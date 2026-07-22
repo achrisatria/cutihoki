@@ -166,6 +166,7 @@
 
   .btn-secondary { background: #e8ecf1; color: #1a2332; }
   .btn-secondary:hover { background: #d5dbe3; }
+  .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .actions {
     display: flex;
@@ -257,7 +258,6 @@
     border-color: #0f5c4d;
   }
 
-  /* FIX: warna task sesuai status */
   .task-select[data-status="DONE CATAT"]    { background: #e8f5e9; color: #1b5e20; }
   .task-select[data-status="SEDANG CUTI"]   { background: #fff8e1; color: #f57f17; }
   .task-select[data-status="WAITING"]       { background: #f3f4f6; color: #374151; }
@@ -336,25 +336,20 @@
     font-weight: 400;
   }
 
-  /* Baris cuti kedua — background sedikit berbeda & border atas tipis */
   tr.row-cuti2 td {
     background: #f9fafb;
     border-top: 1px dashed #d0d7de;
   }
 
-  /* Garis pemisah tegas antar staff berbeda */
   tr.staff-end td {
     border-bottom: 2px solid #c8d0d8 !important;
   }
 
-  /* FIX: pesan update task */
   .task-saving { opacity: 0.5; pointer-events: none; }
 
   /* Skeleton loading */
-  .skeleton-row td {
-    padding: 10px;
-  }
   .skeleton-cell {
+    display: block;
     height: 16px;
     background: linear-gradient(90deg, #f0f2f5 25%, #e4e8ed 50%, #f0f2f5 75%);
     background-size: 200% 100%;
@@ -440,10 +435,9 @@
     </div>
 
     <div class="stat-box" id="statBox"></div>
+    <div id="dashboardLoading" style="display:none; color:#6b7a8a; padding:20px 0;">Memuat data...</div>
 
-    <div id="dashboardLoading" style="display:none; color: #6b7a8a; padding: 20px 0;">Memuat data...</div>
-
-    <div class="table-wrap" id="dashboardContent" style="display: none;">
+    <div class="table-wrap" id="dashboardContent" style="display:none;">
       <table>
         <thead>
           <tr>
@@ -467,53 +461,172 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// KONFIGURASI API — GANTI URL di bawah setelah deploy Apps Script
+// KONFIGURASI SUPABASE
 // ═══════════════════════════════════════════════════════════════
-var API_URL = 'https://script.google.com/macros/s/AKfycbz6WfaewlP0X8t82yulhvtl5v4DL-8ReQDJ1QScCsap-QwJTBrW9ijkjlzijuQ8k3Hrzw/exec';
-var API_KEY = '353e233c9e20c911305369c08546813d6d27b9f76f30d7e3';
+var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_3mByHkVTPwtukH40bOHvow_sB1WW6og';
 
-/**
- * Pemanggil API terpadu — menggantikan google.script.run.
- * - GET dipakai untuk baca (getConfig, getCuti) → cepat, tanpa preflight CORS
- * - POST dipakai untuk tulis (submitCuti, updateTaskAll, addOption)
- *   memakai text/plain agar TIDAK memicu preflight (Apps Script tidak
- *   menerima OPTIONS request).
- * Mengembalikan Promise yang resolve dengan data, atau reject dengan Error.
- */
-function apiCall(action, payload) {
-  var isRead = (action === 'getConfig' || action === 'getCuti');
-  var url = API_URL + '?key=' + encodeURIComponent(API_KEY) +
-            (isRead ? '&action=' + encodeURIComponent(action) : '');
+var MAX_DURASI = { 'CS': 14, 'KAPTEN': 14, 'KASIR': 12 };
+var MONTHS = ['January','February','March','April','May','June',
+              'July','August','September','October','November','December'];
 
-  var opts = isRead
-    ? { method: 'GET' }
-    : {
-        method: 'POST',
-        // text/plain = "simple request" → tidak memicu CORS preflight
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(Object.assign({ action: action }, payload || {}))
-      };
+// ── Supabase REST helpers ─────────────────────────────────────
 
-  return fetch(url, opts)
+function sbHeaders(extra) {
+  var h = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  };
+  if (extra) {
+    Object.keys(extra).forEach(function(k) { h[k] = extra[k]; });
+  }
+  return h;
+}
+
+function sbGet(table, qs) {
+  var url = SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : '');
+  return fetch(url, { headers: sbHeaders() })
     .then(function(res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
       return res.json();
-    })
-    .then(function(j) {
-      if (!j.ok) throw new Error(j.error || 'Unknown error');
-      return j.data;
     });
 }
 
+function sbPost(table, data, extra) {
+  return fetch(SUPABASE_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: sbHeaders(extra),
+    body: JSON.stringify(data)
+  }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
+    return res.status === 204 ? null : res.json();
+  });
+}
+
+function sbPatch(table, filter, data) {
+  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+    method: 'PATCH',
+    headers: sbHeaders({ 'Prefer': 'return=minimal' }),
+    body: JSON.stringify(data)
+  }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
+    return null;
+  });
+}
+
+// ── Business logic (Supabase) ─────────────────────────────────
+
+function getConfig() {
+  return sbGet('dropdown_options', 'select=category,value&order=id.asc')
+    .then(function(rows) {
+      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
+      rows.forEach(function(r) {
+        if (cfg[r.category]) cfg[r.category].push(r.value);
+      });
+      return cfg;
+    });
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  var s = String(iso).trim();
+  // Ambil hanya bagian tanggal jika ada timestamp
+  if (s.length > 10) s = s.slice(0, 10);
+  var p = s.split('-');
+  if (p.length !== 3) return s;
+  return parseInt(p[2]) + ' ' + MONTHS[parseInt(p[1]) - 1] + ' ' + parseInt(p[0]);
+}
+
+function getCuti() {
+  return sbGet('cuti', 'select=*&order=created_at.desc')
+    .then(function(rows) {
+      return rows.map(function(r) {
+        return {
+          rowId:      r.id,
+          id:         r.id_pengajuan || r.id,
+          timestamp:  r.created_at || '',
+          role:       r.role       || '',
+          nama:       r.nama       || '',
+          start1:     formatDate(r.start1),  end1:    formatDate(r.end1),
+          durasi1:    r.durasi1    || '',     perihal1: r.perihal1 || '',
+          start2:     formatDate(r.start2),  end2:    formatDate(r.end2),
+          durasi2:    r.durasi2    || '',     perihal2: r.perihal2 || '',
+          keterangan: r.keterangan || '',
+          tambahan:   r.tambahan   || 'Tidak Ada',
+          task1:      r.task1      || 'WAITING',
+          task2:      r.task2      || 'WAITING'
+        };
+      });
+    });
+}
+
+function genId() {
+  var now = new Date();
+  function pad(n) { return String(n).padStart(2, '0'); }
+  var rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+  return 'CUTI-' +
+    now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' +
+    pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + rand;
+}
+
+function validateDurasi(role, start, end) {
+  var days = dayKey(end) - dayKey(start) + 1;
+  if (days <= 0) throw new Error('Tanggal End tidak boleh sebelum Start.');
+  var max = MAX_DURASI[role];
+  if (!max) throw new Error('Role tidak valid.');
+  if (days > max) throw new Error('Durasi maksimal untuk role ' + role + ' adalah ' + max + ' hari. Diajukan: ' + days + ' hari.');
+  return days;
+}
+
+function submitCuti(payload) {
+  var role   = String(payload.role  || '').trim();
+  var nama   = String(payload.nama  || '').trim();
+  var leaves = payload.leaves || [];
+
+  if (!MAX_DURASI[role]) throw new Error('Role tidak valid.');
+  if (!nama)             throw new Error('Nama wajib diisi.');
+
+  var c1 = leaves[0] || {}, c2 = leaves[1] || {};
+  var d1 = (c1.start && c1.end) ? validateDurasi(role, c1.start, c1.end) : 0;
+  var d2 = (c2.start && c2.end) ? validateDurasi(role, c2.start, c2.end) : 0;
+
+  var id = genId();
+  var row = {
+    id: id, id_pengajuan: id,
+    role: role, nama: nama,
+    start1: c1.start || '', end1: c1.end || '', durasi1: d1 ? d1 + ' Hari' : '', perihal1: c1.perihal || '',
+    start2: c2.start || '', end2: c2.end || '', durasi2: d2 ? d2 + ' Hari' : '', perihal2: c2.perihal || '',
+    keterangan: String(payload.keterangan || ''),
+    tambahan:   String(payload.tambahan   || 'Tidak Ada'),
+    task1: 'WAITING', task2: 'WAITING'
+  };
+
+  return sbPost('cuti', row, { 'Prefer': 'return=minimal' })
+    .then(function() {
+      return { id: id, jumlah: leaves.length, message: 'Pengajuan berhasil! ID: ' + id };
+    });
+}
+
+function updateTask(rowId, value) {
+  return sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value, task2: value });
+}
+
+function addOption(category, value) {
+  return sbPost('dropdown_options', { category: category, value: value },
+    { 'Prefer': 'resolution=ignore-duplicates,return=minimal' })
+    .then(function() { return getConfig(); });
+}
+
+// ── State ─────────────────────────────────────────────────────
 var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
 var leaveSeq = 0;
 var ADD = '__ADD__';
-
-// Cache data dashboard — agar tidak fetch ulang tiap ganti tab
 var _dashboardCache = null;
 var _dashboardLoaded = false;
-// Promise prefetch yang sedang berjalan (agar tidak double-fetch)
 var _prefetchPromise = null;
+
+// ── Utilities ─────────────────────────────────────────────────
 
 function esc(str) {
   return String(str || '').replace(/[&<>"]/g, function(c) {
@@ -521,13 +634,14 @@ function esc(str) {
   });
 }
 
-// Hitung jumlah hari (UTC-safe, tidak terpengaruh DST)
 function dayKey(iso) {
   if (!iso) return 0;
   var parts = iso.split('-');
   if (parts.length !== 3) return 0;
   return Math.round(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])) / 86400000);
 }
+
+// ── Tab ───────────────────────────────────────────────────────
 
 function switchTab(view) {
   document.querySelectorAll('.tab').forEach(function(t) {
@@ -536,33 +650,33 @@ function switchTab(view) {
   document.querySelectorAll('.view').forEach(function(v) {
     v.classList.toggle('active', v.id === 'view-' + view);
   });
-  // OPTIMASI: hanya load dashboard pertama kali, tidak setiap ganti tab
   if (view === 'dashboard' && !_dashboardLoaded) {
     loadDashboard(false);
   }
 }
 
+// ── Dropdown helpers ──────────────────────────────────────────
+
 function fillSelect(sel, cat, selected) {
-  var list = CONFIG[cat] || [];
+  var list  = CONFIG[cat] || [];
   var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>'];
-  for (var i = 0; i < list.length; i++) {
-    parts.push('<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>');
-  }
+  list.forEach(function(v) {
+    parts.push('<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>');
+  });
   parts.push('<option value="' + ADD + '">＋ Tambah opsi baru...</option>');
   sel.innerHTML = parts.join('');
 }
 
-// Dropdown tetap: tanpa opsi "＋ Tambah baru" — dipakai untuk TAMBAHAN & TASK
 function fillStaticSelect(sel, cat, selected) {
-  var list = CONFIG[cat] || [];
+  var list  = CONFIG[cat] || [];
   var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>'];
-  for (var i = 0; i < list.length; i++) {
-    parts.push('<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>');
-  }
+  list.forEach(function(v) {
+    parts.push('<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>');
+  });
   sel.innerHTML = parts.join('');
 }
 
-// Delegasi change untuk dropdown tambah opsi baru
+// Delegasi change untuk dropdown "tambah opsi baru"
 document.addEventListener('change', function(e) {
   var sel = e.target;
   if (sel.tagName !== 'SELECT' || sel.value !== ADD) return;
@@ -572,7 +686,7 @@ document.addEventListener('change', function(e) {
   if (!val || !val.trim()) { fillSelect(sel, cat, ''); return; }
 
   sel.disabled = true;
-  apiCall('addOption', { category: cat, value: val.trim() })
+  addOption(cat, val.trim())
     .then(function(cfg) {
       CONFIG = cfg;
       document.querySelectorAll('select[data-cat="' + cat + '"]').forEach(function(s) {
@@ -587,10 +701,10 @@ document.addEventListener('change', function(e) {
     });
 });
 
-// FIX: Nomor label dihitung dari urutan di DOM, bukan leaveSeq
+// ── Leave blocks ──────────────────────────────────────────────
+
 function renumberBlocks() {
-  var blocks = document.querySelectorAll('.leave-block');
-  blocks.forEach(function(b, idx) {
+  document.querySelectorAll('.leave-block').forEach(function(b, idx) {
     var badge = b.querySelector('.badge');
     if (badge) badge.textContent = 'Cuti ' + (idx + 1);
   });
@@ -598,16 +712,13 @@ function renumberBlocks() {
 
 function addLeaveBlock(removable) {
   leaveSeq++;
-  var seq = leaveSeq;
   var block = document.createElement('div');
   block.className = 'leave-block';
-  block.dataset.seq = seq;
+  block.dataset.seq = leaveSeq;
 
   var html = '<div class="header-block">' +
     '<span class="badge">Cuti ' + (document.querySelectorAll('.leave-block').length + 1) + '</span>';
-  if (removable) {
-    html += '<button class="remove-btn" type="button">✕ Hapus</button>';
-  }
+  if (removable) html += '<button class="remove-btn" type="button">✕ Hapus</button>';
   html += '</div><div class="grid">' +
     '<div class="field"><label>Perihal *</label><select data-cat="PERIHAL"></select></div>' +
     '<div class="field"><label>Tanggal Start *</label><input type="date" class="start-date"></div>' +
@@ -618,7 +729,6 @@ function addLeaveBlock(removable) {
   block.innerHTML = html;
   document.getElementById('leaves-container').appendChild(block);
 
-  // Hanya PERIHAL yang boleh tambah opsi baru
   block.querySelectorAll('select[data-cat]').forEach(function(sel) {
     fillSelect(sel, sel.dataset.cat, '');
   });
@@ -643,7 +753,6 @@ function addLeaveBlock(removable) {
   if (rmBtn) {
     rmBtn.addEventListener('click', function() {
       block.remove();
-      // FIX: Renumber setelah hapus agar label tetap "Cuti 1" / "Cuti 2"
       renumberBlocks();
       toggleAddBtn();
     });
@@ -653,13 +762,15 @@ function addLeaveBlock(removable) {
 }
 
 function toggleAddBtn() {
-  var count = document.querySelectorAll('.leave-block').length;
-  document.getElementById('addLeave').style.display = count >= 2 ? 'none' : 'inline-block';
+  document.getElementById('addLeave').style.display =
+    document.querySelectorAll('.leave-block').length >= 2 ? 'none' : 'inline-block';
 }
 
 document.getElementById('addLeave').addEventListener('click', function() {
   addLeaveBlock(true);
 });
+
+// ── Form submit ───────────────────────────────────────────────
 
 document.getElementById('submitBtn').addEventListener('click', function() {
   var role       = document.getElementById('role').value;
@@ -667,26 +778,25 @@ document.getElementById('submitBtn').addEventListener('click', function() {
   var keterangan = document.getElementById('keterangan').value;
   var tambahan   = document.getElementById('tambahan').value || 'Tidak Ada';
 
-  if (!role || role === ADD)       { showMsg('error', 'Pilih Role terlebih dahulu.'); return; }
-  if (!nama)                       { showMsg('error', 'Isi Nama lengkap dengan ID.'); return; }
-  if (!keterangan || keterangan === ADD) { showMsg('error', 'Pilih Keterangan Passport.'); return; }
+  if (!role || role === ADD)              { showMsg('error', 'Pilih Role terlebih dahulu.'); return; }
+  if (!nama)                              { showMsg('error', 'Isi Nama lengkap dengan ID.'); return; }
+  if (!keterangan || keterangan === ADD)  { showMsg('error', 'Pilih Keterangan Passport.'); return; }
 
   var blocks = document.querySelectorAll('.leave-block');
   if (blocks.length === 0) { showMsg('error', 'Tambahkan minimal 1 cuti.'); return; }
 
   var leaves = [];
-  var valid = true;
+  var valid  = true;
 
   blocks.forEach(function(b) {
     if (!valid) return;
-    var perihal  = b.querySelector('[data-cat="PERIHAL"]').value;
-    var start    = b.querySelector('.start-date').value;
-    var end      = b.querySelector('.end-date').value;
+    var perihal = b.querySelector('[data-cat="PERIHAL"]').value;
+    var start   = b.querySelector('.start-date').value;
+    var end     = b.querySelector('.end-date').value;
 
     if (!perihal || perihal === ADD) { showMsg('error', 'Pilih Perihal untuk semua cuti.'); valid = false; return; }
     if (!start || !end)              { showMsg('error', 'Isi tanggal Start dan End untuk semua cuti.'); valid = false; return; }
     if (dayKey(end) < dayKey(start)) { showMsg('error', 'Tanggal End tidak boleh sebelum Start.'); valid = false; return; }
-
     leaves.push({ perihal: perihal, start: start, end: end });
   });
 
@@ -701,15 +811,26 @@ document.getElementById('submitBtn').addEventListener('click', function() {
   btn.disabled = true;
   btn.textContent = 'Mengirim...';
 
-  apiCall('submitCuti', { payload: { role: role, nama: nama, keterangan: keterangan, tambahan: tambahan, leaves: leaves } })
-    .then(function(res) {
+  var payload = { role: role, nama: nama, keterangan: keterangan, tambahan: tambahan, leaves: leaves };
+
+  var res;
+  try { res = submitCuti(payload); } catch(err) {
+    btn.disabled = false;
+    btn.textContent = '📤 Kirim Pengajuan';
+    showMsg('error', '❌ ' + err.message);
+    return;
+  }
+
+  res
+    .then(function(data) {
       btn.disabled = false;
       btn.textContent = '📤 Kirim Pengajuan';
-      showMsg('success', '✅ ' + res.message);
+      showMsg('success', '✅ ' + data.message);
       resetForm();
-      // Invalidasi cache agar dashboard memuat ulang data terbaru
+      // Invalidasi cache → dashboard akan fetch ulang
       _dashboardLoaded = false;
-      _dashboardCache = null;
+      _dashboardCache  = null;
+      _prefetchPromise = null;
       switchTab('dashboard');
     })
     .catch(function(err) {
@@ -719,14 +840,12 @@ document.getElementById('submitBtn').addEventListener('click', function() {
     });
 });
 
-// FIX: showMsg sekarang lengkap (fungsi sebelumnya terpotong di source asli)
 function showMsg(type, text) {
   var el = document.getElementById('formMsg');
   el.className = 'msg ' + type;
   el.textContent = text;
 }
 
-// FIX: resetForm sebelumnya tidak ada di source asli (dipanggil tapi tidak didefinisikan)
 function resetForm() {
   document.getElementById('role').value = '';
   document.getElementById('nama').value = '';
@@ -734,24 +853,21 @@ function resetForm() {
   document.getElementById('tambahan').value = 'Tidak Ada';
   document.getElementById('leaves-container').innerHTML = '';
   leaveSeq = 0;
-  // Tambahkan kembali blok cuti pertama
   addLeaveBlock(false);
   var msgEl = document.getElementById('formMsg');
   msgEl.className = 'msg';
   msgEl.textContent = '';
 }
 
-// OPTIMASI: loadDashboard menerima parameter forceRefresh
-// forceRefresh=true  → selalu fetch ulang dari server (tombol Refresh)
-// forceRefresh=false → pakai cache jika sudah ada; jika prefetch masih berjalan,
-//                      tunggu tanpa double-fetch; baru fetch jika benar-benar belum ada.
+// ── Dashboard ─────────────────────────────────────────────────
+
 function loadDashboard(forceRefresh) {
-  var loading = document.getElementById('dashboardLoading');
-  var content = document.getElementById('dashboardContent');
-  var statBox = document.getElementById('statBox');
+  var loading    = document.getElementById('dashboardLoading');
+  var content    = document.getElementById('dashboardContent');
+  var statBox    = document.getElementById('statBox');
   var refreshBtn = document.getElementById('refreshBtn');
 
-  // ── Kasus 1: Cache sudah ada dan tidak di-force refresh → render instan
+  // Cache tersedia dan tidak di-force refresh → render instan
   if (!forceRefresh && _dashboardLoaded && _dashboardCache !== null) {
     renderStats(_dashboardCache);
     renderTable(_dashboardCache);
@@ -759,21 +875,20 @@ function loadDashboard(forceRefresh) {
     return;
   }
 
-  // Tampilkan skeleton saat menunggu
+  // Tampilkan skeleton
   loading.style.display = 'block';
-  loading.textContent = 'Memuat data...';
+  loading.textContent   = 'Memuat data...';
   content.style.display = 'none';
-  statBox.innerHTML = renderSkeletonStats();
+  statBox.innerHTML     = renderSkeletonStats();
   if (refreshBtn) refreshBtn.disabled = true;
 
-  // ── Kasus 2: Prefetch masih berjalan dan tidak di-force refresh →
-  //    tunggu promise yang sudah ada, TIDAK buat request baru
+  // Prefetch masih berjalan → tunggu tanpa double-fetch
   if (!forceRefresh && _prefetchPromise) {
     _prefetchPromise
       .then(function(rows) {
-        if (rows == null) return fetchFresh(); // prefetch gagal, coba lagi
+        if (rows == null) return fetchFresh();
         loading.style.display = 'none';
-        statBox.innerHTML = '';
+        statBox.innerHTML     = '';
         renderStats(rows);
         renderTable(rows);
         content.style.display = 'block';
@@ -783,23 +898,17 @@ function loadDashboard(forceRefresh) {
     return;
   }
 
-  // ── Kasus 3: Force refresh atau belum ada request sama sekali → fetch baru
   fetchFresh();
 
   function fetchFresh() {
-    var p = apiCall('getCuti');
-    _prefetchPromise = p.then(function(rows) {
-      _dashboardCache = rows;
-      _dashboardLoaded = true;
-      return rows;
-    }).catch(function(err) {
-      _prefetchPromise = null;
-      throw err;
-    });
+    var p = getCuti();
+    _prefetchPromise = p
+      .then(function(rows) { _dashboardCache = rows; _dashboardLoaded = true; return rows; })
+      .catch(function(err) { _prefetchPromise = null; throw err; });
 
     p.then(function(rows) {
         loading.style.display = 'none';
-        statBox.innerHTML = '';
+        statBox.innerHTML     = '';
         renderStats(rows);
         renderTable(rows);
         content.style.display = 'block';
@@ -807,48 +916,41 @@ function loadDashboard(forceRefresh) {
       .catch(function(err) {
         loading.textContent = '❌ Gagal memuat data: ' + err.message;
       })
-      .finally(function() {
-        if (refreshBtn) refreshBtn.disabled = false;
-      });
+      .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
   }
 }
 
-// OPTIMASI: skeleton stats agar UI tidak kosong saat loading
 function renderSkeletonStats() {
   var html = '';
   for (var i = 0; i < 5; i++) {
     html += '<div class="stat-item">' +
-      '<div class="skeleton-cell" style="width:60%;margin-bottom:8px;"></div>' +
-      '<div class="skeleton-cell" style="width:40%;height:24px;"></div>' +
+      '<span class="skeleton-cell" style="width:60%;margin-bottom:8px;display:block;"></span>' +
+      '<span class="skeleton-cell" style="width:40%;height:24px;display:block;"></span>' +
     '</div>';
   }
   return html;
 }
 
 function renderStats(rows) {
-  var total = rows.length;
-  var waiting = 0, sedang = 0, selesai = 0, doneCatat = 0;
-
+  var total = rows.length, waiting = 0, sedang = 0, selesai = 0, doneCatat = 0;
   for (var i = 0; i < rows.length; i++) {
     var t = (rows[i].task1 || '').toUpperCase();
-    if (t === 'WAITING')      waiting++;
+    if      (t === 'WAITING')      waiting++;
     else if (t === 'SEDANG CUTI')  sedang++;
     else if (t === 'SELESAI CUTI') selesai++;
     else if (t === 'DONE CATAT')   doneCatat++;
   }
-
-  var statBox = document.getElementById('statBox');
-  statBox.innerHTML =
+  document.getElementById('statBox').innerHTML =
     statCard('Total Pengajuan', total) +
-    statCard('Waiting', waiting) +
-    statCard('Sedang Cuti', sedang) +
-    statCard('Selesai Cuti', selesai) +
-    statCard('Done Catat', doneCatat);
+    statCard('Waiting',         waiting) +
+    statCard('Sedang Cuti',     sedang) +
+    statCard('Selesai Cuti',    selesai) +
+    statCard('Done Catat',      doneCatat);
 }
 
 function statCard(label, value) {
-  return '<div class="stat-item"><div class="label">' + esc(label) + '</div>' +
-         '<div class="value">' + value + '</div></div>';
+  return '<div class="stat-item"><div class="label">' + esc(label) +
+         '</div><div class="value">' + value + '</div></div>';
 }
 
 function renderTable(rows) {
@@ -858,64 +960,43 @@ function renderTable(rows) {
     return;
   }
 
-  // OPTIMASI: bangun semua HTML dalam satu operasi, lalu set innerHTML sekali
-  var parts = [];
   var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['DONE CATAT', 'SEDANG CUTI', 'WAITING', 'SELESAI CUTI'];
+  var parts    = [];
 
   for (var i = 0; i < rows.length; i++) {
-    var r = rows[i];
+    var r        = rows[i];
     var hasCuti2 = !!(r.start2 || r.perihal2);
-    var span = hasCuti2 ? ' rowspan="2"' : '';
+    var span     = hasCuti2 ? ' rowspan="2"' : '';
 
-    // Sel yang di-rowspan hanya muncul di baris pertama
-    var tdRole = '<td' + span + ' style="vertical-align:middle;font-weight:600;">' + esc(r.role) + '</td>';
-    var tdNama = '<td' + span + ' style="vertical-align:middle;white-space:nowrap;">' + esc(r.nama) + '</td>';
-    var tdKet  = '<td' + span + ' style="vertical-align:middle;">' +
-                   '<span class="badge-passport">' + esc(r.keterangan) + '</span>' +
-                 '</td>';
+    var tdRole     = '<td' + span + ' style="vertical-align:middle;font-weight:600;">' + esc(r.role) + '</td>';
+    var tdNama     = '<td' + span + ' style="vertical-align:middle;white-space:nowrap;">' + esc(r.nama) + '</td>';
+    var tdKet      = '<td' + span + ' style="vertical-align:middle;"><span class="badge-passport">' + esc(r.keterangan) + '</span></td>';
+    var tambahanTx = (r.tambahan && r.tambahan !== 'Tidak Ada') ? r.tambahan : '';
+    var tdTambahan = '<td' + span + ' style="vertical-align:middle;">' + esc(tambahanTx) + '</td>';
+    var tdTask     = '<td' + span + ' style="vertical-align:middle;">' + buildTaskOptions(r.task1, r.rowId, taskList) + '</td>';
 
-    // Tambahan sekarang tunggal per pengajuan → ikut di-rowspan
-    var tambahanText = (r.tambahan && r.tambahan !== 'Tidak Ada') ? r.tambahan : '';
-    var tdTambahan = '<td' + span + ' style="vertical-align:middle;">' + esc(tambahanText) + '</td>';
-
-    // Task Checker: SATU dropdown per pengajuan (ikut di-rowspan).
-    // Statusnya memakai task1 sebagai status utama pengajuan.
-    var tdTask = '<td' + span + ' style="vertical-align:middle;">' +
-                   buildTaskOptions(r.task1, r.rowId, taskList) +
-                 '</td>';
-
-    // Baris pertama (Cuti 1)
     parts.push('<tr>' +
-      tdRole +
-      tdNama +
+      tdRole + tdNama +
       '<td style="white-space:nowrap">' + esc(r.start1) + '</td>' +
       '<td style="white-space:nowrap">' + esc(r.end1)   + '</td>' +
-      '<td><span class="badge-durasi">' + esc(r.durasi1) + '</span></td>' +
+      '<td><span class="badge-durasi">'  + esc(r.durasi1)  + '</span></td>' +
       '<td><span class="badge-perihal">' + esc(r.perihal1) + '</span></td>' +
-      tdKet +
-      tdTambahan +
-      tdTask +
+      tdKet + tdTambahan + tdTask +
     '</tr>');
 
-    // Baris kedua (Cuti 2) — hanya jika ada.
     if (hasCuti2) {
       parts.push('<tr class="row-cuti2">' +
         '<td style="white-space:nowrap">' + esc(r.start2) + '</td>' +
         '<td style="white-space:nowrap">' + esc(r.end2)   + '</td>' +
-        '<td><span class="badge-durasi">' + esc(r.durasi2) + '</span></td>' +
+        '<td><span class="badge-durasi">'  + esc(r.durasi2)  + '</span></td>' +
         '<td><span class="badge-perihal">' + esc(r.perihal2) + '</span></td>' +
       '</tr>');
     }
   }
 
-  // Satu kali set innerHTML (lebih cepat daripada string concat langsung)
   tbody.innerHTML = parts.join('');
-
-  // OPTIMASI: Terapkan warna task langsung lewat data-status — tidak perlu loop tambahan
-  // karena buildTaskOptions sudah menulis data-status yang benar di HTML.
 }
 
-// OPTIMASI: taskList di-pass sebagai argumen agar tidak dibaca ulang tiap baris
 function buildTaskOptions(currentVal, rowId, taskList) {
   var opts = '';
   for (var i = 0; i < taskList.length; i++) {
@@ -926,12 +1007,7 @@ function buildTaskOptions(currentVal, rowId, taskList) {
          '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
 }
 
-function applyTaskColor(sel) {
-  sel.setAttribute('data-status', sel.value);
-}
-
-// OPTIMASI: satu event listener terdelegasi di tbody — jauh lebih efisien
-// daripada memasang satu listener per baris setelah render
+// Delegasi event untuk task-select (satu listener, bukan per-baris)
 document.getElementById('tableBody').addEventListener('change', function(e) {
   var sel = e.target;
   if (!sel.classList.contains('task-select')) return;
@@ -939,12 +1015,11 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
   var rowId = sel.dataset.rowid;
   var value = sel.value;
   sel.classList.add('task-saving');
-  applyTaskColor(sel);
+  sel.setAttribute('data-status', value);
 
-  apiCall('updateTaskAll', { rowId: rowId, value: value })
+  updateTask(rowId, value)
     .then(function() {
       sel.classList.remove('task-saving');
-      // Update cache agar sinkron dengan server
       if (_dashboardCache) {
         for (var i = 0; i < _dashboardCache.length; i++) {
           if (_dashboardCache[i].rowId === rowId) {
@@ -962,44 +1037,35 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
 });
 
 // ── Inisialisasi ──────────────────────────────────────────────
-// OPTIMASI UTAMA: langsung mulai prefetch getCuti bersamaan dengan getConfig
-// sehingga saat user klik tab Dashboard, data sudah siap (atau hampir selesai).
-_prefetchPromise = apiCall('getCuti')
+// Prefetch getCuti segera (paralel dengan getConfig) agar Dashboard
+// sudah siap saat user klik tab — tanpa tunggu GAS lagi.
+_prefetchPromise = getCuti()
   .then(function(rows) {
-    _dashboardCache = rows;
+    _dashboardCache  = rows;
     _dashboardLoaded = true;
-    // Jika tab dashboard sudah aktif sebelum ini selesai, render sekarang
+    // Jika tab dashboard sudah aktif saat ini selesai, langsung render
     if (document.getElementById('view-dashboard').classList.contains('active')) {
-      var loading = document.getElementById('dashboardLoading');
-      var content = document.getElementById('dashboardContent');
-      var statBox = document.getElementById('statBox');
-      loading.style.display = 'none';
-      statBox.innerHTML = '';
+      document.getElementById('dashboardLoading').style.display = 'none';
+      document.getElementById('statBox').innerHTML = '';
       renderStats(rows);
       renderTable(rows);
-      content.style.display = 'block';
+      document.getElementById('dashboardContent').style.display = 'block';
     }
     return rows;
   })
-  .catch(function() {
-    // Gagal diam-diam — akan dicoba ulang saat user buka tab Dashboard
-    _prefetchPromise = null;
-    return null;
-  });
+  .catch(function() { _prefetchPromise = null; return null; });
 
-apiCall('getConfig')
+getConfig()
   .then(function(cfg) {
     CONFIG = cfg;
-    // Isi dropdown Role, Keterangan, dan Tambahan (tunggal) di form
-    fillSelect(document.getElementById('role'), 'ROLE', '');
+    fillSelect(document.getElementById('role'),       'ROLE',       '');
     fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
     fillStaticSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada');
-    // Tambahkan blok cuti pertama
     addLeaveBlock(false);
   })
   .catch(function(err) {
     alert('Gagal memuat konfigurasi: ' + err.message +
-          '\n\nPastikan API_URL sudah diisi di atas kode.');
+          '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
   });
 </script>
 </body>
