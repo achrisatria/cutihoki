@@ -216,6 +216,11 @@
   .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .dash-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
   .dash-head p { color: var(--muted); font-size: 13px; }
+  .dash-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .form-panel { display: none; margin-bottom: 20px; }
+  .form-panel.open { display: block; animation: slidedown .28s ease; }
+  @keyframes slidedown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 
   .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 13px; margin-bottom: 20px; }
   .stat-item {
@@ -381,9 +386,9 @@
   .dnum { display: inline-grid; place-items: center; min-width: 23px; height: 23px; padding: 0 6px; border-radius: 7px; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .cal-day.out .dnum { color: #B4BECD; }
   .cal-clash-badge { float: right; font-size: 10px; font-weight: 800; color: var(--red); background: #fff; border: 1px solid #EEC4bd; border-radius: 6px; padding: 1px 6px; margin-top: 2px; }
-  .cal-events { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 23px; row-gap: 3px; column-gap: 3px; padding: 36px 5px 7px; }
-  .cal-bar { border-radius: 6px; font-size: 11px; font-weight: 600; color: #fff; padding: 3px 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-shadow: 0 1px 2px rgba(12,21,36,.14); cursor: default; }
-  .cal-bar.clash { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--red); }
+  .cal-events { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 19px; row-gap: 2px; column-gap: 2px; padding: 32px 4px 6px; }
+  .cal-bar { border-radius: 5px; font-size: 10.5px; font-weight: 500; letter-spacing: .01em; color: #fff; padding: 2px 7px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; opacity: .95; cursor: default; }
+  .cal-bar:hover { opacity: 1; }
   .bar-lokal { background: #0E7A63; } .bar-indo { background: #235FA3; } .bar-kerja { background: #4C5A72; }
   .bar-lahir { background: #8E44AD; } .bar-nikah { background: #B5760B; } .bar-other { background: #64748B; }
   .cal-empty { padding: 46px; text-align: center; color: var(--muted); font-size: 14px; }
@@ -414,61 +419,64 @@
   </div>
 
   <div class="tabs">
-    <button class="tab active" id="tabForm" onclick="switchTab('form')">✏️ Ajukan Cuti</button>
-    <button class="tab" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab active" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
   </div>
 
-  <!-- VIEW FORM -->
-  <div class="view active" id="view-form">
-    <div class="card">
-      <h3>👤 Data Pemohon</h3>
-      <div class="grid">
-        <div class="field">
-          <label>Role</label>
-          <select id="role" data-cat="ROLE"></select>
-        </div>
-        <div class="field">
-          <label>Nama Lengkap &amp; ID</label>
-          <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
-        </div>
-      </div>
-      <div class="info-box">⏱️ Batas durasi per pengajuan — CS &amp; KAPTEN maksimal 14 hari, KASIR maksimal 12 hari.</div>
-    </div>
-
-    <div class="card">
-      <h3>📅 Detail Cuti</h3>
-      <div id="leaves-container"></div>
-      <button class="add-leave-btn" id="addLeave" type="button">＋ Tambah cuti kedua</button>
-
-      <div class="divider">
-        <div class="grid" style="max-width: 720px;">
-          <div class="field">
-            <label>Keterangan Passport</label>
-            <select id="keterangan" data-cat="KETERANGAN"></select>
-          </div>
-          <div class="field">
-            <label>Tambahan Cuti</label>
-            <select id="tambahan"></select>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim pengajuan</button>
-    </div>
-    <div class="msg" id="formMsg"></div>
-  </div>
-
   <!-- VIEW DASHBOARD -->
-  <div class="view" id="view-dashboard">
+  <div class="view active" id="view-dashboard">
     <div class="dash-head">
       <div>
         <h2>Data Pengajuan Cuti</h2>
         <p>Kolom <strong>Bentrok</strong> menghitung staff lain dengan CUTI LOKAL/INDO di tanggal yang beririsan.</p>
       </div>
-      <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadDashboard(true)">🔄 Muat ulang</button>
+      <div class="dash-actions">
+        <button class="btn btn-primary btn-sm" id="toggleFormBtn" type="button" onclick="toggleForm()">＋ Ajukan Cuti</button>
+        <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadDashboard(true)">🔄 Muat ulang</button>
+      </div>
+    </div>
+
+    <!-- Panel Ajukan Cuti (toggle) -->
+    <div class="form-panel" id="formPanel">
+      <div class="card">
+        <h3>👤 Data Pemohon</h3>
+        <div class="grid">
+          <div class="field">
+            <label>Role</label>
+            <select id="role" data-cat="ROLE"></select>
+          </div>
+          <div class="field">
+            <label>Nama Lengkap &amp; ID</label>
+            <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
+          </div>
+        </div>
+        <div class="info-box">⏱️ Batas durasi per pengajuan — CS &amp; KAPTEN maksimal 14 hari, KASIR maksimal 12 hari.</div>
+      </div>
+
+      <div class="card">
+        <h3>📅 Detail Cuti</h3>
+        <div id="leaves-container"></div>
+        <button class="add-leave-btn" id="addLeave" type="button">＋ Tambah cuti kedua</button>
+
+        <div class="divider">
+          <div class="grid" style="max-width: 720px;">
+            <div class="field">
+              <label>Keterangan Passport</label>
+              <select id="keterangan" data-cat="KETERANGAN"></select>
+            </div>
+            <div class="field">
+              <label>Tambahan Cuti</label>
+              <select id="tambahan"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" type="button" onclick="toggleForm(false)">Batal</button>
+        <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim pengajuan</button>
+      </div>
+      <div class="msg" id="formMsg"></div>
     </div>
 
     <div class="stat-box" id="statBox"></div>
@@ -760,12 +768,23 @@ function buildIntervals(rows) {
 }
 function clashInfo(perihal, startRaw, endRaw, nama, intervals) {
   if (CLASH_PERIHAL.indexOf(perihal) === -1 || !startRaw || !endRaw) return null;
-  var s = dayKey(startRaw), e = dayKey(endRaw), names = [];
-  intervals.forEach(function(iv) {
-    if (iv.perihal === perihal && iv.nama !== nama && s <= iv.e && iv.s <= e && names.indexOf(iv.nama) === -1)
-      names.push(iv.nama);
-  });
-  return { count: names.length, names: names };
+  var s = dayKey(startRaw), e = dayKey(endRaw);
+  var maxConcurrent = 1, others = {};
+  // Untuk tiap hari dalam rentang cuti ini, hitung berapa staff (termasuk diri)
+  // yg cuti dgn perihal sama di hari itu. Ambil angka tertinggi.
+  for (var d = s; d <= e; d++) {
+    var onDay = {}; onDay[nama] = 1;
+    for (var i = 0; i < intervals.length; i++) {
+      var iv = intervals[i];
+      if (iv.perihal === perihal && iv.s <= d && d <= iv.e) {
+        onDay[iv.nama] = 1;
+        if (iv.nama !== nama) others[iv.nama] = 1;
+      }
+    }
+    var c = Object.keys(onDay).length;
+    if (c > maxConcurrent) maxConcurrent = c;
+  }
+  return { count: maxConcurrent, names: Object.keys(others) };
 }
 
 // ── State ─────────────────────────────────────────────────────
@@ -883,7 +902,19 @@ function renumber(container) {
   });
 }
 
-// ── FORM ──────────────────────────────────────────────────────
+// ── FORM (panel toggle di dashboard) ──────────────────────────
+function toggleForm(force) {
+  var panel = document.getElementById('formPanel');
+  var btn = document.getElementById('toggleFormBtn');
+  var open = (force === undefined) ? !panel.classList.contains('open') : !!force;
+  panel.classList.toggle('open', open);
+  btn.innerHTML = open ? '✕ Tutup form' : '＋ Ajukan Cuti';
+  btn.classList.toggle('btn-primary', !open);
+  btn.classList.toggle('btn-secondary', open);
+  if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  else { var m = document.getElementById('formMsg'); m.className = 'msg'; m.textContent = ''; }
+}
+
 var formC = document.getElementById('leaves-container');
 function toggleAddBtn() {
   document.getElementById('addLeave').style.display = formC.querySelectorAll('.leave-block').length >= 2 ? 'none' : 'block';
@@ -927,7 +958,7 @@ document.getElementById('submitBtn').addEventListener('click', function() {
       btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
       showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
       toast('Pengajuan tersimpan', 'ok');
-      resetForm(); invalidate(); switchTab('dashboard');
+      resetForm(); invalidate(); toggleForm(false); loadDashboard(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
       showMsg('error', 'Gagal menyimpan: ' + err.message);
@@ -1127,9 +1158,9 @@ function taskCls(v) {
 function clashCell(perihal, startRaw, endRaw, nama, intervals) {
   var info = clashInfo(perihal, startRaw, endRaw, nama, intervals);
   if (!info) return '<span class="pill pill-dash">–</span>';
-  if (info.count === 0) return '<span class="pill pill-clash-ok">✓ Aman</span>';
-  var cls = info.count >= 2 ? 'pill-clash-alert' : 'pill-clash-warn';
-  var title = 'Bentrok dengan: ' + info.names.join(', ');
+  if (info.count <= 1) return '<span class="pill pill-clash-ok">✓ Aman</span>';
+  var cls = info.count >= 3 ? 'pill-clash-alert' : 'pill-clash-warn';
+  var title = 'Cuti bersamaan dengan: ' + info.names.join(', ');
   return '<span class="pill ' + cls + '" title="' + esc(title) + '">⚠ ' + info.count + ' staff</span>';
 }
 function taskSelect(currentVal, rowId, taskList) {
@@ -1277,6 +1308,9 @@ function shortName(nama) {
   var s = String(nama || '').split(' - ')[0].trim();
   return s || nama || '?';
 }
+function titleCase(s) {
+  return String(s || '').toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
 
 function calShift(n) { calRef.setMonth(calRef.getMonth() + n); renderCalendar(); }
 function calToday() { calRef = new Date(); calRef.setDate(1); renderCalendar(); }
@@ -1334,13 +1368,12 @@ function renderCalendar() {
       // batang
       var bars = '';
       wl.forEach(function (lv) {
-        var isClash = clashInfo(lv.perihal, lv.sRaw, lv.eRaw, lv.nama, intervals);
-        var clashCls = (isClash && isClash.count > 0) ? ' clash' : '';
-        var title = lv.nama + ' · ' + lv.perihal + ' (' + formatDate(lv.sRaw) + ' – ' + formatDate(lv.eRaw) + ')' +
-          (isClash && isClash.count > 0 ? ' — bentrok dgn ' + isClash.names.join(', ') : '');
-        bars += '<div class="cal-bar ' + perihalBar(lv.perihal) + clashCls + '" ' +
+        var ci = clashInfo(lv.perihal, lv.sRaw, lv.eRaw, lv.nama, intervals);
+        var extra = (ci && ci.count > 1) ? ' — barengan ' + ci.names.join(', ') : '';
+        var title = lv.nama + ' · ' + lv.perihal + ' (' + formatDate(lv.sRaw) + ' – ' + formatDate(lv.eRaw) + ')' + extra;
+        bars += '<div class="cal-bar ' + perihalBar(lv.perihal) + '" ' +
           'style="grid-column:' + lv._c1 + '/' + (lv._c2 + 1) + ';grid-row:' + (lv._lane + 1) + '" ' +
-          'title="' + esc(title) + '">' + esc(shortName(lv.nama)) + '</div>';
+          'title="' + esc(title) + '">' + esc(titleCase(shortName(lv.nama))) + '</div>';
       });
 
       html += '<div class="cal-week"><div class="cal-bg">' + bg + '</div>' +
@@ -1369,6 +1402,7 @@ getConfig().then(function(cfg) {
   fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
   addFormLeave(false);
   renderRoleChips();
+  if (_cache && document.getElementById('view-dashboard').classList.contains('active')) applyFilters();
 }).catch(function(err) {
   toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
   alert('Gagal memuat konfigurasi: ' + err.message + '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
