@@ -222,15 +222,18 @@
   .form-panel.open { display: block; animation: slidedown .28s ease; }
   @keyframes slidedown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 
-  .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 13px; margin-bottom: 20px; }
+  .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(166px, 1fr)); gap: 12px; margin-bottom: 20px; }
   .stat-item {
+    display: flex; align-items: center; gap: 13px;
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 15px 17px; box-shadow: var(--shadow-sm);
-    position: relative; overflow: hidden;
+    border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s, transform .05s;
   }
-  .stat-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--dot, var(--brand)); }
-  .stat-item .label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
-  .stat-item .value { font-size: 27px; font-weight: 800; letter-spacing: -.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .stat-item:hover { box-shadow: var(--shadow-md); }
+  .stat-ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 19px; flex: none; }
+  .stat-txt { min-width: 0; }
+  .stat-txt .label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .01em; white-space: nowrap; }
+  .stat-txt .value { font-size: 25px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 
   .filter-bar {
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
@@ -240,6 +243,11 @@
   }
   .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .filter-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .filter-divider { width: 1px; align-self: stretch; min-height: 26px; background: var(--line-strong); }
+  .month-select { width: auto; min-width: 150px; padding: 7px 32px 7px 13px; font-size: 13px; font-weight: 600; border-radius: 999px; border: 1.5px solid var(--line-strong); background-color: var(--surface); }
+  .month-select:hover { border-color: var(--brand); }
+  .result-count { font-size: 12.5px; color: var(--muted); font-weight: 500; margin: -4px 2px 14px; }
+  .result-count strong { color: var(--ink-soft); font-weight: 700; }
   .chip {
     border: 1.5px solid var(--line-strong); background: var(--surface);
     color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 600;
@@ -267,7 +275,7 @@
     position: sticky; top: 0; z-index: 2;
   }
   thead th .sub-header { font-size: 9px; font-weight: 600; color: #A7B1C2; letter-spacing: .02em; }
-  tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr td { background: var(--surface); transition: background .12s; }
   tbody tr.rec-alt td { background: var(--stripe); }            /* selang-seling per record */
@@ -503,11 +511,18 @@
         <span class="filter-label">Role</span>
         <span id="roleChips"></span>
       </div>
+      <span class="filter-divider"></span>
+      <div class="filter-group">
+        <span class="filter-label">Bulan</span>
+        <select id="monthFilter" class="month-select"></select>
+      </div>
       <div class="search-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input id="searchInput" type="text" placeholder="Cari nama atau ID…" autocomplete="off">
       </div>
     </div>
+
+    <div class="result-count" id="resultCount"></div>
 
     <div id="dashboardLoading" style="display:none; color:var(--muted); padding:20px 0;">Memuat data…</div>
 
@@ -811,7 +826,7 @@ function clashInfo(perihal, startRaw, endRaw, nama, intervals) {
 var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
 var ADD = '__ADD__';
 var _cache = null, _loaded = false, _prefetch = null;
-var filterState = { role: 'ALL', search: '' };
+var filterState = { role: 'ALL', search: '', month: 'ALL' };
 
 // ── Toast & Confirm ───────────────────────────────────────────
 function toast(msg, type) {
@@ -1084,7 +1099,7 @@ function loadDashboard(force) {
   var statBox = document.getElementById('statBox');
   var refreshBtn = document.getElementById('refreshBtn');
 
-  if (!force && _loaded && _cache) { renderRoleChips(); applyFilters(); content.style.display = 'block'; return; }
+  if (!force && _loaded && _cache) { renderFilters(); applyFilters(); content.style.display = 'block'; return; }
 
   loading.style.display = 'block'; loading.textContent = 'Memuat data…';
   content.style.display = 'none'; statBox.innerHTML = renderSkeletonStats();
@@ -1108,7 +1123,7 @@ function loadDashboard(force) {
   }
   function done(rows) {
     loading.style.display = 'none'; statBox.innerHTML = '';
-    renderRoleChips(); applyFilters(); content.style.display = 'block';
+    renderFilters(); applyFilters(); content.style.display = 'block';
   }
 }
 
@@ -1125,27 +1140,78 @@ function renderRoleChips() {
   });
 }
 
+// Bangun opsi dropdown Bulan dari rentang tanggal semua cuti
+function buildMonthOptions() {
+  var set = {};
+  (_cache || []).forEach(function(r) {
+    [[r.start1Raw, r.end1Raw], [r.start2Raw, r.end2Raw]].forEach(function(t) {
+      if (t[0] && t[1]) {
+        var s = keyToDate(dayKey(t[0])), e = keyToDate(dayKey(t[1]));
+        var y = s.getUTCFullYear(), m = s.getUTCMonth(), ey = e.getUTCFullYear(), em = e.getUTCMonth();
+        while (y < ey || (y === ey && m <= em)) {
+          set[y + '-' + String(m + 1).padStart(2, '0')] = 1;
+          m++; if (m > 11) { m = 0; y++; }
+        }
+      }
+    });
+  });
+  var keys = Object.keys(set).sort();
+  if (filterState.month !== 'ALL' && keys.indexOf(filterState.month) === -1) filterState.month = 'ALL';
+  var opts = ['<option value="ALL">Semua Bulan</option>'];
+  keys.forEach(function(k) {
+    var y = +k.slice(0, 4), m = +k.slice(5, 7) - 1;
+    opts.push('<option value="' + k + '"' + (k === filterState.month ? ' selected' : '') + '>' + MONTHS_ID[m] + ' ' + y + '</option>');
+  });
+  document.getElementById('monthFilter').innerHTML = opts.join('');
+}
+function renderFilters() { renderRoleChips(); buildMonthOptions(); }
+
+function monthRange(ym) {
+  var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1;
+  return [ymdKey(y, m, 1), ymdKey(y, m, new Date(Date.UTC(y, m + 1, 0)).getUTCDate())];
+}
+function recordInMonth(r, ym) {
+  if (ym === 'ALL') return true;
+  var rng = monthRange(ym), lv = [[r.start1Raw, r.end1Raw], [r.start2Raw, r.end2Raw]];
+  for (var i = 0; i < lv.length; i++) {
+    if (lv[i][0] && lv[i][1]) {
+      var sk = dayKey(lv[i][0]), ek = dayKey(lv[i][1]);
+      if (sk <= rng[1] && rng[0] <= ek) return true;
+    }
+  }
+  return false;
+}
+// Satu sumber kebenaran untuk semua filter
+function matchFilters(r) {
+  if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
+  if (filterState.search) {
+    var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase();
+    if (hay.indexOf(filterState.search) === -1) return false;
+  }
+  if (!recordInMonth(r, filterState.month)) return false;
+  return true;
+}
+
 document.getElementById('searchInput').addEventListener('input', function() {
   filterState.search = this.value.trim().toLowerCase(); applyFilters();
+});
+document.getElementById('monthFilter').addEventListener('change', function() {
+  filterState.month = this.value; applyFilters();
 });
 
 function applyFilters() {
   if (!_cache) return;
-  var rows = _cache.filter(function(r) {
-    if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
-    if (filterState.search) {
-      var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase();
-      if (hay.indexOf(filterState.search) === -1) return false;
-    }
-    return true;
-  });
+  var rows = _cache.filter(matchFilters);
+  var rc = document.getElementById('resultCount');
+  var filtered = (filterState.role !== 'ALL' || filterState.search || filterState.month !== 'ALL');
+  rc.innerHTML = 'Menampilkan <strong>' + rows.length + '</strong> dari ' + _cache.length + ' pengajuan' + (filtered ? ' · terfilter' : '');
   renderStats(rows);
   renderTable(rows, buildIntervals(_cache)); // bentrok dihitung terhadap SEMUA data
 }
 
 function renderSkeletonStats() {
   var h = '';
-  for (var i = 0; i < 5; i++) h += '<div class="stat-item"><span class="skeleton-cell" style="width:55%;margin-bottom:9px;"></span><span class="skeleton-cell" style="width:35%;height:22px;"></span></div>';
+  for (var i = 0; i < 5; i++) h += '<div class="stat-item"><span class="skeleton-cell" style="width:40px;height:40px;border-radius:11px;"></span><div style="flex:1"><span class="skeleton-cell" style="width:55%;margin-bottom:8px;"></span><span class="skeleton-cell" style="width:35%;height:20px;"></span></div></div>';
   return h;
 }
 function renderStats(rows) {
@@ -1158,14 +1224,17 @@ function renderStats(rows) {
     else if (t === 'DONE CATAT') done++;
   });
   document.getElementById('statBox').innerHTML =
-    statCard('Total Tampil', total, 'var(--brand)') +
-    statCard('Waiting', waiting, 'var(--amber)') +
-    statCard('Sedang Cuti', sedang, 'var(--blue)') +
-    statCard('Selesai Cuti', selesai, 'var(--green)') +
-    statCard('Done Catat', done, 'var(--brand-ink)');
+    statCard('Total Tampil', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
+    statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
+    statCard('Sedang Cuti', sedang, 'var(--blue)', 'var(--blue-bg)', '🏝️') +
+    statCard('Selesai Cuti', selesai, 'var(--green)', 'var(--green-bg)', '✅') +
+    statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️');
 }
-function statCard(label, value, dot) {
-  return '<div class="stat-item" style="--dot:' + dot + '"><div class="label">' + esc(label) + '</div><div class="value">' + value + '</div></div>';
+function statCard(label, value, color, bg, icon) {
+  return '<div class="stat-item">' +
+    '<div class="stat-ic" style="background:' + bg + ';color:' + color + '">' + icon + '</div>' +
+    '<div class="stat-txt"><div class="label">' + esc(label) + '</div><div class="value">' + value + '</div></div>' +
+  '</div>';
 }
 
 function taskCls(v) {
@@ -1255,11 +1324,7 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
 });
 function currentFiltered() {
   if (!_cache) return [];
-  return _cache.filter(function(r) {
-    if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
-    if (filterState.search) { var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase(); if (hay.indexOf(filterState.search) === -1) return false; }
-    return true;
-  });
+  return _cache.filter(matchFilters);
 }
 
 // close modal on overlay/Escape
@@ -1425,7 +1490,7 @@ _prefetch = getCuti().then(function(rows) {
   _cache = rows; _loaded = true;
   if (document.getElementById('view-dashboard').classList.contains('active')) {
     document.getElementById('dashboardLoading').style.display = 'none';
-    renderRoleChips(); applyFilters();
+    renderFilters(); applyFilters();
     document.getElementById('dashboardContent').style.display = 'block';
   }
   return rows;
@@ -1437,7 +1502,7 @@ getConfig().then(function(cfg) {
   fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
   fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
   addFormLeave(false);
-  renderRoleChips();
+  renderFilters();
   if (_cache && document.getElementById('view-dashboard').classList.contains('active')) applyFilters();
 }).catch(function(err) {
   toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
