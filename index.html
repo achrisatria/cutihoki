@@ -350,6 +350,22 @@
   /* FIX: pesan update task */
   .task-saving { opacity: 0.5; pointer-events: none; }
 
+  /* Skeleton loading */
+  .skeleton-row td {
+    padding: 10px;
+  }
+  .skeleton-cell {
+    height: 16px;
+    background: linear-gradient(90deg, #f0f2f5 25%, #e4e8ed 50%, #f0f2f5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
   @media (max-width: 600px) {
     body { padding: 12px; }
     .view { padding: 14px; }
@@ -420,12 +436,12 @@
   <div class="view" id="view-dashboard">
     <div class="toolbar">
       <h3>📊 Data Pengajuan Cuti</h3>
-      <button class="btn btn-secondary" onclick="loadDashboard()">🔄 Refresh</button>
+      <button class="btn btn-secondary" id="refreshBtn" onclick="loadDashboard(true)">🔄 Refresh</button>
     </div>
 
     <div class="stat-box" id="statBox"></div>
 
-    <div id="dashboardLoading" style="color: #6b7a8a; padding: 20px 0;">Memuat data...</div>
+    <div id="dashboardLoading" style="display:none; color: #6b7a8a; padding: 20px 0;">Memuat data...</div>
 
     <div class="table-wrap" id="dashboardContent" style="display: none;">
       <table>
@@ -493,6 +509,10 @@ var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
 var leaveSeq = 0;
 var ADD = '__ADD__';
 
+// Cache data dashboard — agar tidak fetch ulang tiap ganti tab
+var _dashboardCache = null;
+var _dashboardLoaded = false;
+
 function esc(str) {
   return String(str || '').replace(/[&<>"]/g, function(c) {
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
@@ -514,27 +534,30 @@ function switchTab(view) {
   document.querySelectorAll('.view').forEach(function(v) {
     v.classList.toggle('active', v.id === 'view-' + view);
   });
-  if (view === 'dashboard') loadDashboard();
+  // OPTIMASI: hanya load dashboard pertama kali, tidak setiap ganti tab
+  if (view === 'dashboard' && !_dashboardLoaded) {
+    loadDashboard(false);
+  }
 }
 
 function fillSelect(sel, cat, selected) {
   var list = CONFIG[cat] || [];
-  var html = '<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>';
+  var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>'];
   for (var i = 0; i < list.length; i++) {
-    html += '<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>';
+    parts.push('<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>');
   }
-  html += '<option value="' + ADD + '">＋ Tambah opsi baru...</option>';
-  sel.innerHTML = html;
+  parts.push('<option value="' + ADD + '">＋ Tambah opsi baru...</option>');
+  sel.innerHTML = parts.join('');
 }
 
 // Dropdown tetap: tanpa opsi "＋ Tambah baru" — dipakai untuk TAMBAHAN & TASK
 function fillStaticSelect(sel, cat, selected) {
   var list = CONFIG[cat] || [];
-  var html = '<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>';
+  var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>'];
   for (var i = 0; i < list.length; i++) {
-    html += '<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>';
+    parts.push('<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>');
   }
-  sel.innerHTML = html;
+  sel.innerHTML = parts.join('');
 }
 
 // Delegasi change untuk dropdown tambah opsi baru
@@ -682,6 +705,9 @@ document.getElementById('submitBtn').addEventListener('click', function() {
       btn.textContent = '📤 Kirim Pengajuan';
       showMsg('success', '✅ ' + res.message);
       resetForm();
+      // Invalidasi cache agar dashboard memuat ulang data terbaru
+      _dashboardLoaded = false;
+      _dashboardCache = null;
       switchTab('dashboard');
     })
     .catch(function(err) {
@@ -713,40 +739,73 @@ function resetForm() {
   msgEl.textContent = '';
 }
 
-// FIX: loadDashboard sebelumnya tidak ada di source asli (dipanggil tapi tidak didefinisikan)
-function loadDashboard() {
+// OPTIMASI: loadDashboard menerima parameter forceRefresh
+// forceRefresh=true  → selalu fetch ulang dari server (tombol Refresh)
+// forceRefresh=false → pakai cache jika sudah ada, baru fetch jika belum
+function loadDashboard(forceRefresh) {
   var loading = document.getElementById('dashboardLoading');
   var content = document.getElementById('dashboardContent');
   var statBox = document.getElementById('statBox');
 
+  // Pakai cache jika ada dan tidak di-force refresh
+  if (!forceRefresh && _dashboardLoaded && _dashboardCache !== null) {
+    renderStats(_dashboardCache);
+    renderTable(_dashboardCache);
+    content.style.display = 'block';
+    return;
+  }
+
+  // Tampilkan skeleton saat loading
   loading.style.display = 'block';
+  loading.textContent = 'Memuat data...';
   content.style.display = 'none';
-  statBox.innerHTML = '';
+  statBox.innerHTML = renderSkeletonStats();
+
+  // Disable tombol refresh saat sedang loading
+  var refreshBtn = document.getElementById('refreshBtn');
+  if (refreshBtn) refreshBtn.disabled = true;
 
   apiCall('getCuti')
     .then(function(rows) {
+      _dashboardCache = rows;
+      _dashboardLoaded = true;
       loading.style.display = 'none';
+      statBox.innerHTML = '';
       renderStats(rows);
       renderTable(rows);
       content.style.display = 'block';
     })
     .catch(function(err) {
       loading.textContent = '❌ Gagal memuat data: ' + err.message;
+    })
+    .finally(function() {
+      if (refreshBtn) refreshBtn.disabled = false;
     });
 }
 
+// OPTIMASI: skeleton stats agar UI tidak kosong saat loading
+function renderSkeletonStats() {
+  var html = '';
+  for (var i = 0; i < 5; i++) {
+    html += '<div class="stat-item">' +
+      '<div class="skeleton-cell" style="width:60%;margin-bottom:8px;"></div>' +
+      '<div class="skeleton-cell" style="width:40%;height:24px;"></div>' +
+    '</div>';
+  }
+  return html;
+}
+
 function renderStats(rows) {
-  var total   = rows.length;
+  var total = rows.length;
   var waiting = 0, sedang = 0, selesai = 0, doneCatat = 0;
 
-  rows.forEach(function(r) {
-    // Hitung berdasarkan status task1 (status utama per pengajuan)
-    var t = (r.task1 || '').toUpperCase();
+  for (var i = 0; i < rows.length; i++) {
+    var t = (rows[i].task1 || '').toUpperCase();
     if (t === 'WAITING')      waiting++;
-    if (t === 'SEDANG CUTI')  sedang++;
-    if (t === 'SELESAI CUTI') selesai++;
-    if (t === 'DONE CATAT')   doneCatat++;
-  });
+    else if (t === 'SEDANG CUTI')  sedang++;
+    else if (t === 'SELESAI CUTI') selesai++;
+    else if (t === 'DONE CATAT')   doneCatat++;
+  }
 
   var statBox = document.getElementById('statBox');
   statBox.innerHTML =
@@ -769,10 +828,14 @@ function renderTable(rows) {
     return;
   }
 
-  var html = '';
-  rows.forEach(function(r) {
+  // OPTIMASI: bangun semua HTML dalam satu operasi, lalu set innerHTML sekali
+  var parts = [];
+  var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['DONE CATAT', 'SEDANG CUTI', 'WAITING', 'SELESAI CUTI'];
+
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
     var hasCuti2 = !!(r.start2 || r.perihal2);
-    var span     = hasCuti2 ? ' rowspan="2"' : '';
+    var span = hasCuti2 ? ' rowspan="2"' : '';
 
     // Sel yang di-rowspan hanya muncul di baris pertama
     var tdRole = '<td' + span + ' style="vertical-align:middle;font-weight:600;">' + esc(r.role) + '</td>';
@@ -788,11 +851,11 @@ function renderTable(rows) {
     // Task Checker: SATU dropdown per pengajuan (ikut di-rowspan).
     // Statusnya memakai task1 sebagai status utama pengajuan.
     var tdTask = '<td' + span + ' style="vertical-align:middle;">' +
-                   buildTaskOptions(r.task1, r.rowId) +
+                   buildTaskOptions(r.task1, r.rowId, taskList) +
                  '</td>';
 
     // Baris pertama (Cuti 1)
-    html += '<tr>' +
+    parts.push('<tr>' +
       tdRole +
       tdNama +
       '<td style="white-space:nowrap">' + esc(r.start1) + '</td>' +
@@ -802,58 +865,71 @@ function renderTable(rows) {
       tdKet +
       tdTambahan +
       tdTask +
-    '</tr>';
+    '</tr>');
 
-    // Baris kedua (Cuti 2) — hanya jika ada. Keterangan, Tambahan, dan
-    // Task Checker tidak diulang karena sudah di-rowspan dari baris pertama.
+    // Baris kedua (Cuti 2) — hanya jika ada.
     if (hasCuti2) {
-      html += '<tr class="row-cuti2">' +
+      parts.push('<tr class="row-cuti2">' +
         '<td style="white-space:nowrap">' + esc(r.start2) + '</td>' +
         '<td style="white-space:nowrap">' + esc(r.end2)   + '</td>' +
         '<td><span class="badge-durasi">' + esc(r.durasi2) + '</span></td>' +
         '<td><span class="badge-perihal">' + esc(r.perihal2) + '</span></td>' +
-      '</tr>';
+      '</tr>');
     }
-  });
+  }
 
-  tbody.innerHTML = html;
+  // Satu kali set innerHTML (lebih cepat daripada string concat langsung)
+  tbody.innerHTML = parts.join('');
 
-  // Pasang event listener untuk semua task-select
-  tbody.querySelectorAll('.task-select').forEach(function(sel) {
-    applyTaskColor(sel);
-    sel.addEventListener('change', function() {
-      var rowId = sel.dataset.rowid;
-      var value = sel.value;
-      sel.classList.add('task-saving');
-      apiCall('updateTaskAll', { rowId: rowId, value: value })
-        .then(function() {
-          sel.classList.remove('task-saving');
-          sel.dataset.status = value;
-          applyTaskColor(sel);
-        })
-        .catch(function(err) {
-          sel.classList.remove('task-saving');
-          alert('Gagal update task: ' + err.message);
-        });
-    });
-  });
+  // OPTIMASI: Terapkan warna task langsung lewat data-status — tidak perlu loop tambahan
+  // karena buildTaskOptions sudah menulis data-status yang benar di HTML.
 }
 
-function buildTaskOptions(currentVal, rowId) {
-  var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['DONE CATAT', 'SEDANG CUTI', 'WAITING', 'SELESAI CUTI'];
+// OPTIMASI: taskList di-pass sebagai argumen agar tidak dibaca ulang tiap baris
+function buildTaskOptions(currentVal, rowId, taskList) {
   var opts = '';
-  taskList.forEach(function(t) {
+  for (var i = 0; i < taskList.length; i++) {
+    var t = taskList[i];
     opts += '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>';
-  });
+  }
   return '<select class="task-select" data-rowid="' + esc(rowId) +
          '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
 }
 
 function applyTaskColor(sel) {
-  // Reset kelas warna lama
-  sel.removeAttribute('data-status');
   sel.setAttribute('data-status', sel.value);
 }
+
+// OPTIMASI: satu event listener terdelegasi di tbody — jauh lebih efisien
+// daripada memasang satu listener per baris setelah render
+document.getElementById('tableBody').addEventListener('change', function(e) {
+  var sel = e.target;
+  if (!sel.classList.contains('task-select')) return;
+
+  var rowId = sel.dataset.rowid;
+  var value = sel.value;
+  sel.classList.add('task-saving');
+  applyTaskColor(sel);
+
+  apiCall('updateTaskAll', { rowId: rowId, value: value })
+    .then(function() {
+      sel.classList.remove('task-saving');
+      // Update cache agar sinkron dengan server
+      if (_dashboardCache) {
+        for (var i = 0; i < _dashboardCache.length; i++) {
+          if (_dashboardCache[i].rowId === rowId) {
+            _dashboardCache[i].task1 = value;
+            _dashboardCache[i].task2 = value;
+            break;
+          }
+        }
+      }
+    })
+    .catch(function(err) {
+      sel.classList.remove('task-saving');
+      alert('Gagal update task: ' + err.message);
+    });
+});
 
 // ── Inisialisasi ──────────────────────────────────────────────
 apiCall('getConfig')
