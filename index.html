@@ -469,7 +469,7 @@
 // ═══════════════════════════════════════════════════════════════
 // KONFIGURASI API — GANTI URL di bawah setelah deploy Apps Script
 // ═══════════════════════════════════════════════════════════════
-var API_URL = 'https://script.google.com/macros/s/AKfycbx51RJ7knfwMg_RWYfr57FFMGkhv1UXTeOVYHMFTpZhOuP4504OXUVh3NTab_8p6tkhDA/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbz6WfaewlP0X8t82yulhvtl5v4DL-8ReQDJ1QScCsap-QwJTBrW9ijkjlzijuQ8k3Hrzw/exec';
 var API_KEY = '353e233c9e20c911305369c08546813d6d27b9f76f30d7e3';
 
 /**
@@ -512,6 +512,8 @@ var ADD = '__ADD__';
 // Cache data dashboard — agar tidak fetch ulang tiap ganti tab
 var _dashboardCache = null;
 var _dashboardLoaded = false;
+// Promise prefetch yang sedang berjalan (agar tidak double-fetch)
+var _prefetchPromise = null;
 
 function esc(str) {
   return String(str || '').replace(/[&<>"]/g, function(c) {
@@ -741,13 +743,15 @@ function resetForm() {
 
 // OPTIMASI: loadDashboard menerima parameter forceRefresh
 // forceRefresh=true  → selalu fetch ulang dari server (tombol Refresh)
-// forceRefresh=false → pakai cache jika sudah ada, baru fetch jika belum
+// forceRefresh=false → pakai cache jika sudah ada; jika prefetch masih berjalan,
+//                      tunggu tanpa double-fetch; baru fetch jika benar-benar belum ada.
 function loadDashboard(forceRefresh) {
   var loading = document.getElementById('dashboardLoading');
   var content = document.getElementById('dashboardContent');
   var statBox = document.getElementById('statBox');
+  var refreshBtn = document.getElementById('refreshBtn');
 
-  // Pakai cache jika ada dan tidak di-force refresh
+  // ── Kasus 1: Cache sudah ada dan tidak di-force refresh → render instan
   if (!forceRefresh && _dashboardLoaded && _dashboardCache !== null) {
     renderStats(_dashboardCache);
     renderTable(_dashboardCache);
@@ -755,32 +759,58 @@ function loadDashboard(forceRefresh) {
     return;
   }
 
-  // Tampilkan skeleton saat loading
+  // Tampilkan skeleton saat menunggu
   loading.style.display = 'block';
   loading.textContent = 'Memuat data...';
   content.style.display = 'none';
   statBox.innerHTML = renderSkeletonStats();
-
-  // Disable tombol refresh saat sedang loading
-  var refreshBtn = document.getElementById('refreshBtn');
   if (refreshBtn) refreshBtn.disabled = true;
 
-  apiCall('getCuti')
-    .then(function(rows) {
+  // ── Kasus 2: Prefetch masih berjalan dan tidak di-force refresh →
+  //    tunggu promise yang sudah ada, TIDAK buat request baru
+  if (!forceRefresh && _prefetchPromise) {
+    _prefetchPromise
+      .then(function(rows) {
+        if (rows == null) return fetchFresh(); // prefetch gagal, coba lagi
+        loading.style.display = 'none';
+        statBox.innerHTML = '';
+        renderStats(rows);
+        renderTable(rows);
+        content.style.display = 'block';
+      })
+      .catch(function() { fetchFresh(); })
+      .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
+    return;
+  }
+
+  // ── Kasus 3: Force refresh atau belum ada request sama sekali → fetch baru
+  fetchFresh();
+
+  function fetchFresh() {
+    var p = apiCall('getCuti');
+    _prefetchPromise = p.then(function(rows) {
       _dashboardCache = rows;
       _dashboardLoaded = true;
-      loading.style.display = 'none';
-      statBox.innerHTML = '';
-      renderStats(rows);
-      renderTable(rows);
-      content.style.display = 'block';
-    })
-    .catch(function(err) {
-      loading.textContent = '❌ Gagal memuat data: ' + err.message;
-    })
-    .finally(function() {
-      if (refreshBtn) refreshBtn.disabled = false;
+      return rows;
+    }).catch(function(err) {
+      _prefetchPromise = null;
+      throw err;
     });
+
+    p.then(function(rows) {
+        loading.style.display = 'none';
+        statBox.innerHTML = '';
+        renderStats(rows);
+        renderTable(rows);
+        content.style.display = 'block';
+      })
+      .catch(function(err) {
+        loading.textContent = '❌ Gagal memuat data: ' + err.message;
+      })
+      .finally(function() {
+        if (refreshBtn) refreshBtn.disabled = false;
+      });
+  }
 }
 
 // OPTIMASI: skeleton stats agar UI tidak kosong saat loading
@@ -932,6 +962,31 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
 });
 
 // ── Inisialisasi ──────────────────────────────────────────────
+// OPTIMASI UTAMA: langsung mulai prefetch getCuti bersamaan dengan getConfig
+// sehingga saat user klik tab Dashboard, data sudah siap (atau hampir selesai).
+_prefetchPromise = apiCall('getCuti')
+  .then(function(rows) {
+    _dashboardCache = rows;
+    _dashboardLoaded = true;
+    // Jika tab dashboard sudah aktif sebelum ini selesai, render sekarang
+    if (document.getElementById('view-dashboard').classList.contains('active')) {
+      var loading = document.getElementById('dashboardLoading');
+      var content = document.getElementById('dashboardContent');
+      var statBox = document.getElementById('statBox');
+      loading.style.display = 'none';
+      statBox.innerHTML = '';
+      renderStats(rows);
+      renderTable(rows);
+      content.style.display = 'block';
+    }
+    return rows;
+  })
+  .catch(function() {
+    // Gagal diam-diam — akan dicoba ulang saat user buka tab Dashboard
+    _prefetchPromise = null;
+    return null;
+  });
+
 apiCall('getConfig')
   .then(function(cfg) {
     CONFIG = cfg;
