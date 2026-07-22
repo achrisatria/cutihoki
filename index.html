@@ -556,8 +556,7 @@ function getCuti() {
           durasi2:    r.durasi2    || '',     perihal2: r.perihal2 || '',
           keterangan: r.keterangan || '',
           tambahan:   r.tambahan   || 'Tidak Ada',
-          task1:      r.task1      || 'WAITING',
-          task2:      r.task2      || 'WAITING'
+          task1:      r.task1      || 'WAITING'
         };
       });
     });
@@ -597,11 +596,11 @@ function submitCuti(payload) {
   var row = {
     id: id, id_pengajuan: id,
     role: role, nama: nama,
-    start1: c1.start || '', end1: c1.end || '', durasi1: d1 ? d1 + ' Hari' : '', perihal1: c1.perihal || '',
-    start2: c2.start || '', end2: c2.end || '', durasi2: d2 ? d2 + ' Hari' : '', perihal2: c2.perihal || '',
+    start1: c1.start || null, end1: c1.end || null, durasi1: d1 ? d1 + ' Hari' : '', perihal1: c1.perihal || '',
+    start2: c2.start || null, end2: c2.end || null, durasi2: d2 ? d2 + ' Hari' : '', perihal2: c2.perihal || '',
     keterangan: String(payload.keterangan || ''),
     tambahan:   String(payload.tambahan   || 'Tidak Ada'),
-    task1: 'WAITING', task2: 'WAITING'
+    task1: 'WAITING'
   };
 
   return sbPost('cuti', row, { 'Prefer': 'return=minimal' })
@@ -611,7 +610,7 @@ function submitCuti(payload) {
 }
 
 function updateTask(rowId, value) {
-  return sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value, task2: value });
+  return sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value });
 }
 
 function addOption(category, value) {
@@ -1027,7 +1026,6 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
         for (var i = 0; i < _dashboardCache.length; i++) {
           if (_dashboardCache[i].rowId === rowId) {
             _dashboardCache[i].task1 = value;
-            _dashboardCache[i].task2 = value;
             break;
           }
         }
