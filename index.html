@@ -500,7 +500,9 @@ function sbPost(table, data, extra) {
     body: JSON.stringify(data)
   }).then(function(res) {
     if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
-    return res.status === 204 ? null : res.json();
+    // FIX: POST dgn Prefer:return=minimal balik 201 TANPA body → res.json() error.
+    // Baca sebagai text dulu, parse hanya kalau memang ada isinya.
+    return res.text().then(function(t) { return t ? JSON.parse(t) : null; });
   });
 }
 
@@ -1012,8 +1014,9 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
   var sel = e.target;
   if (!sel.classList.contains('task-select')) return;
 
-  var rowId = sel.dataset.rowid;
-  var value = sel.value;
+  var rowId  = sel.dataset.rowid;
+  var value  = sel.value;
+  var oldVal = sel.getAttribute('data-status'); // simpan nilai lama utk revert bila gagal
   sel.classList.add('task-saving');
   sel.setAttribute('data-status', value);
 
@@ -1032,6 +1035,9 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
     })
     .catch(function(err) {
       sel.classList.remove('task-saving');
+      // FIX: update gagal → balikkan dropdown ke nilai lama biar tidak menyesatkan
+      sel.value = oldVal;
+      sel.setAttribute('data-status', oldVal);
       alert('Gagal update task: ' + err.message);
     });
 });
