@@ -1,381 +1,383 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<base target="_top">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pengajuan Cuti Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #EAEEF4;
+    --surface: #FFFFFF;
+    --surface-2: #F6F8FB;
+    --ink: #0C1524;
+    --ink-soft: #3D4A60;
+    --muted: #7C899E;
+    --line: #E6EBF2;
+    --line-strong: #D4DCE8;
+    --brand: #0E7A63;
+    --brand-ink: #0A5A49;
+    --brand-050: #E6F3EF;
+    --brand-100: #C9E6DD;
+    --amber: #A2650B;
+    --amber-bg: #FCF0DA;
+    --red: #B4372A;
+    --red-bg: #FBE7E4;
+    --green: #12805C;
+    --green-bg: #E1F4EB;
+    --blue: #235FA3;
+    --blue-bg: #E6EFFA;
+    --slate: #4C5A72;
+    --slate-bg: #EDF1F6;
+    --shadow-sm: 0 1px 2px rgba(12,21,36,.06), 0 1px 3px rgba(12,21,36,.05);
+    --shadow-md: 0 6px 18px rgba(12,21,36,.09);
+    --shadow-lg: 0 18px 50px rgba(12,21,36,.24);
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    background: #f5f7fa;
-    color: #1a2332;
-    padding: 20px;
-    line-height: 1.6;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(1200px 480px at 85% -8%, #DCEBE6 0%, rgba(220,235,230,0) 60%),
+      var(--bg);
+    color: var(--ink);
+    padding: 24px 20px 56px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv05" 1, "ss01" 1;
   }
 
-  .container { max-width: 1400px; margin: 0 auto; }
+  .container { max-width: 1440px; margin: 0 auto; }
 
-  .header {
-    background: white;
-    padding: 20px 24px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  /* ── Header ─────────────────────────────────────────── */
+  .app-head {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 22px;
+  }
+  .brand-mark {
+    width: 46px; height: 46px; flex: none;
+    border-radius: 13px;
+    background: linear-gradient(150deg, #17967A 0%, #0A5A49 100%);
+    box-shadow: 0 6px 16px rgba(14,122,99,.34), inset 0 1px 0 rgba(255,255,255,.28);
+    display: grid; place-items: center;
+    color: #fff; font-size: 22px;
+  }
+  .app-head h1 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .app-head .sub { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+  /* ── Segmented tabs ─────────────────────────────────── */
+  .tabs {
+    display: inline-flex; gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 5px;
+    box-shadow: var(--shadow-sm);
     margin-bottom: 20px;
   }
-
-  .header h1 { font-size: 24px; font-weight: 600; color: #0f5c4d; margin-bottom: 4px; }
-  .header p { color: #6b7a8a; font-size: 14px; }
-
-  .tabs {
-    display: flex;
-    gap: 4px;
-    background: white;
-    border-radius: 10px 10px 0 0;
-    padding: 0 4px;
-    border-bottom: 2px solid #e8ecf1;
-  }
-
   .tab {
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #6b7a8a;
-    background: none;
-    border: none;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
+    border: none; cursor: pointer;
+    background: transparent;
+    padding: 9px 18px; border-radius: 8px;
+    font: inherit; font-weight: 600; font-size: 14px;
+    color: var(--ink-soft);
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background .18s, color .18s;
   }
+  .tab:hover { color: var(--brand-ink); }
+  .tab.active { background: var(--brand); color: #fff; box-shadow: 0 2px 8px rgba(14,122,99,.30); }
 
-  .tab:hover { color: #0f5c4d; }
-  .tab.active { color: #0f5c4d; border-bottom-color: #0f5c4d; }
+  .view { display: none; }
+  .view.active { display: block; animation: fade .28s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  .view {
-    display: none;
-    background: white;
-    border-radius: 0 0 10px 10px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
-
-  .view.active { display: block; }
-
-  .card { margin-bottom: 20px; }
-
-  .card h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a2332;
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #f0f2f5;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .field label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #4a5a6a;
-  }
-
-  .field input,
-  .field select {
-    padding: 9px 12px;
-    font-size: 14px;
-    border: 1px solid #d0d7de;
-    border-radius: 8px;
-    background: #fafbfc;
-    font-family: inherit;
-  }
-
-  .field input:focus,
-  .field select:focus {
-    outline: none;
-    border-color: #0f5c4d;
-    box-shadow: 0 0 0 3px rgba(15, 92, 77, 0.1);
-  }
-
-  .field input:read-only {
-    background: #f0f2f5;
-    color: #4a5a6a;
-    font-weight: 600;
-  }
-
-  .leave-block {
-    border: 1px solid #e8ecf1;
-    border-radius: 10px;
-    padding: 18px;
-    margin-bottom: 14px;
-    background: #fafbfc;
-  }
-
-  .leave-block .header-block {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-
-  .leave-block .badge {
-    font-size: 12px;
-    font-weight: 600;
-    color: #0f5c4d;
-    background: #e8f0ed;
-    padding: 4px 14px;
-    border-radius: 20px;
-  }
-
-  .leave-block .remove-btn {
-    background: none;
-    border: none;
-    color: #d32f2f;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 4px 8px;
-  }
-
-  .leave-block .remove-btn:hover { text-decoration: underline; }
-
-  .btn {
-    padding: 9px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: inherit;
-  }
-
-  .btn-primary { background: #0f5c4d; color: white; }
-  .btn-primary:hover { background: #0c4a3e; }
-  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  .btn-secondary { background: #e8ecf1; color: #1a2332; }
-  .btn-secondary:hover { background: #d5dbe3; }
-  .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  .actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-  }
-
-  .msg {
-    padding: 10px 14px;
-    border-radius: 8px;
-    margin-top: 14px;
-    display: none;
-    font-size: 14px;
-  }
-
-  .msg.success {
-    display: block;
-    background: #e8f5e9;
-    color: #1b5e20;
-    border: 1px solid #c8e6c9;
-  }
-
-  .msg.error {
-    display: block;
-    background: #ffebee;
-    color: #b71c1c;
-    border: 1px solid #ffcdd2;
-  }
-
-  .divider {
-    border-top: 1px solid #e8ecf1;
-    margin: 18px 0 0;
-    padding-top: 18px;
-  }
-
-  .table-wrap {
-    overflow-x: auto;
-    margin-top: 10px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    min-width: 900px;
-  }
-
-  th {
-    text-align: left;
-    padding: 8px 10px;
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #4a5a6a;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #e8ecf1;
-    white-space: nowrap;
-  }
-
-  td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #f0f2f5;
-    vertical-align: middle;
-  }
-
-  tr:hover td { background: #fafbfc; }
-
-  .empty {
-    text-align: center;
-    color: #8a9aa8;
-    padding: 30px 0;
-  }
-
-  .task-select {
-    padding: 3px 6px;
-    font-size: 11px;
-    border: 1px solid #d0d7de;
-    border-radius: 6px;
-    background: white;
-    min-width: 120px;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .task-select:focus {
-    outline: none;
-    border-color: #0f5c4d;
-  }
-
-  .task-select[data-status="DONE CATAT"]    { background: #e8f5e9; color: #1b5e20; }
-  .task-select[data-status="SEDANG CUTI"]   { background: #fff8e1; color: #f57f17; }
-  .task-select[data-status="WAITING"]       { background: #f3f4f6; color: #374151; }
-  .task-select[data-status="SELESAI CUTI"]  { background: #e3f2fd; color: #0d47a1; }
-
-  .badge-durasi {
-    display: inline-block;
-    padding: 2px 8px;
-    background: #e8f0ed;
-    color: #0f5c4d;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 11px;
-  }
-
-  .badge-perihal {
-    display: inline-block;
-    padding: 2px 8px;
-    background: #e3f2fd;
-    color: #0d47a1;
-    border-radius: 12px;
-    font-weight: 500;
-    font-size: 11px;
-  }
-
-  .badge-passport {
-    display: inline-block;
-    padding: 2px 8px;
-    background: #fff3e0;
-    color: #e65100;
-    border-radius: 12px;
-    font-weight: 500;
-    font-size: 11px;
-  }
-
-  .info-box {
-    background: #e8f0ed;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    color: #0f5c4d;
-    margin-top: 10px;
-  }
-
-  .toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .toolbar h3 { margin: 0; }
-
-  .stat-box {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
+  /* ── Cards ──────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
     margin-bottom: 18px;
   }
+  .card > h3 {
+    font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--brand-ink);
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
 
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .field > label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+
+  input, select {
+    font: inherit; font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237C899E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 11px center;
+    padding-right: 34px; cursor: pointer;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3.5px var(--brand-050);
+  }
+  input[readonly] { background: var(--surface-2); color: var(--ink-soft); cursor: default; }
+  input::placeholder { color: #A7B1C2; }
+
+  .info-box {
+    margin-top: 16px;
+    background: var(--amber-bg);
+    border: 1px solid #F0DDB4;
+    color: #7A4E08;
+    border-radius: var(--radius-sm);
+    padding: 11px 14px; font-size: 13px; font-weight: 500;
+  }
+
+  /* ── Leave blocks ───────────────────────────────────── */
+  .leave-block {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 16px; margin-bottom: 14px;
+    background: var(--surface-2);
+  }
+  .header-block { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .badge {
+    background: var(--brand-050); color: var(--brand-ink);
+    font-size: 12px; font-weight: 700; letter-spacing: .02em;
+    padding: 4px 11px; border-radius: 999px;
+    border: 1px solid var(--brand-100);
+  }
+  .remove-btn {
+    background: transparent; border: 1px solid var(--line-strong); color: var(--red);
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    padding: 5px 11px; border-radius: 8px; transition: background .15s, border-color .15s;
+  }
+  .remove-btn:hover { background: var(--red-bg); border-color: #EEC4bd; }
+
+  .divider { margin-top: 6px; padding-top: 18px; border-top: 1px dashed var(--line-strong); }
+
+  /* ── Buttons ────────────────────────────────────────── */
+  .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+  .btn {
+    font: inherit; font-weight: 600; font-size: 14px;
+    border-radius: var(--radius-sm); cursor: pointer;
+    padding: 11px 20px; border: 1.5px solid transparent;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .05s, background .15s, box-shadow .15s, border-color .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 3px 10px rgba(14,122,99,.28); }
+  .btn-primary:hover { background: var(--brand-ink); }
+  .btn-primary:disabled { background: #9BBDB4; box-shadow: none; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface); color: var(--ink-soft); border-color: var(--line-strong); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--muted); }
+  .btn-ghost { background: transparent; color: var(--brand-ink); border-color: var(--brand-100); }
+  .btn-ghost:hover { background: var(--brand-050); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #97281d; }
+  .btn-sm { padding: 7px 12px; font-size: 13px; }
+
+  .add-leave-btn {
+    background: transparent; border: 1.5px dashed var(--line-strong);
+    color: var(--brand-ink); width: 100%;
+    padding: 11px; border-radius: var(--radius-sm); cursor: pointer;
+    font: inherit; font-weight: 600; font-size: 13.5px; transition: border-color .15s, background .15s;
+  }
+  .add-leave-btn:hover { border-color: var(--brand); background: var(--brand-050); }
+
+  /* ── Form message ───────────────────────────────────── */
+  .msg { margin-top: 14px; padding: 0; font-size: 14px; font-weight: 500; border-radius: var(--radius-sm); }
+  .msg.error, .msg.success, .msg.warn { padding: 12px 15px; }
+  .msg.error { background: var(--red-bg); color: var(--red); border: 1px solid #EEC4bd; }
+  .msg.success { background: var(--green-bg); color: var(--green); border: 1px solid #BEE6D2; }
+  .msg.warn { background: var(--amber-bg); color: #7A4E08; border: 1px solid #F0DDB4; }
+
+  /* ── Dashboard toolbar ──────────────────────────────── */
+  .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .dash-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .dash-head p { color: var(--muted); font-size: 13px; }
+
+  .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 13px; margin-bottom: 20px; }
   .stat-item {
-    background: #f8f9fa;
-    padding: 12px 16px;
-    border-radius: 8px;
-    border: 1px solid #e8ecf1;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 15px 17px; box-shadow: var(--shadow-sm);
+    position: relative; overflow: hidden;
   }
+  .stat-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--dot, var(--brand)); }
+  .stat-item .label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+  .stat-item .value { font-size: 27px; font-weight: 800; letter-spacing: -.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
 
-  .stat-item .label { font-size: 12px; color: #6b7a8a; }
-  .stat-item .value { font-size: 22px; font-weight: 600; color: #0f5c4d; }
-
-  .sub-header {
-    font-size: 10px;
-    color: #8a9aa8;
-    font-weight: 400;
+  .filter-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 13px 16px; box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
   }
-
-  tr.row-cuti2 td {
-    background: #f9fafb;
-    border-top: 1px dashed #d0d7de;
+  .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .filter-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .chip {
+    border: 1.5px solid var(--line-strong); background: var(--surface);
+    color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 600;
+    padding: 6px 14px; border-radius: 999px; cursor: pointer;
+    transition: all .15s;
   }
+  .chip:hover { border-color: var(--brand); color: var(--brand-ink); }
+  .chip.active { background: var(--brand); color: #fff; border-color: var(--brand); box-shadow: 0 2px 7px rgba(14,122,99,.26); }
+  .search-wrap { position: relative; margin-left: auto; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .search-wrap input { padding-left: 34px; min-width: 210px; }
 
-  tr.staff-end td {
-    border-bottom: 2px solid #c8d0d8 !important;
+  /* ── Table ──────────────────────────────────────────── */
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    overflow-x: auto;
   }
-
-  .task-saving { opacity: 0.5; pointer-events: none; }
-
-  /* Skeleton loading */
-  .skeleton-cell {
-    display: block;
-    height: 16px;
-    background: linear-gradient(90deg, #f0f2f5 25%, #e4e8ed 50%, #f0f2f5 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-    border-radius: 4px;
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: var(--surface-2);
+    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); padding: 13px 14px;
+    border-bottom: 1px solid var(--line-strong); white-space: nowrap;
+    position: sticky; top: 0; z-index: 2;
   }
-  @keyframes shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
+  thead th .sub-header { font-size: 9px; font-weight: 600; color: #A7B1C2; letter-spacing: .02em; }
+  tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #FBFCFE; }
+  tr.row-cuti2 td { background: #FAFBFD; }
+  tr.row-cuti2:hover td { background: #F4F7FB; }
+  .cell-name { font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .cell-role { font-weight: 700; }
+  .cell-date { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+  .empty { text-align: center; color: var(--muted); padding: 46px 0 !important; font-size: 14px; }
 
-  @media (max-width: 600px) {
-    body { padding: 12px; }
-    .view { padding: 14px; }
-    .grid { grid-template-columns: 1fr; }
-    .header h1 { font-size: 20px; }
-    .tab { padding: 8px 14px; font-size: 13px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .pill-role   { background: var(--slate-bg); color: var(--slate); }
+  .pill-durasi { background: var(--brand-050); color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+  .pill-perihal{ background: var(--blue-bg); color: var(--blue); }
+  .pill-passport{ background: var(--slate-bg); color: var(--slate); }
+  .pill-clash-ok    { background: var(--green-bg); color: var(--green); }
+  .pill-clash-warn  { background: var(--amber-bg); color: var(--amber); cursor: help; }
+  .pill-clash-alert { background: var(--red-bg); color: var(--red); cursor: help; }
+  .pill-dash { color: #B4BECD; font-weight: 500; }
+
+  /* status select styled as pill */
+  .task-select {
+    -webkit-appearance: none; appearance: none;
+    border-radius: 999px; border: 1.5px solid transparent;
+    font-size: 12px; font-weight: 700; padding: 5px 28px 5px 12px; cursor: pointer; width: auto;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+  }
+  .task-select:focus { box-shadow: 0 0 0 3px rgba(14,122,99,.16); outline: none; }
+  .task-WAITING      { background-color: var(--amber-bg);  color: var(--amber);  border-color: #F0DDB4; }
+  .task-SEDANG       { background-color: var(--blue-bg);   color: var(--blue);   border-color: #C7DBF3; }
+  .task-SELESAI      { background-color: var(--green-bg);  color: var(--green);  border-color: #BEE6D2; }
+  .task-DONE         { background-color: var(--brand-050); color: var(--brand-ink); border-color: var(--brand-100); }
+  .task-saving { opacity: .5; pointer-events: none; }
+
+  .row-actions { display: inline-flex; gap: 6px; }
+  .icon-btn {
+    border: 1.5px solid var(--line-strong); background: var(--surface);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+    display: grid; place-items: center; color: var(--ink-soft);
+    transition: all .15s;
+  }
+  .icon-btn:hover { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-050); }
+  .icon-btn.danger:hover { border-color: #EEC4bd; color: var(--red); background: var(--red-bg); }
+
+  /* skeleton */
+  .skeleton-cell { display: inline-block; height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg, #EDF1F6 25%, #E2E8F1 37%, #EDF1F6 63%);
+    background-size: 400% 100%; animation: sk 1.3s ease infinite; }
+  @keyframes sk { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+  /* ── Modal ──────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(12,21,36,.55); backdrop-filter: blur(3px);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 34px 16px; overflow-y: auto;
+  }
+  .overlay.open { display: flex; animation: fade .2s ease; }
+  .modal {
+    background: var(--surface); border-radius: 18px; width: 100%; max-width: 720px;
+    box-shadow: var(--shadow-lg); overflow: hidden;
+    animation: pop .24s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+  .modal-head {
+    padding: 20px 24px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface-2);
+  }
+  .modal-head h3 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+  .modal-head .close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 22px; line-height: 1; padding: 4px; border-radius: 8px; }
+  .modal-head .close:hover { background: var(--line); color: var(--ink); }
+  .modal-body { padding: 22px 24px; max-height: 64vh; overflow-y: auto; }
+  .modal-foot { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 10px; background: var(--surface-2); }
+
+  .confirm-box { max-width: 420px; }
+  .confirm-box .modal-body { text-align: left; }
+  .confirm-box p { color: var(--ink-soft); font-size: 14px; }
+
+  /* ── Toast ──────────────────────────────────────────── */
+  .toast-wrap { position: fixed; right: 22px; bottom: 22px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--ink); color: #fff; padding: 12px 16px; border-radius: 11px;
+    font-size: 13.5px; font-weight: 500; box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px; min-width: 240px;
+    animation: slidein .3s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .toast.ok { background: #0C5F49; }
+  .toast.err { background: #8E2419; }
+  @keyframes slidein { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 720px) {
+    body { padding: 16px 12px 40px; }
+    .tab { padding: 8px 13px; font-size: 13px; }
+    .search-wrap { margin-left: 0; width: 100%; }
+    .search-wrap input { width: 100%; }
+    .actions { flex-direction: column; }
+    .actions .btn { width: 100%; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="header">
-    <h1>📋 Pengajuan Cuti Staff</h1>
-    <p>Isi form cuti dengan benar. Staff dapat mengajukan maksimal 2 cuti berbeda dalam satu pengajuan.</p>
+  <div class="app-head">
+    <div class="brand-mark">🌴</div>
+    <div>
+      <h1>Pengajuan Cuti Staff</h1>
+      <div class="sub">Kelola pengajuan, pantau bentrok jadwal, dan proses status cuti tim.</div>
+    </div>
   </div>
 
   <div class="tabs">
@@ -389,32 +391,30 @@
       <h3>👤 Data Pemohon</h3>
       <div class="grid">
         <div class="field">
-          <label>Role *</label>
+          <label>Role</label>
           <select id="role" data-cat="ROLE"></select>
         </div>
         <div class="field">
-          <label>Nama Lengkap - ID *</label>
+          <label>Nama Lengkap &amp; ID</label>
           <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
         </div>
       </div>
-      <div class="info-box">
-        ⚠️ <strong>Maksimal durasi:</strong> CS=14 hari, KAPTEN=14 hari, KASIR=12 hari
-      </div>
+      <div class="info-box">⏱️ Batas durasi per pengajuan — CS &amp; KAPTEN maksimal 14 hari, KASIR maksimal 12 hari.</div>
     </div>
 
     <div class="card">
       <h3>📅 Detail Cuti</h3>
       <div id="leaves-container"></div>
-      <button class="btn btn-secondary" id="addLeave" type="button">＋ Tambah Cuti Kedua</button>
+      <button class="add-leave-btn" id="addLeave" type="button">＋ Buat cuti</button>
 
       <div class="divider">
         <div class="grid" style="max-width: 720px;">
           <div class="field">
-            <label>📌 Keterangan Passport *</label>
+            <label>Keterangan Passport</label>
             <select id="keterangan" data-cat="KETERANGAN"></select>
           </div>
           <div class="field">
-            <label>➕ Tambahan Cuti</label>
+            <label>Tambahan Cuti</label>
             <select id="tambahan"></select>
           </div>
         </div>
@@ -422,34 +422,51 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim Pengajuan</button>
+      <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim pengajuan</button>
     </div>
     <div class="msg" id="formMsg"></div>
   </div>
 
   <!-- VIEW DASHBOARD -->
   <div class="view" id="view-dashboard">
-    <div class="toolbar">
-      <h3>📊 Data Pengajuan Cuti</h3>
-      <button class="btn btn-secondary" id="refreshBtn" onclick="loadDashboard(true)">🔄 Refresh</button>
+    <div class="dash-head">
+      <div>
+        <h2>Data Pengajuan Cuti</h2>
+        <p>Kolom <strong>Bentrok</strong> menghitung staff lain dengan CUTI LOKAL/INDO di tanggal yang beririsan.</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadDashboard(true)">🔄 Muat ulang</button>
     </div>
 
     <div class="stat-box" id="statBox"></div>
-    <div id="dashboardLoading" style="display:none; color:#6b7a8a; padding:20px 0;">Memuat data...</div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Role</span>
+        <span id="roleChips"></span>
+      </div>
+      <div class="search-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" type="text" placeholder="Cari nama atau ID…" autocomplete="off">
+      </div>
+    </div>
+
+    <div id="dashboardLoading" style="display:none; color:var(--muted); padding:20px 0;">Memuat data…</div>
 
     <div class="table-wrap" id="dashboardContent" style="display:none;">
       <table>
         <thead>
           <tr>
-            <th>ROLE</th>
-            <th>NAMA</th>
-            <th>TANGGAL START</th>
-            <th>TANGGAL END</th>
-            <th>DURASI CUTI<br><span class="sub-header">(OTOMATIS HITUNG)</span></th>
-            <th>PERIHAL</th>
-            <th>KETERANGAN</th>
-            <th>TAMBAHAN</th>
-            <th>TASK CHECKER</th>
+            <th>Role</th>
+            <th>Nama</th>
+            <th>Mulai</th>
+            <th>Selesai</th>
+            <th>Durasi<br><span class="sub-header">otomatis</span></th>
+            <th>Perihal</th>
+            <th>Bentrok<br><span class="sub-header">lokal / indo</span></th>
+            <th>Passport</th>
+            <th>Tambahan</th>
+            <th>Status</th>
+            <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -459,9 +476,51 @@
 
 </div>
 
+<!-- Modal Edit -->
+<div class="overlay" id="editOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal-head">
+      <h3 id="editTitle">Ubah pengajuan cuti</h3>
+      <button class="close" type="button" onclick="closeEdit()" aria-label="Tutup">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid" style="margin-bottom:14px;">
+        <div class="field"><label>Role</label><select id="e_role" data-cat="ROLE"></select></div>
+        <div class="field"><label>Nama Lengkap &amp; ID</label><input id="e_nama" type="text"></div>
+      </div>
+      <div id="e_leaves"></div>
+      <button class="add-leave-btn" id="e_addLeave" type="button" style="margin-bottom:14px;">＋ Tambah cuti kedua</button>
+      <div class="grid">
+        <div class="field"><label>Keterangan Passport</label><select id="e_keterangan" data-cat="KETERANGAN"></select></div>
+        <div class="field"><label>Tambahan Cuti</label><select id="e_tambahan"></select></div>
+        <div class="field"><label>Status</label><select id="e_task"></select></div>
+      </div>
+      <div class="msg" id="e_msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeEdit()">Batal</button>
+      <button class="btn btn-primary" id="e_save" type="button">💾 Simpan perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Konfirmasi -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal confirm-box" role="alertdialog" aria-modal="true">
+    <div class="modal-head"><h3 id="confirmTitle">Konfirmasi</h3></div>
+    <div class="modal-body"><p id="confirmText"></p></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" id="confirmCancel">Batal</button>
+      <button class="btn btn-danger" type="button" id="confirmOk">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
-// KONFIGURASI SUPABASE
+// KONFIGURASI SUPABASE  — ganti dengan milik project kamu
 // ═══════════════════════════════════════════════════════════════
 var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_3mByHkVTPwtukH40bOHvow_sB1WW6og';
@@ -470,180 +529,204 @@ var MAX_DURASI = { 'CS': 14, 'KAPTEN': 14, 'KASIR': 12 };
 var MONTHS = ['January','February','March','April','May','June',
               'July','August','September','October','November','December'];
 
-// ── Supabase REST helpers ─────────────────────────────────────
+// Status yang dianggap "masih aktif" → memblokir pengajuan baru dari staff yg sama
+var ACTIVE_STATUSES = ['WAITING', 'SEDANG CUTI'];
+// Perihal yg dihitung bentroknya
+var CLASH_PERIHAL = ['CUTI LOKAL', 'CUTI INDO'];
 
+// ── Supabase REST helpers ─────────────────────────────────────
 function sbHeaders(extra) {
-  var h = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_KEY,
-    'Content-Type': 'application/json'
-  };
-  if (extra) {
-    Object.keys(extra).forEach(function(k) { h[k] = extra[k]; });
-  }
+  var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+  if (extra) Object.keys(extra).forEach(function(k) { h[k] = extra[k]; });
   return h;
 }
-
 function sbGet(table, qs) {
   var url = SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : '');
-  return fetch(url, { headers: sbHeaders() })
-    .then(function(res) {
-      if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
-      return res.json();
-    });
+  return fetch(url, { headers: sbHeaders() }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
+    return res.json();
+  });
 }
-
 function sbPost(table, data, extra) {
   return fetch(SUPABASE_URL + '/rest/v1/' + table, {
-    method: 'POST',
-    headers: sbHeaders(extra),
-    body: JSON.stringify(data)
+    method: 'POST', headers: sbHeaders(extra), body: JSON.stringify(data)
   }).then(function(res) {
     if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
-    // FIX: POST dgn Prefer:return=minimal balik 201 TANPA body → res.json() error.
-    // Baca sebagai text dulu, parse hanya kalau memang ada isinya.
     return res.text().then(function(t) { return t ? JSON.parse(t) : null; });
   });
 }
-
 function sbPatch(table, filter, data) {
   return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
-    method: 'PATCH',
-    headers: sbHeaders({ 'Prefer': 'return=minimal' }),
-    body: JSON.stringify(data)
+    method: 'PATCH', headers: sbHeaders({ 'Prefer': 'return=minimal' }), body: JSON.stringify(data)
+  }).then(function(res) {
+    if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
+    return null;
+  });
+}
+function sbDelete(table, filter) {
+  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+    method: 'DELETE', headers: sbHeaders({ 'Prefer': 'return=minimal' })
   }).then(function(res) {
     if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
     return null;
   });
 }
 
-// ── Business logic (Supabase) ─────────────────────────────────
-
-function getConfig() {
-  return sbGet('dropdown_options', 'select=category,value&order=id.asc')
-    .then(function(rows) {
-      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
-      rows.forEach(function(r) {
-        if (cfg[r.category]) cfg[r.category].push(r.value);
-      });
-      return cfg;
-    });
+// ── Utilities ─────────────────────────────────────────────────
+function esc(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
 }
-
 function formatDate(iso) {
   if (!iso) return '';
   var s = String(iso).trim();
-  // Ambil hanya bagian tanggal jika ada timestamp
   if (s.length > 10) s = s.slice(0, 10);
   var p = s.split('-');
   if (p.length !== 3) return s;
   return parseInt(p[2]) + ' ' + MONTHS[parseInt(p[1]) - 1] + ' ' + parseInt(p[0]);
 }
-
-function getCuti() {
-  return sbGet('cuti', 'select=*&order=created_at.desc')
-    .then(function(rows) {
-      return rows.map(function(r) {
-        return {
-          rowId:      r.id,
-          id:         r.id_pengajuan || r.id,
-          timestamp:  r.created_at || '',
-          role:       r.role       || '',
-          nama:       r.nama       || '',
-          start1:     formatDate(r.start1),  end1:    formatDate(r.end1),
-          durasi1:    r.durasi1    || '',     perihal1: r.perihal1 || '',
-          start2:     formatDate(r.start2),  end2:    formatDate(r.end2),
-          durasi2:    r.durasi2    || '',     perihal2: r.perihal2 || '',
-          keterangan: r.keterangan || '',
-          tambahan:   r.tambahan   || 'Tidak Ada',
-          task1:      r.task1      || 'WAITING'
-        };
-      });
-    });
+function dayKey(iso) {
+  if (!iso) return 0;
+  var p = String(iso).slice(0,10).split('-');
+  if (p.length !== 3) return 0;
+  return Math.round(Date.UTC(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])) / 86400000);
 }
-
 function genId() {
   var now = new Date();
   function pad(n) { return String(n).padStart(2, '0'); }
   var rand = Math.random().toString(36).slice(2, 5).toUpperCase();
-  return 'CUTI-' +
-    now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' +
+  return 'CUTI-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' +
     pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + rand;
 }
 
-function validateDurasi(role, start, end) {
-  var days = dayKey(end) - dayKey(start) + 1;
-  if (days <= 0) throw new Error('Tanggal End tidak boleh sebelum Start.');
-  var max = MAX_DURASI[role];
-  if (!max) throw new Error('Role tidak valid.');
-  if (days > max) throw new Error('Durasi maksimal untuk role ' + role + ' adalah ' + max + ' hari. Diajukan: ' + days + ' hari.');
-  return days;
+// ── Data logic ────────────────────────────────────────────────
+function getConfig() {
+  return sbGet('dropdown_options', 'select=category,value&order=id.asc').then(function(rows) {
+    var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
+    rows.forEach(function(r) { if (cfg[r.category]) cfg[r.category].push(r.value); });
+    return cfg;
+  });
 }
-
-function submitCuti(payload) {
-  var role   = String(payload.role  || '').trim();
-  var nama   = String(payload.nama  || '').trim();
-  var leaves = payload.leaves || [];
-
-  if (!MAX_DURASI[role]) throw new Error('Role tidak valid.');
-  if (!nama)             throw new Error('Nama wajib diisi.');
-
-  var c1 = leaves[0] || {}, c2 = leaves[1] || {};
-  var d1 = (c1.start && c1.end) ? validateDurasi(role, c1.start, c1.end) : 0;
-  var d2 = (c2.start && c2.end) ? validateDurasi(role, c2.start, c2.end) : 0;
-
-  var id = genId();
-  var row = {
-    id: id, id_pengajuan: id,
-    role: role, nama: nama,
-    start1: c1.start || null, end1: c1.end || null, durasi1: d1 ? d1 + ' Hari' : '', perihal1: c1.perihal || '',
-    start2: c2.start || null, end2: c2.end || null, durasi2: d2 ? d2 + ' Hari' : '', perihal2: c2.perihal || '',
-    keterangan: String(payload.keterangan || ''),
-    tambahan:   String(payload.tambahan   || 'Tidak Ada'),
-    task1: 'WAITING'
-  };
-
-  return sbPost('cuti', row, { 'Prefer': 'return=minimal' })
-    .then(function() {
-      return { id: id, jumlah: leaves.length, message: 'Pengajuan berhasil! ID: ' + id };
+function getCuti() {
+  return sbGet('cuti', 'select=*&order=created_at.desc').then(function(rows) {
+    return rows.map(function(r) {
+      return {
+        rowId: r.id, id: r.id_pengajuan || r.id, timestamp: r.created_at || '',
+        role: r.role || '', nama: r.nama || '',
+        start1Raw: r.start1 || null, end1Raw: r.end1 || null,
+        start2Raw: r.start2 || null, end2Raw: r.end2 || null,
+        start1: formatDate(r.start1), end1: formatDate(r.end1),
+        start2: formatDate(r.start2), end2: formatDate(r.end2),
+        durasi1: r.durasi1 || '', perihal1: r.perihal1 || '',
+        durasi2: r.durasi2 || '', perihal2: r.perihal2 || '',
+        keterangan: r.keterangan || '', tambahan: r.tambahan || 'Tidak Ada',
+        task1: r.task1 || 'WAITING'
+      };
     });
+  });
 }
 
-function updateTask(rowId, value) {
-  return sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value });
+// Validasi daftar cuti → kembalikan durasi[] atau lempar Error
+function validateLeaves(role, leaves) {
+  if (!MAX_DURASI[role]) throw new Error('Role tidak valid.');
+  var max = MAX_DURASI[role];
+  var durasi = [];
+  for (var i = 0; i < leaves.length; i++) {
+    var lv = leaves[i];
+    if (!lv.perihal || lv.perihal === ADD) throw new Error('Pilih perihal untuk semua cuti.');
+    if (!lv.start || !lv.end) throw new Error('Isi tanggal mulai dan selesai untuk semua cuti.');
+    var days = dayKey(lv.end) - dayKey(lv.start) + 1;
+    if (days <= 0) throw new Error('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+    if (days > max) throw new Error('Durasi maksimal role ' + role + ' adalah ' + max + ' hari. Diajukan: ' + days + ' hari.');
+    durasi.push(days);
+  }
+  if (leaves.length === 2 && leaves[0].perihal === leaves[1].perihal)
+    throw new Error('Jika mengajukan 2 cuti, perihalnya harus berbeda.');
+  return durasi;
+}
+
+// Cek apakah staff masih punya pengajuan aktif
+function checkActiveLeave(nama) {
+  var qs = 'select=id_pengajuan,nama,task1,start1,end1,start2,end2&nama=eq.' + encodeURIComponent(nama);
+  return sbGet('cuti', qs).then(function(rows) {
+    var active = rows.filter(function(r) { return ACTIVE_STATUSES.indexOf((r.task1||'').toUpperCase()) !== -1; });
+    if (active.length === 0) return null;
+    var latest = '';
+    active.forEach(function(r) {
+      [r.end1, r.end2].forEach(function(d) { if (d && d > latest) latest = d; });
+    });
+    return { count: active.length, status: active[0].task1, until: latest };
+  });
+}
+
+function buildRowPayload(id, role, nama, keterangan, tambahan, leaves, durasi, task1) {
+  var c1 = leaves[0] || {}, c2 = leaves[1] || {};
+  return {
+    id: id, id_pengajuan: id, role: role, nama: nama,
+    start1: c1.start || null, end1: c1.end || null,
+    durasi1: durasi[0] ? durasi[0] + ' Hari' : '', perihal1: c1.perihal || '',
+    start2: c2.start || null, end2: c2.end || null,
+    durasi2: durasi[1] ? durasi[1] + ' Hari' : '', perihal2: c2.perihal || '',
+    keterangan: String(keterangan || ''), tambahan: String(tambahan || 'Tidak Ada'),
+    task1: task1 || 'WAITING'
+  };
 }
 
 function addOption(category, value) {
   return sbPost('dropdown_options', { category: category, value: value },
-    { 'Prefer': 'resolution=ignore-duplicates,return=minimal' })
-    .then(function() { return getConfig(); });
+    { 'Prefer': 'resolution=ignore-duplicates,return=minimal' }).then(function() { return getConfig(); });
+}
+
+// ── Clash (bentrok) ───────────────────────────────────────────
+function buildIntervals(rows) {
+  var out = [];
+  rows.forEach(function(r) {
+    [[r.perihal1, r.start1Raw, r.end1Raw], [r.perihal2, r.start2Raw, r.end2Raw]].forEach(function(t) {
+      if (CLASH_PERIHAL.indexOf(t[0]) !== -1 && t[1] && t[2]) {
+        out.push({ nama: r.nama, perihal: t[0], s: dayKey(t[1]), e: dayKey(t[2]) });
+      }
+    });
+  });
+  return out;
+}
+function clashInfo(perihal, startRaw, endRaw, nama, intervals) {
+  if (CLASH_PERIHAL.indexOf(perihal) === -1 || !startRaw || !endRaw) return null;
+  var s = dayKey(startRaw), e = dayKey(endRaw), names = [];
+  intervals.forEach(function(iv) {
+    if (iv.perihal === perihal && iv.nama !== nama && s <= iv.e && iv.s <= e && names.indexOf(iv.nama) === -1)
+      names.push(iv.nama);
+  });
+  return { count: names.length, names: names };
 }
 
 // ── State ─────────────────────────────────────────────────────
 var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
-var leaveSeq = 0;
 var ADD = '__ADD__';
-var _dashboardCache = null;
-var _dashboardLoaded = false;
-var _prefetchPromise = null;
+var _cache = null, _loaded = false, _prefetch = null;
+var filterState = { role: 'ALL', search: '' };
 
-// ── Utilities ─────────────────────────────────────────────────
-
-function esc(str) {
-  return String(str || '').replace(/[&<>"]/g, function(c) {
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
-  });
+// ── Toast & Confirm ───────────────────────────────────────────
+function toast(msg, type) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + (type || '');
+  el.textContent = (type === 'ok' ? '✅ ' : type === 'err' ? '⚠️ ' : '') + msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(function() { el.style.transition = 'opacity .3s'; el.style.opacity = '0';
+    setTimeout(function() { el.remove(); }, 300); }, 3200);
 }
-
-function dayKey(iso) {
-  if (!iso) return 0;
-  var parts = iso.split('-');
-  if (parts.length !== 3) return 0;
-  return Math.round(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])) / 86400000);
+function confirmDialog(text, onOk) {
+  var ov = document.getElementById('confirmOverlay');
+  document.getElementById('confirmText').textContent = text;
+  ov.classList.add('open');
+  var okBtn = document.getElementById('confirmOk');
+  var cancelBtn = document.getElementById('confirmCancel');
+  function cleanup() { ov.classList.remove('open'); okBtn.onclick = null; cancelBtn.onclick = null; }
+  okBtn.onclick = function() { cleanup(); onOk(); };
+  cancelBtn.onclick = cleanup;
 }
 
 // ── Tab ───────────────────────────────────────────────────────
-
 function switchTab(view) {
   document.querySelectorAll('.tab').forEach(function(t) {
     t.classList.toggle('active', t.id === 'tab' + view.charAt(0).toUpperCase() + view.slice(1));
@@ -651,33 +734,18 @@ function switchTab(view) {
   document.querySelectorAll('.view').forEach(function(v) {
     v.classList.toggle('active', v.id === 'view-' + view);
   });
-  if (view === 'dashboard' && !_dashboardLoaded) {
-    loadDashboard(false);
-  }
+  if (view === 'dashboard') loadDashboard(false);
 }
 
 // ── Dropdown helpers ──────────────────────────────────────────
-
-function fillSelect(sel, cat, selected) {
-  var list  = CONFIG[cat] || [];
-  var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>'];
-  list.forEach(function(v) {
-    parts.push('<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>');
-  });
-  parts.push('<option value="' + ADD + '">＋ Tambah opsi baru...</option>');
+function fillSelect(sel, cat, selected, withAdd) {
+  var list = CONFIG[cat] || [];
+  var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih…</option>'];
+  list.forEach(function(v) { parts.push('<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>'); });
+  if (withAdd !== false) parts.push('<option value="' + ADD + '">＋ Tambah opsi baru…</option>');
   sel.innerHTML = parts.join('');
 }
-
-function fillStaticSelect(sel, cat, selected) {
-  var list  = CONFIG[cat] || [];
-  var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>'];
-  list.forEach(function(v) {
-    parts.push('<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>');
-  });
-  sel.innerHTML = parts.join('');
-}
-
-// Delegasi change untuk dropdown "tambah opsi baru"
+// dropdown "tambah opsi baru"
 document.addEventListener('change', function(e) {
   var sel = e.target;
   if (sel.tagName !== 'SELECT' || sel.value !== ADD) return;
@@ -685,392 +753,422 @@ document.addEventListener('change', function(e) {
   if (!cat) return;
   var val = prompt('Ketik opsi baru untuk ' + cat + ':');
   if (!val || !val.trim()) { fillSelect(sel, cat, ''); return; }
-
   sel.disabled = true;
-  addOption(cat, val.trim())
-    .then(function(cfg) {
-      CONFIG = cfg;
-      document.querySelectorAll('select[data-cat="' + cat + '"]').forEach(function(s) {
-        fillSelect(s, cat, s === sel ? val.trim() : '');
-      });
-      sel.disabled = false;
-    })
-    .catch(function(err) {
-      alert('Gagal menambah opsi: ' + err.message);
-      fillSelect(sel, cat, '');
-      sel.disabled = false;
+  addOption(cat, val.trim()).then(function(cfg) {
+    CONFIG = cfg;
+    document.querySelectorAll('select[data-cat="' + cat + '"]').forEach(function(s) {
+      fillSelect(s, cat, s === sel ? val.trim() : s.value === ADD ? '' : s.value);
     });
+    sel.disabled = false;
+    if (cat === 'ROLE') renderRoleChips();
+  }).catch(function(err) { toast('Gagal menambah opsi: ' + err.message, 'err'); fillSelect(sel, cat, ''); sel.disabled = false; });
 });
 
-// ── Leave blocks ──────────────────────────────────────────────
-
-function renumberBlocks() {
-  document.querySelectorAll('.leave-block').forEach(function(b, idx) {
-    var badge = b.querySelector('.badge');
-    if (badge) badge.textContent = 'Cuti ' + (idx + 1);
-  });
-}
-
-function addLeaveBlock(removable) {
-  leaveSeq++;
+// ── Leave block builder (dipakai form & modal) ────────────────
+function createLeaveBlock(container, opts) {
+  opts = opts || {};
   var block = document.createElement('div');
   block.className = 'leave-block';
-  block.dataset.seq = leaveSeq;
-
-  var html = '<div class="header-block">' +
-    '<span class="badge">Cuti ' + (document.querySelectorAll('.leave-block').length + 1) + '</span>';
-  if (removable) html += '<button class="remove-btn" type="button">✕ Hapus</button>';
+  var idx = container.querySelectorAll('.leave-block').length + 1;
+  var html = '<div class="header-block"><span class="badge">Cuti ' + idx + '</span>';
+  if (opts.removable) html += '<button class="remove-btn" type="button">✕ Hapus</button>';
   html += '</div><div class="grid">' +
-    '<div class="field"><label>Perihal *</label><select data-cat="PERIHAL"></select></div>' +
-    '<div class="field"><label>Tanggal Start *</label><input type="date" class="start-date"></div>' +
-    '<div class="field"><label>Tanggal End *</label><input type="date" class="end-date"></div>' +
-    '<div class="field"><label>Durasi (Otomatis)</label><input type="text" class="duration" readonly placeholder="0 Hari"></div>' +
+    '<div class="field"><label>Perihal</label><select data-cat="PERIHAL"></select></div>' +
+    '<div class="field"><label>Tanggal Mulai</label><input type="date" class="start-date"></div>' +
+    '<div class="field"><label>Tanggal Selesai</label><input type="date" class="end-date"></div>' +
+    '<div class="field"><label>Durasi</label><input type="text" class="duration" readonly placeholder="0 Hari"></div>' +
     '</div>';
-
   block.innerHTML = html;
-  document.getElementById('leaves-container').appendChild(block);
+  container.appendChild(block);
 
-  block.querySelectorAll('select[data-cat]').forEach(function(sel) {
-    fillSelect(sel, sel.dataset.cat, '');
+  var pf = opts.prefill || {};
+  block.querySelectorAll('select[data-cat]').forEach(function(sel) { fillSelect(sel, sel.dataset.cat, pf.perihal || ''); });
+  var s = block.querySelector('.start-date'), en = block.querySelector('.end-date'), du = block.querySelector('.duration');
+  if (pf.start) s.value = pf.start;
+  if (pf.end) en.value = pf.end;
+  function calc() {
+    if (s.value && en.value) {
+      var d = dayKey(en.value) - dayKey(s.value) + 1;
+      du.value = d > 0 ? d + ' Hari' : '⚠ Selesai < Mulai';
+    } else du.value = '';
+  }
+  s.addEventListener('change', calc); en.addEventListener('change', calc); calc();
+
+  var rm = block.querySelector('.remove-btn');
+  if (rm) rm.addEventListener('click', function() { block.remove(); if (opts.onRemove) opts.onRemove(); });
+  return block;
+}
+function gatherLeaves(container) {
+  var leaves = [];
+  container.querySelectorAll('.leave-block').forEach(function(b) {
+    var perihal = b.querySelector('[data-cat="PERIHAL"]').value;
+    var start = b.querySelector('.start-date').value;
+    var end = b.querySelector('.end-date').value;
+    if ((perihal && perihal !== ADD) || start || end) leaves.push({ perihal: perihal, start: start, end: end });
   });
-
-  var startInput = block.querySelector('.start-date');
-  var endInput   = block.querySelector('.end-date');
-  var durInput   = block.querySelector('.duration');
-
-  function calcDuration() {
-    if (startInput.value && endInput.value) {
-      var days = dayKey(endInput.value) - dayKey(startInput.value) + 1;
-      durInput.value = days > 0 ? days + ' Hari' : '⚠ End < Start';
-    } else {
-      durInput.value = '';
-    }
-  }
-
-  startInput.addEventListener('change', calcDuration);
-  endInput.addEventListener('change', calcDuration);
-
-  var rmBtn = block.querySelector('.remove-btn');
-  if (rmBtn) {
-    rmBtn.addEventListener('click', function() {
-      block.remove();
-      renumberBlocks();
-      toggleAddBtn();
-    });
-  }
-
-  toggleAddBtn();
+  return leaves;
+}
+function renumber(container) {
+  container.querySelectorAll('.leave-block').forEach(function(b, i) {
+    var bd = b.querySelector('.badge'); if (bd) bd.textContent = 'Cuti ' + (i + 1);
+  });
 }
 
+// ── FORM ──────────────────────────────────────────────────────
+var formC = document.getElementById('leaves-container');
 function toggleAddBtn() {
-  document.getElementById('addLeave').style.display =
-    document.querySelectorAll('.leave-block').length >= 2 ? 'none' : 'inline-block';
+  document.getElementById('addLeave').style.display = formC.querySelectorAll('.leave-block').length >= 2 ? 'none' : 'block';
 }
-
-document.getElementById('addLeave').addEventListener('click', function() {
-  addLeaveBlock(true);
-});
-
-// ── Form submit ───────────────────────────────────────────────
+function addFormLeave(removable) {
+  createLeaveBlock(formC, { removable: removable, onRemove: function() { renumber(formC); toggleAddBtn(); } });
+  renumber(formC); toggleAddBtn();
+}
+document.getElementById('addLeave').addEventListener('click', function() { addFormLeave(true); });
 
 document.getElementById('submitBtn').addEventListener('click', function() {
-  var role       = document.getElementById('role').value;
-  var nama       = document.getElementById('nama').value.trim();
+  var role = document.getElementById('role').value;
+  var nama = document.getElementById('nama').value.trim();
   var keterangan = document.getElementById('keterangan').value;
-  var tambahan   = document.getElementById('tambahan').value || 'Tidak Ada';
+  var tambahan = document.getElementById('tambahan').value || 'Tidak Ada';
 
-  if (!role || role === ADD)              { showMsg('error', 'Pilih Role terlebih dahulu.'); return; }
-  if (!nama)                              { showMsg('error', 'Isi Nama lengkap dengan ID.'); return; }
-  if (!keterangan || keterangan === ADD)  { showMsg('error', 'Pilih Keterangan Passport.'); return; }
+  if (!role || role === ADD) return showMsg('error', 'Pilih role terlebih dahulu.');
+  if (!nama) return showMsg('error', 'Isi nama lengkap beserta ID.');
+  if (!keterangan || keterangan === ADD) return showMsg('error', 'Pilih keterangan passport.');
 
-  var blocks = document.querySelectorAll('.leave-block');
-  if (blocks.length === 0) { showMsg('error', 'Tambahkan minimal 1 cuti.'); return; }
-
-  var leaves = [];
-  var valid  = true;
-
-  blocks.forEach(function(b) {
-    if (!valid) return;
-    var perihal = b.querySelector('[data-cat="PERIHAL"]').value;
-    var start   = b.querySelector('.start-date').value;
-    var end     = b.querySelector('.end-date').value;
-
-    if (!perihal || perihal === ADD) { showMsg('error', 'Pilih Perihal untuk semua cuti.'); valid = false; return; }
-    if (!start || !end)              { showMsg('error', 'Isi tanggal Start dan End untuk semua cuti.'); valid = false; return; }
-    if (dayKey(end) < dayKey(start)) { showMsg('error', 'Tanggal End tidak boleh sebelum Start.'); valid = false; return; }
-    leaves.push({ perihal: perihal, start: start, end: end });
-  });
-
-  if (!valid) return;
-
-  if (leaves.length === 2 && leaves[0].perihal === leaves[1].perihal) {
-    showMsg('error', 'Jika mengajukan 2 cuti, perihal harus berbeda.');
-    return;
-  }
+  var leaves = gatherLeaves(formC);
+  if (leaves.length === 0) return showMsg('error', 'Tambahkan minimal 1 cuti.');
+  var durasi;
+  try { durasi = validateLeaves(role, leaves); }
+  catch (err) { return showMsg('error', err.message); }
 
   var btn = this;
-  btn.disabled = true;
-  btn.textContent = 'Mengirim...';
+  btn.disabled = true; btn.textContent = 'Memeriksa…';
 
-  var payload = { role: role, nama: nama, keterangan: keterangan, tambahan: tambahan, leaves: leaves };
-
-  var res;
-  try { res = submitCuti(payload); } catch(err) {
-    btn.disabled = false;
-    btn.textContent = '📤 Kirim Pengajuan';
-    showMsg('error', '❌ ' + err.message);
-    return;
-  }
-
-  res
-    .then(function(data) {
-      btn.disabled = false;
-      btn.textContent = '📤 Kirim Pengajuan';
-      showMsg('success', '✅ ' + data.message);
-      resetForm();
-      // Invalidasi cache → dashboard akan fetch ulang
-      _dashboardLoaded = false;
-      _dashboardCache  = null;
-      _prefetchPromise = null;
-      switchTab('dashboard');
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.textContent = '📤 Kirim Pengajuan';
-      showMsg('error', '❌ Gagal: ' + err.message);
+  checkActiveLeave(nama).then(function(active) {
+    if (active) {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      var sisa = active.until ? ' (cuti berakhir ' + formatDate(active.until) + ')' : '';
+      return showMsg('warn', '⛔ ' + nama + ' masih punya pengajuan berstatus ' + active.status + sisa +
+        '. Pengajuan baru bisa dibuat setelah cuti tersebut selesai.');
+    }
+    btn.textContent = 'Mengirim…';
+    var id = genId();
+    var payload = buildRowPayload(id, role, nama, keterangan, tambahan, leaves, durasi, 'WAITING');
+    sbPost('cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
+      toast('Pengajuan tersimpan', 'ok');
+      resetForm(); invalidate(); switchTab('dashboard');
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      showMsg('error', 'Gagal menyimpan: ' + err.message);
     });
+  }).catch(function(err) {
+    btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+    showMsg('error', 'Gagal memeriksa data: ' + err.message);
+  });
 });
 
 function showMsg(type, text) {
   var el = document.getElementById('formMsg');
-  el.className = 'msg ' + type;
-  el.textContent = text;
+  el.className = 'msg ' + type; el.textContent = text;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
 function resetForm() {
   document.getElementById('role').value = '';
   document.getElementById('nama').value = '';
   document.getElementById('keterangan').value = '';
   document.getElementById('tambahan').value = 'Tidak Ada';
-  document.getElementById('leaves-container').innerHTML = '';
-  leaveSeq = 0;
-  addLeaveBlock(false);
-  var msgEl = document.getElementById('formMsg');
-  msgEl.className = 'msg';
-  msgEl.textContent = '';
+  formC.innerHTML = ''; addFormLeave(false);
+  var m = document.getElementById('formMsg'); m.className = 'msg'; m.textContent = '';
 }
 
-// ── Dashboard ─────────────────────────────────────────────────
+// ── EDIT MODAL ────────────────────────────────────────────────
+var eC = document.getElementById('e_leaves');
+var editingId = null;
+function eToggleAdd() {
+  document.getElementById('e_addLeave').style.display = eC.querySelectorAll('.leave-block').length >= 2 ? 'none' : 'block';
+}
+document.getElementById('e_addLeave').addEventListener('click', function() {
+  createLeaveBlock(eC, { removable: true, onRemove: function() { renumber(eC); eToggleAdd(); } });
+  renumber(eC); eToggleAdd();
+});
+function fillTaskSelect(sel, selected) {
+  var list = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
+  sel.innerHTML = list.map(function(v) { return '<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('');
+}
+function openEdit(rowId) {
+  var r = null;
+  for (var i = 0; i < (_cache || []).length; i++) if (_cache[i].rowId === rowId) { r = _cache[i]; break; }
+  if (!r) return;
+  editingId = rowId;
+  fillSelect(document.getElementById('e_role'), 'ROLE', r.role);
+  document.getElementById('e_nama').value = r.nama;
+  fillSelect(document.getElementById('e_keterangan'), 'KETERANGAN', r.keterangan);
+  fillSelect(document.getElementById('e_tambahan'), 'TAMBAHAN', r.tambahan, false);
+  fillTaskSelect(document.getElementById('e_task'), r.task1);
+  eC.innerHTML = '';
+  createLeaveBlock(eC, { removable: false, prefill: { perihal: r.perihal1, start: r.start1Raw, end: r.end1Raw } });
+  if (r.start2Raw || r.perihal2)
+    createLeaveBlock(eC, { removable: true, prefill: { perihal: r.perihal2, start: r.start2Raw, end: r.end2Raw }, onRemove: function() { renumber(eC); eToggleAdd(); } });
+  renumber(eC); eToggleAdd();
+  document.getElementById('e_msg').className = 'msg'; document.getElementById('e_msg').textContent = '';
+  document.getElementById('editOverlay').classList.add('open');
+}
+function closeEdit() { document.getElementById('editOverlay').classList.remove('open'); editingId = null; }
+function eShow(type, text) { var el = document.getElementById('e_msg'); el.className = 'msg ' + type; el.textContent = text; }
 
-function loadDashboard(forceRefresh) {
-  var loading    = document.getElementById('dashboardLoading');
-  var content    = document.getElementById('dashboardContent');
-  var statBox    = document.getElementById('statBox');
+document.getElementById('e_save').addEventListener('click', function() {
+  if (!editingId) return;
+  var role = document.getElementById('e_role').value;
+  var nama = document.getElementById('e_nama').value.trim();
+  var keterangan = document.getElementById('e_keterangan').value;
+  var tambahan = document.getElementById('e_tambahan').value || 'Tidak Ada';
+  var task1 = document.getElementById('e_task').value;
+
+  if (!role || role === ADD) return eShow('error', 'Pilih role.');
+  if (!nama) return eShow('error', 'Isi nama beserta ID.');
+  if (!keterangan || keterangan === ADD) return eShow('error', 'Pilih keterangan passport.');
+  var leaves = gatherLeaves(eC);
+  if (leaves.length === 0) return eShow('error', 'Minimal 1 cuti.');
+  var durasi;
+  try { durasi = validateLeaves(role, leaves); } catch (err) { return eShow('error', err.message); }
+
+  var patch = buildRowPayload(editingId, role, nama, keterangan, tambahan, leaves, durasi, task1);
+  delete patch.id; delete patch.id_pengajuan; // id tidak diubah
+  var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
+  sbPatch('cuti', 'id=eq.' + encodeURIComponent(editingId), patch).then(function() {
+    btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+    closeEdit(); toast('Perubahan tersimpan', 'ok'); invalidate(); loadDashboard(true);
+  }).catch(function(err) {
+    btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+    eShow('error', 'Gagal menyimpan: ' + err.message);
+  });
+});
+
+// ── DELETE ────────────────────────────────────────────────────
+function deleteRow(rowId, label) {
+  confirmDialog('Hapus pengajuan "' + label + '"? Data akan dihapus permanen dan tidak bisa dikembalikan.', function() {
+    sbDelete('cuti', 'id=eq.' + encodeURIComponent(rowId)).then(function() {
+      toast('Pengajuan dihapus', 'ok'); invalidate(); loadDashboard(true);
+    }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
+  });
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+function invalidate() { _loaded = false; _cache = null; _prefetch = null; }
+
+function loadDashboard(force) {
+  var loading = document.getElementById('dashboardLoading');
+  var content = document.getElementById('dashboardContent');
+  var statBox = document.getElementById('statBox');
   var refreshBtn = document.getElementById('refreshBtn');
 
-  // Cache tersedia dan tidak di-force refresh → render instan
-  if (!forceRefresh && _dashboardLoaded && _dashboardCache !== null) {
-    renderStats(_dashboardCache);
-    renderTable(_dashboardCache);
-    content.style.display = 'block';
-    return;
-  }
+  if (!force && _loaded && _cache) { renderRoleChips(); applyFilters(); content.style.display = 'block'; return; }
 
-  // Tampilkan skeleton
-  loading.style.display = 'block';
-  loading.textContent   = 'Memuat data...';
-  content.style.display = 'none';
-  statBox.innerHTML     = renderSkeletonStats();
+  loading.style.display = 'block'; loading.textContent = 'Memuat data…';
+  content.style.display = 'none'; statBox.innerHTML = renderSkeletonStats();
   if (refreshBtn) refreshBtn.disabled = true;
 
-  // Prefetch masih berjalan → tunggu tanpa double-fetch
-  if (!forceRefresh && _prefetchPromise) {
-    _prefetchPromise
-      .then(function(rows) {
-        if (rows == null) return fetchFresh();
-        loading.style.display = 'none';
-        statBox.innerHTML     = '';
-        renderStats(rows);
-        renderTable(rows);
-        content.style.display = 'block';
-      })
-      .catch(function() { fetchFresh(); })
-      .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
+  if (!force && _prefetch) {
+    _prefetch.then(function(rows) {
+      if (rows == null) return fetchFresh();
+      done(rows);
+    }).catch(function() { fetchFresh(); }).finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
     return;
   }
-
   fetchFresh();
 
   function fetchFresh() {
     var p = getCuti();
-    _prefetchPromise = p
-      .then(function(rows) { _dashboardCache = rows; _dashboardLoaded = true; return rows; })
-      .catch(function(err) { _prefetchPromise = null; throw err; });
-
-    p.then(function(rows) {
-        loading.style.display = 'none';
-        statBox.innerHTML     = '';
-        renderStats(rows);
-        renderTable(rows);
-        content.style.display = 'block';
-      })
-      .catch(function(err) {
-        loading.textContent = '❌ Gagal memuat data: ' + err.message;
-      })
-      .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
+    _prefetch = p.then(function(rows) { _cache = rows; _loaded = true; return rows; })
+                 .catch(function(err) { _prefetch = null; throw err; });
+    p.then(done).catch(function(err) { loading.textContent = '❌ Gagal memuat data: ' + err.message; })
+     .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
   }
+  function done(rows) {
+    loading.style.display = 'none'; statBox.innerHTML = '';
+    renderRoleChips(); applyFilters(); content.style.display = 'block';
+  }
+}
+
+function renderRoleChips() {
+  var wrap = document.getElementById('roleChips');
+  var roles = ['ALL'].concat(CONFIG.ROLE || []);
+  wrap.innerHTML = roles.map(function(rl) {
+    var active = filterState.role === rl ? ' active' : '';
+    var label = rl === 'ALL' ? 'Semua' : rl;
+    return '<button class="chip' + active + '" data-role="' + esc(rl) + '">' + esc(label) + '</button>';
+  }).join('');
+  wrap.querySelectorAll('.chip').forEach(function(c) {
+    c.addEventListener('click', function() { filterState.role = c.dataset.role; renderRoleChips(); applyFilters(); });
+  });
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  filterState.search = this.value.trim().toLowerCase(); applyFilters();
+});
+
+function applyFilters() {
+  if (!_cache) return;
+  var rows = _cache.filter(function(r) {
+    if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
+    if (filterState.search) {
+      var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase();
+      if (hay.indexOf(filterState.search) === -1) return false;
+    }
+    return true;
+  });
+  renderStats(rows);
+  renderTable(rows, buildIntervals(_cache)); // bentrok dihitung terhadap SEMUA data
 }
 
 function renderSkeletonStats() {
-  var html = '';
-  for (var i = 0; i < 5; i++) {
-    html += '<div class="stat-item">' +
-      '<span class="skeleton-cell" style="width:60%;margin-bottom:8px;display:block;"></span>' +
-      '<span class="skeleton-cell" style="width:40%;height:24px;display:block;"></span>' +
-    '</div>';
-  }
-  return html;
+  var h = '';
+  for (var i = 0; i < 5; i++) h += '<div class="stat-item"><span class="skeleton-cell" style="width:55%;margin-bottom:9px;"></span><span class="skeleton-cell" style="width:35%;height:22px;"></span></div>';
+  return h;
 }
-
 function renderStats(rows) {
-  var total = rows.length, waiting = 0, sedang = 0, selesai = 0, doneCatat = 0;
-  for (var i = 0; i < rows.length; i++) {
-    var t = (rows[i].task1 || '').toUpperCase();
-    if      (t === 'WAITING')      waiting++;
-    else if (t === 'SEDANG CUTI')  sedang++;
+  var total = rows.length, waiting = 0, sedang = 0, selesai = 0, done = 0;
+  rows.forEach(function(r) {
+    var t = (r.task1 || '').toUpperCase();
+    if (t === 'WAITING') waiting++;
+    else if (t === 'SEDANG CUTI') sedang++;
     else if (t === 'SELESAI CUTI') selesai++;
-    else if (t === 'DONE CATAT')   doneCatat++;
-  }
+    else if (t === 'DONE CATAT') done++;
+  });
   document.getElementById('statBox').innerHTML =
-    statCard('Total Pengajuan', total) +
-    statCard('Waiting',         waiting) +
-    statCard('Sedang Cuti',     sedang) +
-    statCard('Selesai Cuti',    selesai) +
-    statCard('Done Catat',      doneCatat);
+    statCard('Total Tampil', total, 'var(--brand)') +
+    statCard('Waiting', waiting, 'var(--amber)') +
+    statCard('Sedang Cuti', sedang, 'var(--blue)') +
+    statCard('Selesai Cuti', selesai, 'var(--green)') +
+    statCard('Done Catat', done, 'var(--brand-ink)');
+}
+function statCard(label, value, dot) {
+  return '<div class="stat-item" style="--dot:' + dot + '"><div class="label">' + esc(label) + '</div><div class="value">' + value + '</div></div>';
 }
 
-function statCard(label, value) {
-  return '<div class="stat-item"><div class="label">' + esc(label) +
-         '</div><div class="value">' + value + '</div></div>';
+function taskCls(v) {
+  var u = (v || '').toUpperCase();
+  if (u === 'WAITING') return 'task-WAITING';
+  if (u === 'SEDANG CUTI') return 'task-SEDANG';
+  if (u === 'SELESAI CUTI') return 'task-SELESAI';
+  return 'task-DONE';
+}
+function clashCell(perihal, startRaw, endRaw, nama, intervals) {
+  var info = clashInfo(perihal, startRaw, endRaw, nama, intervals);
+  if (!info) return '<span class="pill pill-dash">–</span>';
+  if (info.count === 0) return '<span class="pill pill-clash-ok">✓ Aman</span>';
+  var cls = info.count >= 2 ? 'pill-clash-alert' : 'pill-clash-warn';
+  var title = 'Bentrok dengan: ' + info.names.join(', ');
+  return '<span class="pill ' + cls + '" title="' + esc(title) + '">⚠ ' + info.count + ' staff</span>';
+}
+function taskSelect(currentVal, rowId, taskList) {
+  var opts = taskList.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+  return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
+}
+function actionCell(rowId, label) {
+  return '<span class="row-actions">' +
+    '<button class="icon-btn" title="Ubah" onclick="openEdit(\'' + esc(rowId) + '\')">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+    '</button>' +
+    '<button class="icon-btn danger" title="Hapus" onclick="deleteRow(\'' + esc(rowId) + '\',\'' + esc(label) + '\')">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+    '</button>' +
+  '</span>';
 }
 
-function renderTable(rows) {
+function renderTable(rows, intervals) {
   var tbody = document.getElementById('tableBody');
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">Belum ada data pengajuan.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">Tidak ada pengajuan yang cocok dengan filter.</td></tr>';
     return;
   }
-
-  var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['DONE CATAT', 'SEDANG CUTI', 'WAITING', 'SELESAI CUTI'];
-  var parts    = [];
-
-  for (var i = 0; i < rows.length; i++) {
-    var r        = rows[i];
-    var hasCuti2 = !!(r.start2 || r.perihal2);
-    var span     = hasCuti2 ? ' rowspan="2"' : '';
-
-    var tdRole     = '<td' + span + ' style="vertical-align:middle;font-weight:600;">' + esc(r.role) + '</td>';
-    var tdNama     = '<td' + span + ' style="vertical-align:middle;white-space:nowrap;">' + esc(r.nama) + '</td>';
-    var tdKet      = '<td' + span + ' style="vertical-align:middle;"><span class="badge-passport">' + esc(r.keterangan) + '</span></td>';
-    var tambahanTx = (r.tambahan && r.tambahan !== 'Tidak Ada') ? r.tambahan : '';
-    var tdTambahan = '<td' + span + ' style="vertical-align:middle;">' + esc(tambahanTx) + '</td>';
-    var tdTask     = '<td' + span + ' style="vertical-align:middle;">' + buildTaskOptions(r.task1, r.rowId, taskList) + '</td>';
-
+  var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
+  var parts = [];
+  rows.forEach(function(r) {
+    var has2 = !!(r.start2Raw || r.perihal2);
+    var sp = has2 ? ' rowspan="2"' : '';
+    var tamb = (r.tambahan && r.tambahan !== 'Tidak Ada') ? r.tambahan : '';
     parts.push('<tr>' +
-      tdRole + tdNama +
-      '<td style="white-space:nowrap">' + esc(r.start1) + '</td>' +
-      '<td style="white-space:nowrap">' + esc(r.end1)   + '</td>' +
-      '<td><span class="badge-durasi">'  + esc(r.durasi1)  + '</span></td>' +
-      '<td><span class="badge-perihal">' + esc(r.perihal1) + '</span></td>' +
-      tdKet + tdTambahan + tdTask +
+      '<td' + sp + '><span class="pill pill-role">' + esc(r.role) + '</span></td>' +
+      '<td' + sp + ' class="cell-name">' + esc(r.nama) + '</td>' +
+      '<td class="cell-date">' + esc(r.start1) + '</td>' +
+      '<td class="cell-date">' + esc(r.end1) + '</td>' +
+      '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
+      '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
+      '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals) + '</td>' +
+      '<td' + sp + '><span class="pill pill-passport">' + esc(r.keterangan) + '</span></td>' +
+      '<td' + sp + '>' + esc(tamb) + '</td>' +
+      '<td' + sp + '>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
+      '<td' + sp + '>' + actionCell(r.rowId, r.nama) + '</td>' +
     '</tr>');
-
-    if (hasCuti2) {
+    if (has2) {
       parts.push('<tr class="row-cuti2">' +
-        '<td style="white-space:nowrap">' + esc(r.start2) + '</td>' +
-        '<td style="white-space:nowrap">' + esc(r.end2)   + '</td>' +
-        '<td><span class="badge-durasi">'  + esc(r.durasi2)  + '</span></td>' +
-        '<td><span class="badge-perihal">' + esc(r.perihal2) + '</span></td>' +
+        '<td class="cell-date">' + esc(r.start2) + '</td>' +
+        '<td class="cell-date">' + esc(r.end2) + '</td>' +
+        '<td><span class="pill pill-durasi">' + esc(r.durasi2) + '</span></td>' +
+        '<td><span class="pill pill-perihal">' + esc(r.perihal2) + '</span></td>' +
+        '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals) + '</td>' +
       '</tr>');
     }
-  }
-
+  });
   tbody.innerHTML = parts.join('');
 }
 
-function buildTaskOptions(currentVal, rowId, taskList) {
-  var opts = '';
-  for (var i = 0; i < taskList.length; i++) {
-    var t = taskList[i];
-    opts += '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>';
-  }
-  return '<select class="task-select" data-rowid="' + esc(rowId) +
-         '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
-}
-
-// Delegasi event untuk task-select (satu listener, bukan per-baris)
+// status change (task-select)
 document.getElementById('tableBody').addEventListener('change', function(e) {
   var sel = e.target;
   if (!sel.classList.contains('task-select')) return;
-
-  var rowId  = sel.dataset.rowid;
-  var value  = sel.value;
-  var oldVal = sel.getAttribute('data-status'); // simpan nilai lama utk revert bila gagal
+  var rowId = sel.dataset.rowid, value = sel.value, oldVal = sel.getAttribute('data-status');
   sel.classList.add('task-saving');
-  sel.setAttribute('data-status', value);
+  sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value }).then(function() {
+    sel.classList.remove('task-saving');
+    sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
+    if (_cache) for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; }
+    renderStats(currentFiltered());
+    toast('Status diperbarui', 'ok');
+  }).catch(function(err) {
+    sel.classList.remove('task-saving'); sel.value = oldVal; toast('Gagal update status: ' + err.message, 'err');
+  });
+});
+function currentFiltered() {
+  if (!_cache) return [];
+  return _cache.filter(function(r) {
+    if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
+    if (filterState.search) { var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase(); if (hay.indexOf(filterState.search) === -1) return false; }
+    return true;
+  });
+}
 
-  updateTask(rowId, value)
-    .then(function() {
-      sel.classList.remove('task-saving');
-      if (_dashboardCache) {
-        for (var i = 0; i < _dashboardCache.length; i++) {
-          if (_dashboardCache[i].rowId === rowId) {
-            _dashboardCache[i].task1 = value;
-            break;
-          }
-        }
-      }
-    })
-    .catch(function(err) {
-      sel.classList.remove('task-saving');
-      // FIX: update gagal → balikkan dropdown ke nilai lama biar tidak menyesatkan
-      sel.value = oldVal;
-      sel.setAttribute('data-status', oldVal);
-      alert('Gagal update task: ' + err.message);
-    });
+// close modal on overlay/Escape
+document.getElementById('editOverlay').addEventListener('click', function(e) { if (e.target === this) closeEdit(); });
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeEdit(); document.getElementById('confirmOverlay').classList.remove('open'); }
 });
 
-// ── Inisialisasi ──────────────────────────────────────────────
-// Prefetch getCuti segera (paralel dengan getConfig) agar Dashboard
-// sudah siap saat user klik tab — tanpa tunggu GAS lagi.
-_prefetchPromise = getCuti()
-  .then(function(rows) {
-    _dashboardCache  = rows;
-    _dashboardLoaded = true;
-    // Jika tab dashboard sudah aktif saat ini selesai, langsung render
-    if (document.getElementById('view-dashboard').classList.contains('active')) {
-      document.getElementById('dashboardLoading').style.display = 'none';
-      document.getElementById('statBox').innerHTML = '';
-      renderStats(rows);
-      renderTable(rows);
-      document.getElementById('dashboardContent').style.display = 'block';
-    }
-    return rows;
-  })
-  .catch(function() { _prefetchPromise = null; return null; });
+// ── Init ──────────────────────────────────────────────────────
+_prefetch = getCuti().then(function(rows) {
+  _cache = rows; _loaded = true;
+  if (document.getElementById('view-dashboard').classList.contains('active')) {
+    document.getElementById('dashboardLoading').style.display = 'none';
+    renderRoleChips(); applyFilters();
+    document.getElementById('dashboardContent').style.display = 'block';
+  }
+  return rows;
+}).catch(function() { _prefetch = null; return null; });
 
-getConfig()
-  .then(function(cfg) {
-    CONFIG = cfg;
-    fillSelect(document.getElementById('role'),       'ROLE',       '');
-    fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
-    fillStaticSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada');
-    addLeaveBlock(false);
-  })
-  .catch(function(err) {
-    alert('Gagal memuat konfigurasi: ' + err.message +
-          '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
-  });
+getConfig().then(function(cfg) {
+  CONFIG = cfg;
+  fillSelect(document.getElementById('role'), 'ROLE', '');
+  fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
+  fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
+  addFormLeave(false);
+  renderRoleChips();
+}).catch(function(err) {
+  toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
+  alert('Gagal memuat konfigurasi: ' + err.message + '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
+});
 </script>
 </body>
 </html>
