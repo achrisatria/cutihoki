@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengajuan Cuti Staff</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f5f7fa;
+    color: #1a2332;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  .header {
+    background: white;
+    padding: 20px 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+  }
+
+  .header h1 { font-size: 24px; font-weight: 600; color: #0f5c4d; margin-bottom: 4px; }
+  .header p { color: #6b7a8a; font-size: 14px; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: white;
+    border-radius: 10px 10px 0 0;
+    padding: 0 4px;
+    border-bottom: 2px solid #e8ecf1;
+  }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7a8a;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+
+  .tab:hover { color: #0f5c4d; }
+  .tab.active { color: #0f5c4d; border-bottom-color: #0f5c4d; }
+
+  .view {
+    display: none;
+    background: white;
+    border-radius: 0 0 10px 10px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .view.active { display: block; }
+
+  .card { margin-bottom: 20px; }
+
+  .card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a2332;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f2f5;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5a6a;
+  }
+
+  .field input,
+  .field select {
+    padding: 9px 12px;
+    font-size: 14px;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    background: #fafbfc;
+    font-family: inherit;
+  }
+
+  .field input:focus,
+  .field select:focus {
+    outline: none;
+    border-color: #0f5c4d;
+    box-shadow: 0 0 0 3px rgba(15, 92, 77, 0.1);
+  }
+
+  .field input:read-only {
+    background: #f0f2f5;
+    color: #4a5a6a;
+    font-weight: 600;
+  }
+
+  .leave-block {
+    border: 1px solid #e8ecf1;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 14px;
+    background: #fafbfc;
+  }
+
+  .leave-block .header-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .leave-block .badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f5c4d;
+    background: #e8f0ed;
+    padding: 4px 14px;
+    border-radius: 20px;
+  }
+
+  .leave-block .remove-btn {
+    background: none;
+    border: none;
+    color: #d32f2f;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  .leave-block .remove-btn:hover { text-decoration: underline; }
+
+  .btn {
+    padding: 9px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-primary { background: #0f5c4d; color: white; }
+  .btn-primary:hover { background: #0c4a3e; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn-secondary { background: #e8ecf1; color: #1a2332; }
+  .btn-secondary:hover { background: #d5dbe3; }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .msg {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+    display: none;
+    font-size: 14px;
+  }
+
+  .msg.success {
+    display: block;
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #c8e6c9;
+  }
+
+  .msg.error {
+    display: block;
+    background: #ffebee;
+    color: #b71c1c;
+    border: 1px solid #ffcdd2;
+  }
+
+  .divider {
+    border-top: 1px solid #e8ecf1;
+    margin: 18px 0 0;
+    padding-top: 18px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 900px;
+  }
+
+  th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #4a5a6a;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e8ecf1;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f2f5;
+    vertical-align: middle;
+  }
+
+  tr:hover td { background: #fafbfc; }
+
+  .empty {
+    text-align: center;
+    color: #8a9aa8;
+    padding: 30px 0;
+  }
+
+  .task-select {
+    padding: 3px 6px;
+    font-size: 11px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: white;
+    min-width: 120px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .task-select:focus {
+    outline: none;
+    border-color: #0f5c4d;
+  }
+
+  /* FIX: warna task sesuai status */
+  .task-select[data-status="DONE CATAT"]    { background: #e8f5e9; color: #1b5e20; }
+  .task-select[data-status="SEDANG CUTI"]   { background: #fff8e1; color: #f57f17; }
+  .task-select[data-status="WAITING"]       { background: #f3f4f6; color: #374151; }
+  .task-select[data-status="SELESAI CUTI"]  { background: #e3f2fd; color: #0d47a1; }
+
+  .badge-durasi {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e8f0ed;
+    color: #0f5c4d;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  .badge-perihal {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #0d47a1;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 11px;
+  }
+
+  .badge-passport {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #fff3e0;
+    color: #e65100;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 11px;
+  }
+
+  .info-box {
+    background: #e8f0ed;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #0f5c4d;
+    margin-top: 10px;
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .toolbar h3 { margin: 0; }
+
+  .stat-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .stat-item {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e8ecf1;
+  }
+
+  .stat-item .label { font-size: 12px; color: #6b7a8a; }
+  .stat-item .value { font-size: 22px; font-weight: 600; color: #0f5c4d; }
+
+  .sub-header {
+    font-size: 10px;
+    color: #8a9aa8;
+    font-weight: 400;
+  }
+
+  /* Baris cuti kedua — background sedikit berbeda & border atas tipis */
+  tr.row-cuti2 td {
+    background: #f9fafb;
+    border-top: 1px dashed #d0d7de;
+  }
+
+  /* Garis pemisah tegas antar staff berbeda */
+  tr.staff-end td {
+    border-bottom: 2px solid #c8d0d8 !important;
+  }
+
+  /* FIX: pesan update task */
+  .task-saving { opacity: 0.5; pointer-events: none; }
+
+  @media (max-width: 600px) {
+    body { padding: 12px; }
+    .view { padding: 14px; }
+    .grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 20px; }
+    .tab { padding: 8px 14px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>📋 Pengajuan Cuti Staff</h1>
+    <p>Isi form cuti dengan benar. Staff dapat mengajukan maksimal 2 cuti berbeda dalam satu pengajuan.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabForm" onclick="switchTab('form')">✏️ Ajukan Cuti</button>
+    <button class="tab" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+  </div>
+
+  <!-- VIEW FORM -->
+  <div class="view active" id="view-form">
+    <div class="card">
+      <h3>👤 Data Pemohon</h3>
+      <div class="grid">
+        <div class="field">
+          <label>Role *</label>
+          <select id="role" data-cat="ROLE"></select>
+        </div>
+        <div class="field">
+          <label>Nama Lengkap - ID *</label>
+          <input id="nama" type="text" placeholder="Contoh: EGI SETIAWAN - X7900962">
+        </div>
+      </div>
+      <div class="info-box">
+        ⚠️ <strong>Maksimal durasi:</strong> CS=14 hari, KAPTEN=14 hari, KASIR=12 hari
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📅 Detail Cuti</h3>
+      <div id="leaves-container"></div>
+      <button class="btn btn-secondary" id="addLeave" type="button">＋ Tambah Cuti Kedua</button>
+
+      <div class="divider">
+        <div class="grid" style="max-width: 720px;">
+          <div class="field">
+            <label>📌 Keterangan Passport *</label>
+            <select id="keterangan" data-cat="KETERANGAN"></select>
+          </div>
+          <div class="field">
+            <label>➕ Tambahan Cuti</label>
+            <select id="tambahan"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim Pengajuan</button>
+    </div>
+    <div class="msg" id="formMsg"></div>
+  </div>
+
+  <!-- VIEW DASHBOARD -->
+  <div class="view" id="view-dashboard">
+    <div class="toolbar">
+      <h3>📊 Data Pengajuan Cuti</h3>
+      <button class="btn btn-secondary" onclick="loadDashboard()">🔄 Refresh</button>
+    </div>
+
+    <div class="stat-box" id="statBox"></div>
+
+    <div id="dashboardLoading" style="color: #6b7a8a; padding: 20px 0;">Memuat data...</div>
+
+    <div class="table-wrap" id="dashboardContent" style="display: none;">
+      <table>
+        <thead>
+          <tr>
+            <th>ROLE</th>
+            <th>NAMA</th>
+            <th>TANGGAL START</th>
+            <th>TANGGAL END</th>
+            <th>DURASI CUTI<br><span class="sub-header">(OTOMATIS HITUNG)</span></th>
+            <th>PERIHAL</th>
+            <th>KETERANGAN</th>
+            <th>TAMBAHAN</th>
+            <th>TASK CHECKER</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// KONFIGURASI API — GANTI URL di bawah setelah deploy Apps Script
+// ═══════════════════════════════════════════════════════════════
+var API_URL = 'https://script.google.com/macros/s/AKfycbx51RJ7knfwMg_RWYfr57FFMGkhv1UXTeOVYHMFTpZhOuP4504OXUVh3NTab_8p6tkhDA/exec';
+var API_KEY = '353e233c9e20c911305369c08546813d6d27b9f76f30d7e3';
+
+/**
+ * Pemanggil API terpadu — menggantikan google.script.run.
+ * - GET dipakai untuk baca (getConfig, getCuti) → cepat, tanpa preflight CORS
+ * - POST dipakai untuk tulis (submitCuti, updateTaskAll, addOption)
+ *   memakai text/plain agar TIDAK memicu preflight (Apps Script tidak
+ *   menerima OPTIONS request).
+ * Mengembalikan Promise yang resolve dengan data, atau reject dengan Error.
+ */
+function apiCall(action, payload) {
+  var isRead = (action === 'getConfig' || action === 'getCuti');
+  var url = API_URL + '?key=' + encodeURIComponent(API_KEY) +
+            (isRead ? '&action=' + encodeURIComponent(action) : '');
+
+  var opts = isRead
+    ? { method: 'GET' }
+    : {
+        method: 'POST',
+        // text/plain = "simple request" → tidak memicu CORS preflight
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({ action: action }, payload || {}))
+      };
+
+  return fetch(url, opts)
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(j) {
+      if (!j.ok) throw new Error(j.error || 'Unknown error');
+      return j.data;
+    });
+}
+
+var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [] };
+var leaveSeq = 0;
+var ADD = '__ADD__';
+
+function esc(str) {
+  return String(str || '').replace(/[&<>"]/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+  });
+}
+
+// Hitung jumlah hari (UTC-safe, tidak terpengaruh DST)
+function dayKey(iso) {
+  if (!iso) return 0;
+  var parts = iso.split('-');
+  if (parts.length !== 3) return 0;
+  return Math.round(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])) / 86400000);
+}
+
+function switchTab(view) {
+  document.querySelectorAll('.tab').forEach(function(t) {
+    t.classList.toggle('active', t.id === 'tab' + view.charAt(0).toUpperCase() + view.slice(1));
+  });
+  document.querySelectorAll('.view').forEach(function(v) {
+    v.classList.toggle('active', v.id === 'view-' + view);
+  });
+  if (view === 'dashboard') loadDashboard();
+}
+
+function fillSelect(sel, cat, selected) {
+  var list = CONFIG[cat] || [];
+  var html = '<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>';
+  for (var i = 0; i < list.length; i++) {
+    html += '<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>';
+  }
+  html += '<option value="' + ADD + '">＋ Tambah opsi baru...</option>';
+  sel.innerHTML = html;
+}
+
+// Dropdown tetap: tanpa opsi "＋ Tambah baru" — dipakai untuk TAMBAHAN & TASK
+function fillStaticSelect(sel, cat, selected) {
+  var list = CONFIG[cat] || [];
+  var html = '<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih...</option>';
+  for (var i = 0; i < list.length; i++) {
+    html += '<option' + (list[i] === selected ? ' selected' : '') + '>' + esc(list[i]) + '</option>';
+  }
+  sel.innerHTML = html;
+}
+
+// Delegasi change untuk dropdown tambah opsi baru
+document.addEventListener('change', function(e) {
+  var sel = e.target;
+  if (sel.tagName !== 'SELECT' || sel.value !== ADD) return;
+  var cat = sel.dataset.cat;
+  if (!cat) return;
+  var val = prompt('Ketik opsi baru untuk ' + cat + ':');
+  if (!val || !val.trim()) { fillSelect(sel, cat, ''); return; }
+
+  sel.disabled = true;
+  apiCall('addOption', { category: cat, value: val.trim() })
+    .then(function(cfg) {
+      CONFIG = cfg;
+      document.querySelectorAll('select[data-cat="' + cat + '"]').forEach(function(s) {
+        fillSelect(s, cat, s === sel ? val.trim() : '');
+      });
+      sel.disabled = false;
+    })
+    .catch(function(err) {
+      alert('Gagal menambah opsi: ' + err.message);
+      fillSelect(sel, cat, '');
+      sel.disabled = false;
+    });
+});
+
+// FIX: Nomor label dihitung dari urutan di DOM, bukan leaveSeq
+function renumberBlocks() {
+  var blocks = document.querySelectorAll('.leave-block');
+  blocks.forEach(function(b, idx) {
+    var badge = b.querySelector('.badge');
+    if (badge) badge.textContent = 'Cuti ' + (idx + 1);
+  });
+}
+
+function addLeaveBlock(removable) {
+  leaveSeq++;
+  var seq = leaveSeq;
+  var block = document.createElement('div');
+  block.className = 'leave-block';
+  block.dataset.seq = seq;
+
+  var html = '<div class="header-block">' +
+    '<span class="badge">Cuti ' + (document.querySelectorAll('.leave-block').length + 1) + '</span>';
+  if (removable) {
+    html += '<button class="remove-btn" type="button">✕ Hapus</button>';
+  }
+  html += '</div><div class="grid">' +
+    '<div class="field"><label>Perihal *</label><select data-cat="PERIHAL"></select></div>' +
+    '<div class="field"><label>Tanggal Start *</label><input type="date" class="start-date"></div>' +
+    '<div class="field"><label>Tanggal End *</label><input type="date" class="end-date"></div>' +
+    '<div class="field"><label>Durasi (Otomatis)</label><input type="text" class="duration" readonly placeholder="0 Hari"></div>' +
+    '</div>';
+
+  block.innerHTML = html;
+  document.getElementById('leaves-container').appendChild(block);
+
+  // Hanya PERIHAL yang boleh tambah opsi baru
+  block.querySelectorAll('select[data-cat]').forEach(function(sel) {
+    fillSelect(sel, sel.dataset.cat, '');
+  });
+
+  var startInput = block.querySelector('.start-date');
+  var endInput   = block.querySelector('.end-date');
+  var durInput   = block.querySelector('.duration');
+
+  function calcDuration() {
+    if (startInput.value && endInput.value) {
+      var days = dayKey(endInput.value) - dayKey(startInput.value) + 1;
+      durInput.value = days > 0 ? days + ' Hari' : '⚠ End < Start';
+    } else {
+      durInput.value = '';
+    }
+  }
+
+  startInput.addEventListener('change', calcDuration);
+  endInput.addEventListener('change', calcDuration);
+
+  var rmBtn = block.querySelector('.remove-btn');
+  if (rmBtn) {
+    rmBtn.addEventListener('click', function() {
+      block.remove();
+      // FIX: Renumber setelah hapus agar label tetap "Cuti 1" / "Cuti 2"
+      renumberBlocks();
+      toggleAddBtn();
+    });
+  }
+
+  toggleAddBtn();
+}
+
+function toggleAddBtn() {
+  var count = document.querySelectorAll('.leave-block').length;
+  document.getElementById('addLeave').style.display = count >= 2 ? 'none' : 'inline-block';
+}
+
+document.getElementById('addLeave').addEventListener('click', function() {
+  addLeaveBlock(true);
+});
+
+document.getElementById('submitBtn').addEventListener('click', function() {
+  var role       = document.getElementById('role').value;
+  var nama       = document.getElementById('nama').value.trim();
+  var keterangan = document.getElementById('keterangan').value;
+  var tambahan   = document.getElementById('tambahan').value || 'Tidak Ada';
+
+  if (!role || role === ADD)       { showMsg('error', 'Pilih Role terlebih dahulu.'); return; }
+  if (!nama)                       { showMsg('error', 'Isi Nama lengkap dengan ID.'); return; }
+  if (!keterangan || keterangan === ADD) { showMsg('error', 'Pilih Keterangan Passport.'); return; }
+
+  var blocks = document.querySelectorAll('.leave-block');
+  if (blocks.length === 0) { showMsg('error', 'Tambahkan minimal 1 cuti.'); return; }
+
+  var leaves = [];
+  var valid = true;
+
+  blocks.forEach(function(b) {
+    if (!valid) return;
+    var perihal  = b.querySelector('[data-cat="PERIHAL"]').value;
+    var start    = b.querySelector('.start-date').value;
+    var end      = b.querySelector('.end-date').value;
+
+    if (!perihal || perihal === ADD) { showMsg('error', 'Pilih Perihal untuk semua cuti.'); valid = false; return; }
+    if (!start || !end)              { showMsg('error', 'Isi tanggal Start dan End untuk semua cuti.'); valid = false; return; }
+    if (dayKey(end) < dayKey(start)) { showMsg('error', 'Tanggal End tidak boleh sebelum Start.'); valid = false; return; }
+
+    leaves.push({ perihal: perihal, start: start, end: end });
+  });
+
+  if (!valid) return;
+
+  if (leaves.length === 2 && leaves[0].perihal === leaves[1].perihal) {
+    showMsg('error', 'Jika mengajukan 2 cuti, perihal harus berbeda.');
+    return;
+  }
+
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Mengirim...';
+
+  apiCall('submitCuti', { payload: { role: role, nama: nama, keterangan: keterangan, tambahan: tambahan, leaves: leaves } })
+    .then(function(res) {
+      btn.disabled = false;
+      btn.textContent = '📤 Kirim Pengajuan';
+      showMsg('success', '✅ ' + res.message);
+      resetForm();
+      switchTab('dashboard');
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '📤 Kirim Pengajuan';
+      showMsg('error', '❌ Gagal: ' + err.message);
+    });
+});
+
+// FIX: showMsg sekarang lengkap (fungsi sebelumnya terpotong di source asli)
+function showMsg(type, text) {
+  var el = document.getElementById('formMsg');
+  el.className = 'msg ' + type;
+  el.textContent = text;
+}
+
+// FIX: resetForm sebelumnya tidak ada di source asli (dipanggil tapi tidak didefinisikan)
+function resetForm() {
+  document.getElementById('role').value = '';
+  document.getElementById('nama').value = '';
+  document.getElementById('keterangan').value = '';
+  document.getElementById('tambahan').value = 'Tidak Ada';
+  document.getElementById('leaves-container').innerHTML = '';
+  leaveSeq = 0;
+  // Tambahkan kembali blok cuti pertama
+  addLeaveBlock(false);
+  var msgEl = document.getElementById('formMsg');
+  msgEl.className = 'msg';
+  msgEl.textContent = '';
+}
+
+// FIX: loadDashboard sebelumnya tidak ada di source asli (dipanggil tapi tidak didefinisikan)
+function loadDashboard() {
+  var loading = document.getElementById('dashboardLoading');
+  var content = document.getElementById('dashboardContent');
+  var statBox = document.getElementById('statBox');
+
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  statBox.innerHTML = '';
+
+  apiCall('getCuti')
+    .then(function(rows) {
+      loading.style.display = 'none';
+      renderStats(rows);
+      renderTable(rows);
+      content.style.display = 'block';
+    })
+    .catch(function(err) {
+      loading.textContent = '❌ Gagal memuat data: ' + err.message;
+    });
+}
+
+function renderStats(rows) {
+  var total   = rows.length;
+  var waiting = 0, sedang = 0, selesai = 0, doneCatat = 0;
+
+  rows.forEach(function(r) {
+    // Hitung berdasarkan status task1 (status utama per pengajuan)
+    var t = (r.task1 || '').toUpperCase();
+    if (t === 'WAITING')      waiting++;
+    if (t === 'SEDANG CUTI')  sedang++;
+    if (t === 'SELESAI CUTI') selesai++;
+    if (t === 'DONE CATAT')   doneCatat++;
+  });
+
+  var statBox = document.getElementById('statBox');
+  statBox.innerHTML =
+    statCard('Total Pengajuan', total) +
+    statCard('Waiting', waiting) +
+    statCard('Sedang Cuti', sedang) +
+    statCard('Selesai Cuti', selesai) +
+    statCard('Done Catat', doneCatat);
+}
+
+function statCard(label, value) {
+  return '<div class="stat-item"><div class="label">' + esc(label) + '</div>' +
+         '<div class="value">' + value + '</div></div>';
+}
+
+function renderTable(rows) {
+  var tbody = document.getElementById('tableBody');
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Belum ada data pengajuan.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  rows.forEach(function(r) {
+    var hasCuti2 = !!(r.start2 || r.perihal2);
+    var span     = hasCuti2 ? ' rowspan="2"' : '';
+
+    // Sel yang di-rowspan hanya muncul di baris pertama
+    var tdRole = '<td' + span + ' style="vertical-align:middle;font-weight:600;">' + esc(r.role) + '</td>';
+    var tdNama = '<td' + span + ' style="vertical-align:middle;white-space:nowrap;">' + esc(r.nama) + '</td>';
+    var tdKet  = '<td' + span + ' style="vertical-align:middle;">' +
+                   '<span class="badge-passport">' + esc(r.keterangan) + '</span>' +
+                 '</td>';
+
+    // Tambahan sekarang tunggal per pengajuan → ikut di-rowspan
+    var tambahanText = (r.tambahan && r.tambahan !== 'Tidak Ada') ? r.tambahan : '';
+    var tdTambahan = '<td' + span + ' style="vertical-align:middle;">' + esc(tambahanText) + '</td>';
+
+    // Task Checker: SATU dropdown per pengajuan (ikut di-rowspan).
+    // Statusnya memakai task1 sebagai status utama pengajuan.
+    var tdTask = '<td' + span + ' style="vertical-align:middle;">' +
+                   buildTaskOptions(r.task1, r.rowId) +
+                 '</td>';
+
+    // Baris pertama (Cuti 1)
+    html += '<tr>' +
+      tdRole +
+      tdNama +
+      '<td style="white-space:nowrap">' + esc(r.start1) + '</td>' +
+      '<td style="white-space:nowrap">' + esc(r.end1)   + '</td>' +
+      '<td><span class="badge-durasi">' + esc(r.durasi1) + '</span></td>' +
+      '<td><span class="badge-perihal">' + esc(r.perihal1) + '</span></td>' +
+      tdKet +
+      tdTambahan +
+      tdTask +
+    '</tr>';
+
+    // Baris kedua (Cuti 2) — hanya jika ada. Keterangan, Tambahan, dan
+    // Task Checker tidak diulang karena sudah di-rowspan dari baris pertama.
+    if (hasCuti2) {
+      html += '<tr class="row-cuti2">' +
+        '<td style="white-space:nowrap">' + esc(r.start2) + '</td>' +
+        '<td style="white-space:nowrap">' + esc(r.end2)   + '</td>' +
+        '<td><span class="badge-durasi">' + esc(r.durasi2) + '</span></td>' +
+        '<td><span class="badge-perihal">' + esc(r.perihal2) + '</span></td>' +
+      '</tr>';
+    }
+  });
+
+  tbody.innerHTML = html;
+
+  // Pasang event listener untuk semua task-select
+  tbody.querySelectorAll('.task-select').forEach(function(sel) {
+    applyTaskColor(sel);
+    sel.addEventListener('change', function() {
+      var rowId = sel.dataset.rowid;
+      var value = sel.value;
+      sel.classList.add('task-saving');
+      apiCall('updateTaskAll', { rowId: rowId, value: value })
+        .then(function() {
+          sel.classList.remove('task-saving');
+          sel.dataset.status = value;
+          applyTaskColor(sel);
+        })
+        .catch(function(err) {
+          sel.classList.remove('task-saving');
+          alert('Gagal update task: ' + err.message);
+        });
+    });
+  });
+}
+
+function buildTaskOptions(currentVal, rowId) {
+  var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['DONE CATAT', 'SEDANG CUTI', 'WAITING', 'SELESAI CUTI'];
+  var opts = '';
+  taskList.forEach(function(t) {
+    opts += '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>';
+  });
+  return '<select class="task-select" data-rowid="' + esc(rowId) +
+         '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
+}
+
+function applyTaskColor(sel) {
+  // Reset kelas warna lama
+  sel.removeAttribute('data-status');
+  sel.setAttribute('data-status', sel.value);
+}
+
+// ── Inisialisasi ──────────────────────────────────────────────
+apiCall('getConfig')
+  .then(function(cfg) {
+    CONFIG = cfg;
+    // Isi dropdown Role, Keterangan, dan Tambahan (tunggal) di form
+    fillSelect(document.getElementById('role'), 'ROLE', '');
+    fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
+    fillStaticSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada');
+    // Tambahkan blok cuti pertama
+    addLeaveBlock(false);
+  })
+  .catch(function(err) {
+    alert('Gagal memuat konfigurasi: ' + err.message +
+          '\n\nPastikan API_URL sudah diisi di atas kode.');
+  });
+</script>
+</body>
+</html>
