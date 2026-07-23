@@ -32,6 +32,10 @@
     --slate: #4C5A72;
     --slate-bg: #EDF1F6;
     --stripe: #EEF3F9;
+    /* Warna identitas role */
+    --role-cs: #5B4CBF;     --role-cs-bg: #EDEAFB;   --role-cs-bd: #D6D0F4;
+    --role-kap: #0B6E8A;    --role-kap-bg: #E0F0F6;  --role-kap-bd: #C3E2ED;
+    --role-kas: #A93A63;    --role-kas-bg: #FBE9F0;  --role-kas-bd: #F2CEDD;
     --shadow-sm: 0 1px 2px rgba(12,21,36,.06), 0 1px 3px rgba(12,21,36,.05);
     --shadow-md: 0 6px 18px rgba(12,21,36,.09);
     --shadow-lg: 0 18px 50px rgba(12,21,36,.24);
@@ -132,10 +136,12 @@
   /* ── Leave blocks ───────────────────────────────────── */
   .leave-block {
     border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 15px; margin-bottom: 12px;
-    background: var(--surface);
+    border-radius: 12px;
+    padding: 15px 16px; margin-bottom: 12px;
+    background: linear-gradient(180deg, #FCFDFE 0%, var(--surface) 100%);
+    transition: border-color .15s, box-shadow .15s;
   }
+  .leave-block:focus-within { border-color: var(--brand-100); box-shadow: 0 0 0 3px var(--brand-050); }
   .header-block { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .badge {
     background: var(--brand-050); color: var(--brand-ink);
@@ -196,28 +202,50 @@
   .form-panel.open {
     display: block; position: relative; overflow: hidden;
     background: var(--surface);
-    border: 1px solid var(--line-strong); border-radius: 16px;
-    box-shadow: 0 20px 48px -16px rgba(12,21,36,.20), 0 2px 6px rgba(12,21,36,.05);
-    animation: slidedown .3s cubic-bezier(.2,.8,.3,1);
+    border: 1px solid var(--line-strong); border-radius: 18px;
+    box-shadow:
+      0 1px 1px rgba(12,21,36,.04),
+      0 8px 20px -8px rgba(12,21,36,.14),
+      0 28px 60px -22px rgba(12,21,36,.30);
+    animation: slidedown .34s cubic-bezier(.2,.85,.3,1);
+  }
+  .form-panel.open::before {
+    content: ""; position: absolute; top: 0; left: 22px; right: 22px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--brand-100) 18%, var(--brand) 50%, var(--brand-100) 82%, transparent);
+    opacity: .85;
   }
   .fp-head {
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
-    padding: 20px 24px 18px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 21px 24px 19px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #FAFCFB 0%, var(--surface) 100%);
   }
-  .fp-title h3 { font-size: 16px; font-weight: 700; letter-spacing: -.015em; color: var(--ink); }
+  .fp-mark {
+    width: 38px; height: 38px; flex: none; border-radius: 11px;
+    display: grid; place-items: center; font-size: 16px; color: #fff;
+    background: linear-gradient(150deg, #17967A 0%, #0A5A49 100%);
+    box-shadow: 0 4px 12px rgba(14,122,99,.30), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .fp-title { flex: 1; min-width: 0; }
+  .fp-title h3 { font-size: 15.5px; font-weight: 700; letter-spacing: -.015em; color: var(--ink); }
   .fp-title p { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
   .fp-close {
     background: none; border: none; cursor: pointer; color: var(--muted);
-    font-size: 15px; line-height: 1; padding: 7px; border-radius: 8px; flex: none;
+    font-size: 14px; line-height: 1; padding: 8px; border-radius: 9px; flex: none;
     transition: background .15s, color .15s;
   }
   .fp-close:hover { background: var(--surface-2); color: var(--ink); }
-  .fp-body { padding: 4px 24px 8px; }
-  .fsec { padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .fp-body { padding: 2px 24px 6px; }
+  .fsec { padding: 21px 0; border-bottom: 1px solid var(--line); }
   .fsec:last-child { border-bottom: none; }
   .fsec-label {
-    display: block; font-size: 11px; font-weight: 700; letter-spacing: .07em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 9px;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); margin-bottom: 15px;
+  }
+  .fsec-label em {
+    font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .02em;
+    color: var(--brand-ink); background: var(--brand-050);
+    border: 1px solid var(--brand-100); border-radius: 6px; padding: 2px 6px;
   }
   .fsec-note { font-size: 12px; color: var(--muted); margin-top: 11px; }
   .fsec-note strong { color: var(--ink-soft); font-weight: 700; }
@@ -225,9 +253,10 @@
   .fsec-note.note-hi strong { color: var(--amber); }
   .fp-foot {
     display: flex; justify-content: flex-end; gap: 10px;
-    padding: 15px 24px; border-top: 1px solid var(--line); background: var(--surface-2);
+    padding: 16px 24px; border-top: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
   }
-  @keyframes slidedown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  @keyframes slidedown { from { opacity: 0; transform: translateY(-8px) scale(.995); } to { opacity: 1; transform: none; } }
 
   .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(166px, 1fr)); gap: 12px; margin-bottom: 20px; }
   .stat-item {
@@ -256,6 +285,7 @@
   .result-count { font-size: 12.5px; color: var(--muted); font-weight: 500; margin: -4px 2px 14px; }
   .result-count strong { color: var(--ink-soft); font-weight: 700; }
   .chip {
+    display: inline-flex; align-items: center;
     border: 1.5px solid var(--line-strong); background: var(--surface);
     color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 600;
     padding: 6px 14px; border-radius: 999px; cursor: pointer;
@@ -320,7 +350,15 @@
 
   .pill-total { background: var(--brand); color: #fff; font-variant-numeric: tabular-nums; }
   .pill-total.plus { background: var(--amber); }
-  .pill-role   { background: var(--slate-bg); color: var(--slate); }
+  .pill-role   { background: var(--slate-bg); color: var(--slate); border: 1px solid transparent; font-weight: 700; }
+  .role-CS     { background: var(--role-cs-bg);  color: var(--role-cs);  border-color: var(--role-cs-bd); }
+  .role-KAPTEN { background: var(--role-kap-bg); color: var(--role-kap); border-color: var(--role-kap-bd); }
+  .role-KASIR  { background: var(--role-kas-bg); color: var(--role-kas); border-color: var(--role-kas-bd); }
+  .role-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; background: var(--muted); }
+  .role-dot.role-CS     { background: var(--role-cs); }
+  .role-dot.role-KAPTEN { background: var(--role-kap); }
+  .role-dot.role-KASIR  { background: var(--role-kas); }
+  .chip.active .role-dot { background: #fff !important; }
   .pill-durasi { background: var(--brand-050); color: var(--brand-ink); font-variant-numeric: tabular-nums; }
   .pill-perihal{ background: var(--blue-bg); color: var(--blue); }
   .pill-clash-ok    { background: var(--green-bg); color: var(--green); }
@@ -493,16 +531,17 @@
     <!-- Panel Ajukan Cuti (toggle) -->
     <div class="form-panel" id="formPanel">
       <div class="fp-head">
+        <div class="fp-mark">✦</div>
         <div class="fp-title">
           <h3>Pengajuan Cuti Baru</h3>
-          <p>Lengkapi data di bawah, sistem memeriksa durasi &amp; bentrok otomatis.</p>
+          <p>Sistem memeriksa durasi, batas role, dan bentrok jadwal secara otomatis.</p>
         </div>
         <button class="fp-close" type="button" onclick="toggleForm(false)" aria-label="Tutup form">✕</button>
       </div>
 
       <div class="fp-body">
         <section class="fsec">
-          <span class="fsec-label">Data Pemohon</span>
+          <span class="fsec-label"><em>01</em>Data Pemohon</span>
           <div class="grid">
             <div class="field">
               <label>Role</label>
@@ -517,13 +556,13 @@
         </section>
 
         <section class="fsec">
-          <span class="fsec-label">Detail Cuti</span>
+          <span class="fsec-label"><em>02</em>Detail Cuti</span>
           <div id="leaves-container"></div>
           <button class="add-leave-btn" id="addLeave" type="button">＋ Tambah cuti kedua</button>
         </section>
 
         <section class="fsec">
-          <span class="fsec-label">Keterangan</span>
+          <span class="fsec-label"><em>03</em>Keterangan &amp; Total</span>
           <div class="grid" style="max-width: 720px;">
             <div class="field">
               <label>Keterangan Passport</label>
@@ -1284,7 +1323,8 @@ function renderRoleChips() {
   wrap.innerHTML = roles.map(function(rl) {
     var active = filterState.role === rl ? ' active' : '';
     var label = rl === 'ALL' ? 'Semua' : rl;
-    return '<button class="chip' + active + '" data-role="' + esc(rl) + '">' + esc(label) + '</button>';
+    var dot = rl === 'ALL' ? '' : '<i class="role-dot ' + roleCls(rl) + '"></i>';
+    return '<button class="chip' + active + '" data-role="' + esc(rl) + '">' + dot + esc(label) + '</button>';
   }).join('');
   wrap.querySelectorAll('.chip').forEach(function(c) {
     c.addEventListener('click', function() { filterState.role = c.dataset.role; renderRoleChips(); applyFilters(); });
@@ -1429,6 +1469,11 @@ function actionCell(rowId, label) {
   '</span>';
 }
 
+function roleCls(role) {
+  var u = String(role || '').trim().toUpperCase();
+  if (u === 'CS' || u === 'KAPTEN' || u === 'KASIR') return 'role-' + u;
+  return '';   // role lain → warna netral
+}
 function periodeCell(sRaw, eRaw) {
   if (!sRaw || !eRaw) return '<span class="pill-dash">–</span>';
   return '<span class="periode" title="' + esc(formatDate(sRaw) + ' – ' + formatDate(eRaw)) + '">' +
@@ -1455,7 +1500,7 @@ function renderTable(rows, intervals) {
     var sp = has2 ? ' rowspan="2"' : '';
     var alt = (ri % 2 === 1) ? ' rec-alt' : '';   // selang-seling per record
     parts.push('<tr class="rec' + alt + '">' +
-      '<td' + sp + '><span class="pill pill-role">' + esc(r.role) + '</span></td>' +
+      '<td' + sp + '><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
       '<td' + sp + ' class="cell-name">' + esc(r.nama) + '</td>' +
       '<td>' + periodeCell(r.start1Raw, r.end1Raw) + '</td>' +
       '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
