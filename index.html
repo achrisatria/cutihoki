@@ -1516,27 +1516,65 @@ function renderRoleChips() {
 
 // Bangun opsi dropdown Bulan dari rentang tanggal semua cuti
 function buildMonthOptions() {
-  var set = {};
-  (_cache || []).forEach(function(r) {
+  // Hanya hitung data pada menu yang sedang dibuka (Dashboard / Selesai Cuti)
+  var data = (_cache || []).filter(function(r) {
+    return filterState.segment === 'ARSIP' ? isArchived(r.task1) : !isArchived(r.task1);
+  });
+
+  var count = {}, minK = null, maxK = null;
+  data.forEach(function(r) {
+    var bulanRecord = {};                       // bulan yg disentuh record ini
     [[r.start1Raw, r.end1Raw], [r.start2Raw, r.end2Raw]].forEach(function(t) {
-      if (t[0] && t[1]) {
-        var s = keyToDate(dayKey(t[0])), e = keyToDate(dayKey(t[1]));
-        var y = s.getUTCFullYear(), m = s.getUTCMonth(), ey = e.getUTCFullYear(), em = e.getUTCMonth();
-        while (y < ey || (y === ey && m <= em)) {
-          set[y + '-' + String(m + 1).padStart(2, '0')] = 1;
-          m++; if (m > 11) { m = 0; y++; }
-        }
+      if (!t[0] || !t[1]) return;
+      var sd = keyToDate(dayKey(t[0])), ed = keyToDate(dayKey(t[1]));
+      var y = sd.getUTCFullYear(), m = sd.getUTCMonth();
+      var ey = ed.getUTCFullYear(), em = ed.getUTCMonth();
+      while (y < ey || (y === ey && m <= em)) {
+        bulanRecord[y + '-' + String(m + 1).padStart(2, '0')] = 1;
+        m++; if (m > 11) { m = 0; y++; }
       }
     });
+    Object.keys(bulanRecord).forEach(function(k) {
+      count[k] = (count[k] || 0) + 1;           // 1 record dihitung sekali per bulan
+      if (minK === null || k < minK) minK = k;
+      if (maxK === null || k > maxK) maxK = k;
+    });
   });
-  var keys = Object.keys(set).sort();
-  if (filterState.month !== 'ALL' && keys.indexOf(filterState.month) === -1) filterState.month = 'ALL';
+
+  var sel = document.getElementById('monthFilter');
+  if (!minK) {                                   // belum ada data sama sekali
+    filterState.month = 'ALL';
+    sel.innerHTML = '<option value="ALL">Semua Bulan</option>';
+    return;
+  }
+
+  // Susun daftar BERURUTAN PENUH dari bulan terawal s/d terakhir (tanpa bolong),
+  // dikelompokkan per tahun agar mudah dibaca.
+  var y = +minK.slice(0, 4), m = +minK.slice(5, 7) - 1;
+  var yEnd = +maxK.slice(0, 4), mEnd = +maxK.slice(5, 7) - 1;
   var opts = ['<option value="ALL">Semua Bulan</option>'];
-  keys.forEach(function(k) {
-    var y = +k.slice(0, 4), m = +k.slice(5, 7) - 1;
-    opts.push('<option value="' + k + '"' + (k === filterState.month ? ' selected' : '') + '>' + MONTHS_ID[m] + ' ' + y + '</option>');
-  });
-  document.getElementById('monthFilter').innerHTML = opts.join('');
+  var tahunAktif = null, ada = {};
+  while (y < yEnd || (y === yEnd && m <= mEnd)) {
+    if (tahunAktif !== y) {
+      if (tahunAktif !== null) opts.push('</optgroup>');
+      opts.push('<optgroup label="' + y + '">');
+      tahunAktif = y;
+    }
+    var k = y + '-' + String(m + 1).padStart(2, '0');
+    var n = count[k] || 0;
+    ada[k] = 1;
+    opts.push('<option value="' + k + '"' + (k === filterState.month ? ' selected' : '') + '>' +
+      MONTHS_ID[m] + ' ' + y + (n ? ' · ' + n : '') + '</option>');
+    m++; if (m > 11) { m = 0; y++; }
+  }
+  if (tahunAktif !== null) opts.push('</optgroup>');
+
+  // Pilihan lama yang sudah di luar rentang → kembalikan ke "Semua Bulan"
+  if (filterState.month !== 'ALL' && !ada[filterState.month]) {
+    filterState.month = 'ALL';
+    opts[0] = '<option value="ALL" selected>Semua Bulan</option>';
+  }
+  sel.innerHTML = opts.join('');
 }
 function renderFilters() { renderRoleChips(); buildMonthOptions(); }
 
