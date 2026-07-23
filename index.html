@@ -98,22 +98,6 @@
   @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   /* ── Cards ──────────────────────────────────────────── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    padding: 22px 24px;
-    margin-bottom: 18px;
-  }
-  .card > h3 {
-    font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--brand-ink);
-    display: flex; align-items: center; gap: 8px;
-    margin-bottom: 18px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line);
-  }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 
@@ -144,21 +128,13 @@
   input[readonly] { background: var(--surface-2); color: var(--ink-soft); cursor: default; }
   input::placeholder { color: #A7B1C2; }
 
-  .info-box {
-    margin-top: 16px;
-    background: var(--amber-bg);
-    border: 1px solid #F0DDB4;
-    color: #7A4E08;
-    border-radius: var(--radius-sm);
-    padding: 11px 14px; font-size: 13px; font-weight: 500;
-  }
 
   /* ── Leave blocks ───────────────────────────────────── */
   .leave-block {
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    padding: 16px; margin-bottom: 14px;
-    background: var(--surface-2);
+    padding: 15px; margin-bottom: 12px;
+    background: var(--surface);
   }
   .header-block { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .badge {
@@ -174,10 +150,8 @@
   }
   .remove-btn:hover { background: var(--red-bg); border-color: #EEC4bd; }
 
-  .divider { margin-top: 6px; padding-top: 18px; border-top: 1px dashed var(--line-strong); }
 
   /* ── Buttons ────────────────────────────────────────── */
-  .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px; }
   .btn {
     font: inherit; font-weight: 600; font-size: 14px;
     border-radius: var(--radius-sm); cursor: pointer;
@@ -221,21 +195,36 @@
   .form-panel { display: none; margin-bottom: 20px; }
   .form-panel.open {
     display: block; position: relative; overflow: hidden;
-    background: linear-gradient(180deg, var(--brand-050) 0%, #F1F8F5 42%, var(--surface-2) 100%);
-    border: 1.5px solid var(--brand-100); border-radius: 16px;
-    padding: 20px 20px 4px;
-    box-shadow: 0 14px 36px rgba(14,122,99,.14), inset 0 1px 0 rgba(255,255,255,.7);
-    animation: slidedown .3s ease;
+    background: var(--surface);
+    border: 1px solid var(--line-strong); border-radius: 16px;
+    box-shadow: 0 20px 48px -16px rgba(12,21,36,.20), 0 2px 6px rgba(12,21,36,.05);
+    animation: slidedown .3s cubic-bezier(.2,.8,.3,1);
   }
-  .form-panel.open::before {
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-    background: linear-gradient(90deg, var(--brand) 0%, #17967A 55%, #2AA98C 100%);
+  .fp-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    padding: 20px 24px 18px; border-bottom: 1px solid var(--line);
   }
-  .form-panel.open .card { box-shadow: 0 4px 16px rgba(12,21,36,.07); border-color: var(--brand-100); }
-  .form-panel-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-  .fp-badge { display: inline-flex; align-items: center; gap: 7px; background: var(--brand); color: #fff; font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px; box-shadow: 0 3px 10px rgba(14,122,99,.32); }
-  .fp-hint { font-size: 12.5px; color: var(--brand-ink); font-weight: 500; }
-  @keyframes slidedown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+  .fp-title h3 { font-size: 16px; font-weight: 700; letter-spacing: -.015em; color: var(--ink); }
+  .fp-title p { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .fp-close {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 15px; line-height: 1; padding: 7px; border-radius: 8px; flex: none;
+    transition: background .15s, color .15s;
+  }
+  .fp-close:hover { background: var(--surface-2); color: var(--ink); }
+  .fp-body { padding: 4px 24px 8px; }
+  .fsec { padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .fsec:last-child { border-bottom: none; }
+  .fsec-label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+  }
+  .fsec-note { font-size: 12px; color: var(--muted); margin-top: 11px; }
+  .fp-foot {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding: 15px 24px; border-top: 1px solid var(--line); background: var(--surface-2);
+  }
+  @keyframes slidedown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
   .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(166px, 1fr)); gap: 12px; margin-bottom: 20px; }
   .stat-item {
@@ -281,43 +270,49 @@
     border-radius: var(--radius); box-shadow: var(--shadow-sm);
     overflow-x: auto;
   }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; min-width: 1040px; }
   thead th {
     background: var(--surface-2);
-    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-    color: var(--muted); padding: 13px 14px;
+    text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); padding: 11px 10px;
     border-bottom: 1px solid var(--line-strong); white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
   }
-  thead th .sub-header { font-size: 9px; font-weight: 600; color: #A7B1C2; letter-spacing: .02em; }
-  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .c-role { width: 62px; } .c-nama { width: 19%; } .c-periode { width: 172px; }
+  .c-durasi { width: 80px; } .c-perihal { width: 110px; } .c-bentrok { width: 94px; }
+  .c-total { width: 100px; } .c-pass { width: 92px; } .c-status { width: 128px; } .c-aksi { width: 80px; }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; overflow: hidden; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr td { background: var(--surface); transition: background .12s; }
   tbody tr.rec-alt td { background: var(--stripe); }            /* selang-seling per record */
   tbody tr:hover td, tbody tr.rec-alt:hover td { background: #E7EFF8; }
   tbody tr.row-cuti2 td { border-top: none; }
-  .cell-name { font-weight: 600; color: var(--ink); white-space: nowrap; }
-  .cell-role { font-weight: 700; }
-  .cell-date { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+  .cell-name { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .periode { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-soft); font-weight: 500; }
+  .periode i { font-style: normal; color: #B4BECD; font-size: 11px; }
   .empty { text-align: center; color: var(--muted); padding: 46px 0 !important; font-size: 14px; }
 
   .pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis;
   }
+  .pill-pass-yes { background: var(--brand-050); color: var(--brand-ink); }
+  .pill-pass-no  { background: var(--slate-bg); color: var(--muted); }
   .total-box {
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    margin-top: 16px; padding: 14px 18px;
-    background: linear-gradient(135deg, var(--brand-050) 0%, #EAF5F1 100%);
-    border: 1.5px solid var(--brand-100); border-radius: var(--radius-sm);
+    margin-top: 16px; padding: 13px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    transition: background .2s, border-color .2s;
   }
   .total-left { display: flex; align-items: center; gap: 12px; }
-  .total-ic { font-size: 21px; }
-  .total-label { font-size: 12px; font-weight: 700; color: var(--brand-ink); text-transform: uppercase; letter-spacing: .04em; }
+  .total-ic { font-size: 19px; opacity: .85; }
+  .total-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   .total-detail { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
-  .total-value { font-size: 27px; font-weight: 800; color: var(--brand-ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .total-value span { font-size: 13px; font-weight: 600; }
-  .total-box.has-extra { background: linear-gradient(135deg, var(--amber-bg) 0%, #FDF6E7 100%); border-color: #F0DDB4; }
+  .total-value { font-size: 25px; font-weight: 800; color: var(--ink); letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+  .total-value span { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .total-box.has-extra { background: var(--amber-bg); border-color: #F0DDB4; }
   .total-box.has-extra .total-label, .total-box.has-extra .total-value { color: var(--amber); }
 
   .pill-total { background: var(--brand); color: #fff; font-variant-numeric: tabular-nums; }
@@ -325,7 +320,6 @@
   .pill-role   { background: var(--slate-bg); color: var(--slate); }
   .pill-durasi { background: var(--brand-050); color: var(--brand-ink); font-variant-numeric: tabular-nums; }
   .pill-perihal{ background: var(--blue-bg); color: var(--blue); }
-  .pill-passport{ background: var(--slate-bg); color: var(--slate); }
   .pill-clash-ok    { background: var(--green-bg); color: var(--green); }
   .pill-clash-warn  { background: var(--amber-bg); color: var(--amber); cursor: help; }
   .pill-clash-alert { background: var(--red-bg); color: var(--red); cursor: help; }
@@ -335,7 +329,7 @@
   .task-select {
     -webkit-appearance: none; appearance: none;
     border-radius: 999px; border: 1.5px solid transparent;
-    font-size: 12px; font-weight: 700; padding: 5px 28px 5px 12px; cursor: pointer; width: auto;
+    font-size: 11.5px; font-weight: 700; padding: 4px 25px 4px 10px; cursor: pointer; width: 100%; max-width: 118px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 9px center;
   }
@@ -346,10 +340,10 @@
   .task-DONE         { background-color: var(--brand-050); color: var(--brand-ink); border-color: var(--brand-100); }
   .task-saving { opacity: .5; pointer-events: none; }
 
-  .row-actions { display: inline-flex; gap: 6px; }
+  .row-actions { display: inline-flex; gap: 5px; }
   .icon-btn {
     border: 1.5px solid var(--line-strong); background: var(--surface);
-    width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+    width: 28px; height: 28px; border-radius: 7px; cursor: pointer;
     display: grid; place-items: center; color: var(--ink-soft);
     transition: all .15s;
   }
@@ -495,31 +489,38 @@
 
     <!-- Panel Ajukan Cuti (toggle) -->
     <div class="form-panel" id="formPanel">
-      <div class="form-panel-head">
-        <span class="fp-badge">📝 Mode Pengajuan</span>
-        <span class="fp-hint">Lengkapi data cuti di bawah ini, lalu tekan “Kirim pengajuan”.</span>
-      </div>
-      <div class="card">
-        <h3>👤 Data Pemohon</h3>
-        <div class="grid">
-          <div class="field">
-            <label>Role</label>
-            <select id="role" data-cat="ROLE"></select>
-          </div>
-          <div class="field">
-            <label>Nama Lengkap &amp; ID</label>
-            <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
-          </div>
+      <div class="fp-head">
+        <div class="fp-title">
+          <h3>Pengajuan Cuti Baru</h3>
+          <p>Lengkapi data di bawah, sistem memeriksa durasi &amp; bentrok otomatis.</p>
         </div>
-        <div class="info-box">⏱️ Batas durasi per pengajuan — CS &amp; KAPTEN maksimal 14 hari, KASIR maksimal 12 hari.</div>
+        <button class="fp-close" type="button" onclick="toggleForm(false)" aria-label="Tutup form">✕</button>
       </div>
 
-      <div class="card">
-        <h3>📅 Detail Cuti</h3>
-        <div id="leaves-container"></div>
-        <button class="add-leave-btn" id="addLeave" type="button">＋ Tambah cuti kedua</button>
+      <div class="fp-body">
+        <section class="fsec">
+          <span class="fsec-label">Data Pemohon</span>
+          <div class="grid">
+            <div class="field">
+              <label>Role</label>
+              <select id="role" data-cat="ROLE"></select>
+            </div>
+            <div class="field">
+              <label>Nama Lengkap &amp; ID</label>
+              <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
+            </div>
+          </div>
+          <p class="fsec-note">Batas durasi per pengajuan — CS &amp; KAPTEN maks. 14 hari, KASIR maks. 12 hari.</p>
+        </section>
 
-        <div class="divider">
+        <section class="fsec">
+          <span class="fsec-label">Detail Cuti</span>
+          <div id="leaves-container"></div>
+          <button class="add-leave-btn" id="addLeave" type="button">＋ Tambah cuti kedua</button>
+        </section>
+
+        <section class="fsec">
+          <span class="fsec-label">Keterangan</span>
           <div class="grid" style="max-width: 720px;">
             <div class="field">
               <label>Keterangan Passport</label>
@@ -540,14 +541,14 @@
             </div>
             <div class="total-value" id="totalValue">0 <span>Hari</span></div>
           </div>
-        </div>
+          <div class="msg" id="formMsg"></div>
+        </section>
       </div>
 
-      <div class="actions">
+      <div class="fp-foot">
         <button class="btn btn-secondary" type="button" onclick="toggleForm(false)">Batal</button>
-        <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim pengajuan</button>
+        <button class="btn btn-primary" id="submitBtn" type="button">Kirim pengajuan</button>
       </div>
-      <div class="msg" id="formMsg"></div>
     </div>
 
     <div class="stat-box" id="statBox"></div>
@@ -576,18 +577,16 @@
       <table>
         <thead>
           <tr>
-            <th>Role</th>
-            <th>Nama</th>
-            <th>Mulai</th>
-            <th>Selesai</th>
-            <th>Durasi<br><span class="sub-header">otomatis</span></th>
-            <th>Perihal</th>
-            <th>Bentrok<br><span class="sub-header">lokal / indo</span></th>
-            <th>Total Cuti<br><span class="sub-header">+ tambahan</span></th>
-            <th>Passport</th>
-            <th>Tambahan</th>
-            <th>Status</th>
-            <th>Aksi</th>
+            <th class="c-role">Role</th>
+            <th class="c-nama">Nama</th>
+            <th class="c-periode">Periode Cuti</th>
+            <th class="c-durasi">Durasi</th>
+            <th class="c-perihal">Perihal</th>
+            <th class="c-bentrok">Bentrok</th>
+            <th class="c-total">Total</th>
+            <th class="c-pass">Passport</th>
+            <th class="c-status">Status</th>
+            <th class="c-aksi">Aksi</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -686,6 +685,7 @@ var MONTHS = ['January','February','March','April','May','June',
               'July','August','September','October','November','December'];
 var MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni',
                  'Juli','Agustus','September','Oktober','November','Desember'];
+var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
 // Status yang dianggap "masih aktif" → memblokir pengajuan baru dari staff yg sama
 var ACTIVE_STATUSES = ['WAITING', 'SEDANG CUTI'];
@@ -744,8 +744,15 @@ function formatDate(iso) {
   if (p.length !== 3) return s;
   return parseInt(p[2]) + ' ' + MONTHS[parseInt(p[1]) - 1] + ' ' + parseInt(p[0]);
 }
-function dayKey(iso) {
-  if (!iso) return 0;
+function formatDateShort(iso) {
+  if (!iso) return '';
+  var s = String(iso).trim();
+  if (s.length > 10) s = s.slice(0, 10);
+  var p = s.split('-');
+  if (p.length !== 3) return s;
+  return parseInt(p[2]) + ' ' + MONTHS_SHORT[parseInt(p[1]) - 1] + ' ' + parseInt(p[0]);
+}
+function dayKey(iso) {  if (!iso) return 0;
   var p = String(iso).slice(0,10).split('-');
   if (p.length !== 3) return 0;
   return Math.round(Date.UTC(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])) / 86400000);
@@ -1377,10 +1384,23 @@ function actionCell(rowId, label) {
   '</span>';
 }
 
+function periodeCell(sRaw, eRaw) {
+  if (!sRaw || !eRaw) return '<span class="pill-dash">–</span>';
+  return '<span class="periode" title="' + esc(formatDate(sRaw) + ' – ' + formatDate(eRaw)) + '">' +
+    esc(formatDateShort(sRaw)) + '<i>→</i>' + esc(formatDateShort(eRaw)) + '</span>';
+}
+function passportCell(v) {
+  var s = String(v || '');
+  if (!s) return '<span class="pill-dash">–</span>';
+  var ambil = !/tidak/i.test(s);
+  return '<span class="pill ' + (ambil ? 'pill-pass-yes' : 'pill-pass-no') + '" title="' + esc(s) + '">' +
+    (ambil ? '🛂 Ambil' : '— Tidak') + '</span>';
+}
+
 function renderTable(rows, intervals) {
   var tbody = document.getElementById('tableBody');
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty">Tidak ada pengajuan yang cocok dengan filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Tidak ada pengajuan yang cocok dengan filter.</td></tr>';
     return;
   }
   var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
@@ -1389,25 +1409,21 @@ function renderTable(rows, intervals) {
     var has2 = !!(r.start2Raw || r.perihal2);
     var sp = has2 ? ' rowspan="2"' : '';
     var alt = (ri % 2 === 1) ? ' rec-alt' : '';   // selang-seling per record
-    var tamb = (r.tambahan && r.tambahan !== 'Tidak Ada') ? r.tambahan : '';
     parts.push('<tr class="rec' + alt + '">' +
       '<td' + sp + '><span class="pill pill-role">' + esc(r.role) + '</span></td>' +
       '<td' + sp + ' class="cell-name">' + esc(r.nama) + '</td>' +
-      '<td class="cell-date">' + esc(r.start1) + '</td>' +
-      '<td class="cell-date">' + esc(r.end1) + '</td>' +
+      '<td>' + periodeCell(r.start1Raw, r.end1Raw) + '</td>' +
       '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
       '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
       '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals) + '</td>' +
       '<td' + sp + '>' + totalCell(r) + '</td>' +
-      '<td' + sp + '><span class="pill pill-passport">' + esc(r.keterangan) + '</span></td>' +
-      '<td' + sp + '>' + esc(tamb) + '</td>' +
+      '<td' + sp + '>' + passportCell(r.keterangan) + '</td>' +
       '<td' + sp + '>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
       '<td' + sp + '>' + actionCell(r.rowId, r.nama) + '</td>' +
     '</tr>');
     if (has2) {
       parts.push('<tr class="row-cuti2' + alt + '">' +
-        '<td class="cell-date">' + esc(r.start2) + '</td>' +
-        '<td class="cell-date">' + esc(r.end2) + '</td>' +
+        '<td>' + periodeCell(r.start2Raw, r.end2Raw) + '</td>' +
         '<td><span class="pill pill-durasi">' + esc(r.durasi2) + '</span></td>' +
         '<td><span class="pill pill-perihal">' + esc(r.perihal2) + '</span></td>' +
         '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals) + '</td>' +
