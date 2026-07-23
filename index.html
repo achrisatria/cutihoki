@@ -1568,6 +1568,8 @@ function buildCopyFormat(r) {
   leaves.forEach(function(l) {
     lines.push(l.p + ' : ' + formatDate(l.s) + ' - ' + formatDate(l.e) + ' ( ' + l.d + ' )');
   });
+  // Baris keterangan penambahan hari (hanya bila memang ada tambahan)
+  if (r.tambahan && !/tidak ada/i.test(r.tambahan)) lines.push(r.tambahan);
   lines.push('');
   lines.push('ACC LDR : ' + currentLeader());
   return lines.join('\n');
