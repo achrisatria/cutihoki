@@ -305,6 +305,23 @@
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
   }
+  .total-box {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    margin-top: 16px; padding: 14px 18px;
+    background: linear-gradient(135deg, var(--brand-050) 0%, #EAF5F1 100%);
+    border: 1.5px solid var(--brand-100); border-radius: var(--radius-sm);
+  }
+  .total-left { display: flex; align-items: center; gap: 12px; }
+  .total-ic { font-size: 21px; }
+  .total-label { font-size: 12px; font-weight: 700; color: var(--brand-ink); text-transform: uppercase; letter-spacing: .04em; }
+  .total-detail { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .total-value { font-size: 27px; font-weight: 800; color: var(--brand-ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .total-value span { font-size: 13px; font-weight: 600; }
+  .total-box.has-extra { background: linear-gradient(135deg, var(--amber-bg) 0%, #FDF6E7 100%); border-color: #F0DDB4; }
+  .total-box.has-extra .total-label, .total-box.has-extra .total-value { color: var(--amber); }
+
+  .pill-total { background: var(--brand); color: #fff; font-variant-numeric: tabular-nums; }
+  .pill-total.plus { background: var(--amber); }
   .pill-role   { background: var(--slate-bg); color: var(--slate); }
   .pill-durasi { background: var(--brand-050); color: var(--brand-ink); font-variant-numeric: tabular-nums; }
   .pill-perihal{ background: var(--blue-bg); color: var(--blue); }
@@ -513,6 +530,16 @@
               <select id="tambahan"></select>
             </div>
           </div>
+          <div class="total-box" id="totalBox">
+            <div class="total-left">
+              <span class="total-ic">🧮</span>
+              <div>
+                <div class="total-label">Total cuti yang diambil</div>
+                <div class="total-detail" id="totalDetail">Lengkapi tanggal cuti terlebih dahulu</div>
+              </div>
+            </div>
+            <div class="total-value" id="totalValue">0 <span>Hari</span></div>
+          </div>
         </div>
       </div>
 
@@ -556,6 +583,7 @@
             <th>Durasi<br><span class="sub-header">otomatis</span></th>
             <th>Perihal</th>
             <th>Bentrok<br><span class="sub-header">lokal / indo</span></th>
+            <th>Total Cuti<br><span class="sub-header">+ tambahan</span></th>
             <th>Passport</th>
             <th>Tambahan</th>
             <th>Status</th>
@@ -757,6 +785,26 @@ function getCuti() {
   });
 }
 
+// Ambil jumlah hari dari teks tambahan, mis. "Penambahan 2 Hari ..." → 2
+function parseTambahanDays(str) {
+  var s = String(str || '');
+  if (!s || /tidak ada/i.test(s)) return 0;
+  var m = s.match(/penambahan\s+(\d+)\s*hari/i) || s.match(/(\d+)\s*hari/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+// Ambil angka dari teks durasi, mis. "7 Hari" → 7
+function parseDurasi(str) {
+  var m = String(str || '').match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+// Total cuti = durasi cuti 1 + cuti 2 + hari tambahan
+function computeTotal(durasiList, tambahan) {
+  var base = 0;
+  (durasiList || []).forEach(function(d) { base += (typeof d === 'number' ? d : parseDurasi(d)); });
+  var extra = parseTambahanDays(tambahan);
+  return { base: base, extra: extra, total: base + extra };
+}
+
 // Validasi daftar cuti → kembalikan durasi[] atau lempar Error
 function validateLeaves(role, leaves) {
   if (!MAX_DURASI[role]) throw new Error('Role tidak valid.');
@@ -933,6 +981,7 @@ function createLeaveBlock(container, opts) {
       var d = dayKey(en.value) - dayKey(s.value) + 1;
       du.value = d > 0 ? d + ' Hari' : '⚠ Selesai < Mulai';
     } else du.value = '';
+    if (opts.onChange) opts.onChange();
   }
   s.addEventListener('change', calc); en.addEventListener('change', calc); calc();
 
@@ -974,10 +1023,41 @@ function toggleAddBtn() {
   document.getElementById('addLeave').style.display = formC.querySelectorAll('.leave-block').length >= 2 ? 'none' : 'block';
 }
 function addFormLeave(removable) {
-  createLeaveBlock(formC, { removable: removable, onRemove: function() { renumber(formC); toggleAddBtn(); } });
-  renumber(formC); toggleAddBtn();
+  createLeaveBlock(formC, {
+    removable: removable,
+    onChange: updateTotalBox,
+    onRemove: function() { renumber(formC); toggleAddBtn(); updateTotalBox(); }
+  });
+  renumber(formC); toggleAddBtn(); updateTotalBox();
 }
 document.getElementById('addLeave').addEventListener('click', function() { addFormLeave(true); });
+
+// Hitung & tampilkan total cuti secara langsung di form
+function updateTotalBox() {
+  var box = document.getElementById('totalBox');
+  var val = document.getElementById('totalValue');
+  var det = document.getElementById('totalDetail');
+  if (!box) return;
+  var tambahan = document.getElementById('tambahan').value || '';
+  var durasi = [];
+  formC.querySelectorAll('.leave-block').forEach(function(b) {
+    var s = b.querySelector('.start-date').value, e = b.querySelector('.end-date').value;
+    if (s && e) { var d = dayKey(e) - dayKey(s) + 1; if (d > 0) durasi.push(d); }
+  });
+  var t = computeTotal(durasi, tambahan);
+  val.innerHTML = t.total + ' <span>Hari</span>';
+  box.classList.toggle('has-extra', t.extra > 0);
+  if (t.base === 0) {
+    det.textContent = t.extra > 0
+      ? 'Tambahan ' + t.extra + ' hari diterima — lengkapi tanggal cuti'
+      : 'Lengkapi tanggal cuti terlebih dahulu';
+  } else if (t.extra > 0) {
+    det.textContent = 'Cuti ' + t.base + ' hari + tambahan ' + t.extra + ' hari (disetujui)';
+  } else {
+    det.textContent = durasi.length > 1 ? 'Gabungan cuti 1 & cuti 2' : 'Tanpa tambahan hari';
+  }
+}
+document.getElementById('tambahan').addEventListener('change', updateTotalBox);
 
 document.getElementById('submitBtn').addEventListener('click', function() {
   var role = document.getElementById('role').value;
@@ -1271,6 +1351,17 @@ function clashCell(perihal, startRaw, endRaw, nama, intervals) {
   var title = 'Cuti bersamaan dengan: ' + info.names.join(', ');
   return '<span class="pill ' + cls + '" title="' + esc(title) + '">⚠ ' + info.count + ' staff</span>';
 }
+function totalCell(r) {
+  var t = computeTotal([r.durasi1, r.durasi2], r.tambahan);
+  if (t.total <= 0) return '<span class="pill pill-dash">–</span>';
+  var cls = t.extra > 0 ? 'pill-total plus' : 'pill-total';
+  var rincian = t.extra > 0
+    ? 'Cuti ' + t.base + ' hari + tambahan ' + t.extra + ' hari = ' + t.total + ' hari'
+    : 'Total ' + t.total + ' hari';
+  var label = t.total + ' Hari' + (t.extra > 0 ? ' (+' + t.extra + ')' : '');
+  return '<span class="pill ' + cls + '" title="' + esc(rincian) + '">' + esc(label) + '</span>';
+}
+
 function taskSelect(currentVal, rowId, taskList) {
   var opts = taskList.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
   return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
@@ -1289,7 +1380,7 @@ function actionCell(rowId, label) {
 function renderTable(rows, intervals) {
   var tbody = document.getElementById('tableBody');
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty">Tidak ada pengajuan yang cocok dengan filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty">Tidak ada pengajuan yang cocok dengan filter.</td></tr>';
     return;
   }
   var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
@@ -1307,6 +1398,7 @@ function renderTable(rows, intervals) {
       '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
       '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
       '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals) + '</td>' +
+      '<td' + sp + '>' + totalCell(r) + '</td>' +
       '<td' + sp + '><span class="pill pill-passport">' + esc(r.keterangan) + '</span></td>' +
       '<td' + sp + '>' + esc(tamb) + '</td>' +
       '<td' + sp + '>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
