@@ -472,6 +472,11 @@
 
   .confirm-box { max-width: 420px; }
   .confirm-box .modal-body { text-align: left; }
+  .warn-banner {
+    background: var(--amber-bg); border: 1px solid #F0DDB4; color: #7A4E08;
+    border-radius: var(--radius-sm); padding: 11px 14px; margin-bottom: 13px;
+    font-size: 12.5px; font-weight: 700; letter-spacing: .01em; line-height: 1.5;
+  }
   .confirm-box p { color: var(--ink-soft); font-size: 14px; }
 
   /* ── Toast ──────────────────────────────────────────── */
@@ -758,7 +763,10 @@
 <div class="overlay" id="confirmOverlay">
   <div class="modal confirm-box" role="alertdialog" aria-modal="true">
     <div class="modal-head"><h3 id="confirmTitle">Konfirmasi</h3></div>
-    <div class="modal-body"><p id="confirmText"></p></div>
+    <div class="modal-body">
+      <div class="warn-banner" id="confirmWarn" style="display:none"></div>
+      <p id="confirmText"></p>
+    </div>
     <div class="modal-foot">
       <button class="btn btn-secondary" type="button" id="confirmCancel">Batal</button>
       <button class="btn btn-danger" type="button" id="confirmOk">Hapus</button>
@@ -1073,16 +1081,31 @@ function toast(msg, type) {
   setTimeout(function() { el.style.transition = 'opacity .3s'; el.style.opacity = '0';
     setTimeout(function() { el.remove(); }, 300); }, 3200);
 }
-function confirmDialog(text, onOk) {
+var _confirmCancelFn = null;   // dipakai bila ditutup lewat Escape / klik luar
+function confirmDialog(opts, onOk, onCancel) {
+  if (typeof opts === 'string') opts = { text: opts };   // pemakaian lama tetap jalan
   var ov = document.getElementById('confirmOverlay');
-  document.getElementById('confirmText').textContent = text;
-  ov.classList.add('open');
+  var titleEl = document.getElementById('confirmTitle');
+  var textEl = document.getElementById('confirmText');
+  var warnEl = document.getElementById('confirmWarn');
   var okBtn = document.getElementById('confirmOk');
   var cancelBtn = document.getElementById('confirmCancel');
-  function cleanup() { ov.classList.remove('open'); okBtn.onclick = null; cancelBtn.onclick = null; }
-  okBtn.onclick = function() { cleanup(); onOk(); };
-  cancelBtn.onclick = cleanup;
+
+  titleEl.textContent = opts.title || 'Konfirmasi';
+  textEl.textContent = opts.text || '';
+  if (opts.warn) { warnEl.textContent = opts.warn; warnEl.style.display = 'block'; }
+  else warnEl.style.display = 'none';
+  okBtn.textContent = opts.okLabel || 'Hapus';
+  okBtn.className = 'btn ' + (opts.okClass || 'btn-danger');
+  cancelBtn.textContent = opts.cancelLabel || 'Batal';
+  ov.classList.add('open');
+
+  function cleanup() { ov.classList.remove('open'); okBtn.onclick = null; cancelBtn.onclick = null; _confirmCancelFn = null; }
+  okBtn.onclick = function() { cleanup(); if (onOk) onOk(); };
+  cancelBtn.onclick = function() { cleanup(); if (onCancel) onCancel(); };
+  _confirmCancelFn = function() { cleanup(); if (onCancel) onCancel(); };
 }
+function closeConfirm() { if (_confirmCancelFn) _confirmCancelFn(); else document.getElementById('confirmOverlay').classList.remove('open'); }
 
 // ── Tab ───────────────────────────────────────────────────────
 function switchTab(view) {
@@ -1739,10 +1762,8 @@ function renderTable(rows, intervals) {
 function showAllRows() { _showAllRows = true; applyFilters(); }
 
 // status change (task-select)
-document.getElementById('tableBody').addEventListener('change', function(e) {
-  var sel = e.target;
-  if (!sel.classList.contains('task-select')) return;
-  var rowId = sel.dataset.rowid, value = sel.value, oldVal = sel.getAttribute('data-status');
+// Simpan perubahan status ke database
+function simpanStatus(sel, rowId, value, oldVal) {
   sel.classList.add('task-saving');
   sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value }).then(function() {
     sel.classList.remove('task-saving');
@@ -1753,6 +1774,28 @@ document.getElementById('tableBody').addEventListener('change', function(e) {
   }).catch(function(err) {
     sel.classList.remove('task-saving'); sel.value = oldVal; toast('Gagal update status: ' + err.message, 'err');
   });
+}
+
+document.getElementById('tableBody').addEventListener('change', function(e) {
+  var sel = e.target;
+  if (!sel.classList.contains('task-select')) return;
+  var rowId = sel.dataset.rowid, value = sel.value, oldVal = sel.getAttribute('data-status');
+  if (value === oldVal) return;                       // tidak berubah → abaikan
+
+  var nama = '';
+  if (_cache) for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { nama = _cache[i].nama; break; }
+
+  confirmDialog({
+    title: 'Ubah Status Cuti',
+    warn: 'HANYA LEADER DAN CS LINE YANG MENGUBAH STATUS CUTI',
+    text: 'Ubah status ' + (nama ? nama + ' ' : '') + 'dari "' + oldVal + '" menjadi "' + value + '"?',
+    okLabel: 'Ya, ubah status',
+    okClass: 'btn-primary',
+    cancelLabel: 'Batal'
+  },
+  function() { simpanStatus(sel, rowId, value, oldVal); },   // disetujui
+  function() { sel.value = oldVal; }                          // dibatalkan → kembalikan
+  );
 });
 function currentFiltered() {
   if (!_cache) return [];
@@ -1762,8 +1805,9 @@ function currentFiltered() {
 // close modal on overlay/Escape
 document.getElementById('editOverlay').addEventListener('click', function(e) { if (e.target === this) closeEdit(); });
 document.getElementById('copyOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopy(); });
+document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeEdit(); closeCopy(); document.getElementById('confirmOverlay').classList.remove('open'); }
+  if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); }
 });
 
 // ── KALENDER ──────────────────────────────────────────────────
