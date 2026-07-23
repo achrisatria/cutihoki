@@ -96,6 +96,12 @@
   }
   .tab:hover { color: var(--brand-ink); }
   .tab.active { background: var(--brand); color: #fff; box-shadow: 0 2px 8px rgba(14,122,99,.30); }
+  .tab-count {
+    font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 1;
+    background: var(--slate-bg); color: var(--slate);
+    padding: 3px 6px; border-radius: 999px; min-width: 18px; text-align: center;
+  }
+  .tab.active .tab-count { background: rgba(255,255,255,.24); color: #fff; }
 
   .view { display: none; }
   .view.active { display: block; animation: fade .28s ease; }
@@ -565,6 +571,7 @@
 
   <div class="tabs">
     <button class="tab active" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" id="tabArchive" onclick="switchTab('archive')">✅ Selesai Cuti <em class="tab-count" id="archiveCount">0</em></button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
   </div>
 
@@ -572,8 +579,8 @@
   <div class="view active" id="view-dashboard">
     <div class="dash-head">
       <div>
-        <h2>Data Pengajuan Cuti</h2>
-        <p>Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.</p>
+        <h2 id="dashTitle">Data Pengajuan Cuti</h2>
+        <p id="dashDesc">Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.</p>
       </div>
       <div class="dash-actions">
         <div class="ldr-picker">
@@ -811,6 +818,9 @@ var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt',
 
 // Status yang dianggap "masih aktif" → memblokir pengajuan baru dari staff yg sama
 var ACTIVE_STATUSES = ['WAITING', 'SEDANG CUTI'];
+// Status yang otomatis pindah ke menu "Selesai Cuti"
+var ARCHIVED_STATUSES = ['SELESAI CUTI'];
+function isArchived(task) { return ARCHIVED_STATUSES.indexOf(String(task || '').toUpperCase()) !== -1; }
 // Perihal yg dihitung bentroknya
 var CLASH_PERIHAL = ['CUTI LOKAL', 'CUTI INDO'];
 
@@ -847,12 +857,15 @@ function sbPatch(table, filter, data) {
     return null;
   });
 }
+// DELETE memakai return=representation agar kita tahu baris mana yang BENAR-BENAR
+// terhapus. Dengan return=minimal, Supabase tetap membalas sukses walau 0 baris
+// terhapus (mis. diblokir izin/RLS) — itu menyesatkan.
 function sbDelete(table, filter) {
   return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
-    method: 'DELETE', headers: sbHeaders({ 'Prefer': 'return=minimal' })
+    method: 'DELETE', headers: sbHeaders({ 'Prefer': 'return=representation' })
   }).then(function(res) {
     if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
-    return null;
+    return res.text().then(function(t) { return t ? JSON.parse(t) : []; });
   });
 }
 
@@ -1069,7 +1082,7 @@ function clashInfo(perihal, startRaw, endRaw, nama, index, role) {
 var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [] };
 var ADD = '__ADD__';
 var _cache = null, _loaded = false, _prefetch = null;
-var filterState = { role: 'ALL', search: '', month: 'ALL' };
+var filterState = { role: 'ALL', search: '', month: 'ALL', segment: 'AKTIF' };
 var ROW_LIMIT = 120, _showAllRows = false;   // batasi baris agar tabel tetap ringan
 
 // ── Toast & Confirm ───────────────────────────────────────────
@@ -1112,11 +1125,39 @@ function switchTab(view) {
   document.querySelectorAll('.tab').forEach(function(t) {
     t.classList.toggle('active', t.id === 'tab' + view.charAt(0).toUpperCase() + view.slice(1));
   });
+  // Arsip memakai tampilan dashboard yang sama, hanya isinya yang berbeda
+  var target = (view === 'archive') ? 'dashboard' : view;
   document.querySelectorAll('.view').forEach(function(v) {
-    v.classList.toggle('active', v.id === 'view-' + view);
+    v.classList.toggle('active', v.id === 'view-' + target);
   });
-  if (view === 'dashboard') loadDashboard(false);
+  if (view === 'dashboard' || view === 'archive') {
+    filterState.segment = (view === 'archive') ? 'ARSIP' : 'AKTIF';
+    applySegmentUI();
+    loadDashboard(false);
+  }
   if (view === 'calendar') renderCalendar();
+}
+
+// Sesuaikan judul, keterangan, dan tombol sesuai segmen yang dibuka
+function applySegmentUI() {
+  var arsip = filterState.segment === 'ARSIP';
+  var h = document.getElementById('dashTitle'), p = document.getElementById('dashDesc');
+  if (h) h.textContent = arsip ? 'Data Selesai Cuti' : 'Data Pengajuan Cuti';
+  if (p) p.innerHTML = arsip
+    ? 'Pengajuan yang statusnya <strong>SELESAI CUTI</strong> otomatis pindah ke sini.'
+    : 'Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.';
+  var btn = document.getElementById('toggleFormBtn');
+  if (btn) btn.style.display = arsip ? 'none' : '';
+  if (arsip) toggleForm(false);          // form pengajuan tidak relevan di arsip
+}
+
+// Perbarui angka pada tab Arsip
+function updateTabCounts() {
+  var el = document.getElementById('archiveCount');
+  if (!el) return;
+  var n = (_cache || []).filter(function(r) { return isArchived(r.task1); }).length;
+  el.textContent = n;
+  el.style.display = n ? '' : 'none';
 }
 
 // ── Dropdown helpers ──────────────────────────────────────────
@@ -1395,9 +1436,29 @@ document.getElementById('e_save').addEventListener('click', function() {
 
 // ── DELETE ────────────────────────────────────────────────────
 function deleteRow(rowId, label) {
-  confirmDialog('Hapus pengajuan "' + label + '"? Data akan dihapus permanen dan tidak bisa dikembalikan.', function() {
-    sbDelete('cuti', 'id=eq.' + encodeURIComponent(rowId)).then(function() {
-      toast('Pengajuan dihapus', 'ok'); invalidate(); loadDashboard(true);
+  confirmDialog({
+    title: 'Hapus Pengajuan',
+    warn: 'DATA AKAN DIHAPUS PERMANEN DARI DATABASE DAN TIDAK BISA DIKEMBALIKAN',
+    text: 'Hapus pengajuan cuti milik "' + label + '"?',
+    okLabel: 'Ya, hapus permanen',
+    okClass: 'btn-danger'
+  }, function() {
+    sbDelete('cuti', 'id=eq.' + encodeURIComponent(rowId)).then(function(hapus) {
+      // Pastikan benar-benar ada baris yang terhapus di server
+      if (!hapus || hapus.length === 0) {
+        toast('Data tidak terhapus — periksa izin akses (RLS) di Supabase', 'err');
+        return;
+      }
+      // Buang dari cache lokal supaya tabel langsung ikut berubah
+      if (_cache) {
+        for (var i = 0; i < _cache.length; i++) {
+          if (_cache[i].rowId === rowId) { _cache.splice(i, 1); break; }
+        }
+        _clashIdx = null;      // bentrok dihitung ulang tanpa data itu
+        renderFilters(); applyFilters(); updateTabCounts();
+      }
+      toast('Pengajuan dihapus permanen', 'ok');
+      loadDashboard(true);     // sinkronkan lagi dengan server
     }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
   });
 }
@@ -1411,7 +1472,7 @@ function loadDashboard(force) {
   var statBox = document.getElementById('statBox');
   var refreshBtn = document.getElementById('refreshBtn');
 
-  if (!force && _loaded && _cache) { renderFilters(); applyFilters(); content.style.display = 'block'; return; }
+  if (!force && _loaded && _cache) { renderFilters(); applyFilters(); updateTabCounts(); content.style.display = 'block'; return; }
 
   loading.style.display = 'block'; loading.textContent = 'Memuat data…';
   content.style.display = 'none'; statBox.innerHTML = renderSkeletonStats();
@@ -1435,7 +1496,7 @@ function loadDashboard(force) {
   }
   function done(rows) {
     loading.style.display = 'none'; statBox.innerHTML = '';
-    renderFilters(); applyFilters(); content.style.display = 'block';
+    renderFilters(); applyFilters(); updateTabCounts(); content.style.display = 'block';
   }
 }
 
@@ -1496,6 +1557,9 @@ function recordInMonth(r, ym) {
 }
 // Satu sumber kebenaran untuk semua filter
 function matchFilters(r) {
+  // Pisahkan Aktif vs Arsip berdasarkan status
+  if (filterState.segment === 'ARSIP') { if (!isArchived(r.task1)) return false; }
+  else if (isArchived(r.task1)) return false;
   if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
   if (filterState.search) {
     var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase();
@@ -1541,12 +1605,20 @@ function renderStats(rows) {
     else if (t === 'SELESAI CUTI') selesai++;
     else if (t === 'DONE CATAT') done++;
   });
-  document.getElementById('statBox').innerHTML =
-    statCard('Total Tampil', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
-    statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
-    statCard('Sedang Cuti', sedang, 'var(--blue)', 'var(--blue-bg)', '🏝️') +
-    statCard('Selesai Cuti', selesai, 'var(--green)', 'var(--green-bg)', '✅') +
-    statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️');
+  var box = document.getElementById('statBox');
+  if (filterState.segment === 'ARSIP') {
+    var hari = 0;
+    rows.forEach(function(r) { hari += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total; });
+    box.innerHTML =
+      statCard('Total Selesai Cuti', total, 'var(--green)', 'var(--green-bg)', '✅') +
+      statCard('Total Hari Diambil', hari, 'var(--brand-ink)', 'var(--brand-050)', '📅');
+  } else {
+    box.innerHTML =
+      statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
+      statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
+      statCard('Sedang Cuti', sedang, 'var(--blue)', 'var(--blue-bg)', '🏝️') +
+      statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️');
+  }
 }
 function statCard(label, value, color, bg, icon) {
   return '<div class="stat-item">' +
@@ -1769,8 +1841,13 @@ function simpanStatus(sel, rowId, value, oldVal) {
     sel.classList.remove('task-saving');
     sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
     if (_cache) for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; }
-    renderStats(currentFiltered());
-    toast('Status diperbarui', 'ok');
+    var pindahKeArsip = isArchived(value) && filterState.segment === 'AKTIF';
+    var kembaliAktif  = !isArchived(value) && filterState.segment === 'ARSIP';
+    applyFilters();          // baris otomatis berpindah antara Aktif ↔ Arsip
+    updateTabCounts();
+    toast(pindahKeArsip ? 'Status diperbarui — dipindahkan ke Selesai Cuti'
+        : kembaliAktif  ? 'Status diperbarui — dikembalikan ke Dashboard'
+        : 'Status diperbarui', 'ok');
   }).catch(function(err) {
     sel.classList.remove('task-saving'); sel.value = oldVal; toast('Gagal update status: ' + err.message, 'err');
   });
@@ -1982,7 +2059,7 @@ _prefetch = getCuti().then(function(rows) {
   _cache = rows; _loaded = true; _clashIdx = null;
   if (document.getElementById('view-dashboard').classList.contains('active')) {
     document.getElementById('dashboardLoading').style.display = 'none';
-    renderFilters(); applyFilters();
+    renderFilters(); applyFilters(); updateTabCounts();
     document.getElementById('dashboardContent').style.display = 'block';
   }
   return rows;
