@@ -324,28 +324,44 @@
     border-bottom: 1px solid var(--line-strong); white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
   }
-  .c-role { width: 58px; } .c-nama { width: 17%; } .c-periode { width: 164px; }
-  .c-durasi { width: 74px; } .c-perihal { width: 102px; } .c-bentrok { width: 88px; }
-  .c-total { width: 94px; } .c-pass { width: 84px; } .c-status { width: 118px; }
-  .c-copy { width: 78px; } .c-aksi { width: 74px; }
-  tbody td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; overflow: hidden; }
+  .c-role { width: 78px; } .c-nama { width: 21%; } .c-periode { width: 160px; }
+  .c-durasi { width: 70px; } .c-perihal { width: 100px; } .c-bentrok { width: 86px; }
+  .c-total { width: 92px; } .c-pass { width: 78px; } .c-status { width: 126px; }
+  .c-copy { width: 74px; } .c-aksi { width: 70px; }
+  tbody td {
+    padding: 0 10px; height: 42px;                 /* tinggi baris seragam */
+    border-bottom: 1px solid var(--line); vertical-align: middle; overflow: hidden;
+    background: var(--surface);
+  }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr td { background: var(--surface); transition: background .12s; }
   tbody tr.rec-alt td { background: var(--stripe); }            /* selang-seling per record */
-  tbody tr:hover td, tbody tr.rec-alt:hover td { background: #E7EFF8; }
+  tbody tr:hover td, tbody tr.rec-alt:hover td { background: #E8EFF8; }
   tbody tr.row-cuti2 td { border-top: none; }
-  .cell-name { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell-name {
+    font-weight: 600; color: var(--ink); font-size: 12.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  /* penanda bahwa baris ini cuti kedua dari record yang sama */
+  tr.row-cuti2 .periode::before { content: "↳"; color: #AEB9C8; margin-right: 3px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-soft); font-weight: 500; }
   .periode i { font-style: normal; color: #B4BECD; font-size: 11px; }
   .empty { text-align: center; color: var(--muted); padding: 46px 0 !important; font-size: 14px; }
+  .more-row td { height: auto !important; padding: 14px 12px !important; text-align: center; background: var(--surface-2) !important; }
+  .more-note { display: block; margin-top: 7px; font-size: 12px; color: var(--muted); }
 
   .pill {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
     max-width: 100%; overflow: hidden; text-overflow: ellipsis;
   }
+  .pill-pass-yes, .pill-pass-no { padding-left: 8px; }
+  .pill-pass-yes::before, .pill-pass-no::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%; flex: none;
+  }
   .pill-pass-yes { background: var(--brand-050); color: var(--brand-ink); }
+  .pill-pass-yes::before { background: var(--brand); }
   .pill-pass-no  { background: var(--slate-bg); color: var(--muted); }
+  .pill-pass-no::before { background: #B4BECD; }
   .total-box {
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
     margin-top: 16px; padding: 13px 16px;
@@ -364,7 +380,8 @@
 
   .pill-total { background: var(--brand); color: #fff; font-variant-numeric: tabular-nums; }
   .pill-total.plus { background: var(--amber); }
-  .pill-role   { background: var(--slate-bg); color: var(--slate); border: 1px solid transparent; font-weight: 700; }
+  .pill-role   { background: var(--slate-bg); color: var(--slate); border: 1px solid transparent;
+                 font-weight: 700; font-size: 10.5px; letter-spacing: .02em; padding: 3px 8px; }
   .role-CS     { background: var(--role-cs-bg);  color: var(--role-cs);  border-color: var(--role-cs-bd); }
   .role-KAPTEN { background: var(--role-kap-bg); color: var(--role-kap); border-color: var(--role-kap-bd); }
   .role-KASIR  { background: var(--role-kas-bg); color: var(--role-kas); border-color: var(--role-kas-bd); }
@@ -384,7 +401,7 @@
   .task-select {
     -webkit-appearance: none; appearance: none;
     border-radius: 999px; border: 1.5px solid transparent;
-    font-size: 11.5px; font-weight: 700; padding: 4px 25px 4px 10px; cursor: pointer; width: 100%; max-width: 118px;
+    font-size: 11.5px; font-weight: 700; padding: 4px 24px 4px 10px; cursor: pointer; width: 100%;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 9px center;
   }
@@ -987,36 +1004,57 @@ function addOption(category, value) {
 }
 
 // ── Clash (bentrok) ───────────────────────────────────────────
-function buildIntervals(rows) {
-  var out = [];
+// Indeks bentrok: dikelompokkan per "ROLE|PERIHAL" supaya pencarian jauh lebih cepat
+// (tidak perlu memindai seluruh data untuk setiap baris).
+function buildClashIndex(rows) {
+  var idx = {};
   rows.forEach(function(r) {
     [[r.perihal1, r.start1Raw, r.end1Raw], [r.perihal2, r.start2Raw, r.end2Raw]].forEach(function(t) {
       if (CLASH_PERIHAL.indexOf(t[0]) !== -1 && t[1] && t[2]) {
-        out.push({ nama: r.nama, role: r.role, perihal: t[0], s: dayKey(t[1]), e: dayKey(t[2]) });
+        var k = r.role + '|' + t[0];
+        (idx[k] = idx[k] || []).push({ nama: r.nama, role: r.role, perihal: t[0], s: dayKey(t[1]), e: dayKey(t[2]) });
       }
     });
   });
+  return idx;
+}
+// Indeks di-cache; hanya dibangun ulang saat data berubah
+var _clashIdx = null;
+function clashIndex() {
+  if (!_clashIdx) _clashIdx = buildClashIndex(_cache || []);
+  return _clashIdx;
+}
+// Daftar rata (dipakai kalender)
+function flatIntervals(idx) {
+  var out = [];
+  Object.keys(idx).forEach(function(k) { out = out.concat(idx[k]); });
   return out;
 }
-function clashInfo(perihal, startRaw, endRaw, nama, intervals, role) {
+function clashInfo(perihal, startRaw, endRaw, nama, index, role) {
   if (CLASH_PERIHAL.indexOf(perihal) === -1 || !startRaw || !endRaw) return null;
   var s = dayKey(startRaw), e = dayKey(endRaw);
-  var maxConcurrent = 1, others = {};
-  // Untuk tiap hari dalam rentang cuti ini, hitung berapa staff (termasuk diri)
-  // dgn ROLE SAMA & perihal sama yg cuti di hari itu. Ambil angka tertinggi.
+  var list = (index && index[role + '|' + perihal]) || [];
+  // Saring dulu: hanya kandidat (role & perihal sama) yang rentangnya beririsan
+  var cand = [], others = [];
+  for (var i = 0; i < list.length; i++) {
+    var iv = list[i];
+    if (iv.nama === nama || iv.s > e || iv.e < s) continue;
+    cand.push(iv);
+    if (others.indexOf(iv.nama) === -1) others.push(iv.nama);
+  }
+  if (!cand.length) return { count: 1, names: [] };
+  // Cari hari tersibuk (jumlah staff berbeda terbanyak, termasuk diri sendiri)
+  var maxConcurrent = 1;
   for (var d = s; d <= e; d++) {
     var onDay = {}; onDay[nama] = 1;
-    for (var i = 0; i < intervals.length; i++) {
-      var iv = intervals[i];
-      if (iv.perihal === perihal && iv.role === role && iv.s <= d && d <= iv.e) {
-        onDay[iv.nama] = 1;
-        if (iv.nama !== nama) others[iv.nama] = 1;
-      }
+    for (var j = 0; j < cand.length; j++) {
+      var c2 = cand[j];
+      if (c2.s <= d && d <= c2.e) onDay[c2.nama] = 1;
     }
-    var c = Object.keys(onDay).length;
-    if (c > maxConcurrent) maxConcurrent = c;
+    var n = Object.keys(onDay).length;
+    if (n > maxConcurrent) maxConcurrent = n;
   }
-  return { count: maxConcurrent, names: Object.keys(others) };
+  return { count: maxConcurrent, names: others };
 }
 
 // ── State ─────────────────────────────────────────────────────
@@ -1024,6 +1062,7 @@ var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LD
 var ADD = '__ADD__';
 var _cache = null, _loaded = false, _prefetch = null;
 var filterState = { role: 'ALL', search: '', month: 'ALL' };
+var ROW_LIMIT = 120, _showAllRows = false;   // batasi baris agar tabel tetap ringan
 
 // ── Toast & Confirm ───────────────────────────────────────────
 function toast(msg, type) {
@@ -1341,7 +1380,7 @@ function deleteRow(rowId, label) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
-function invalidate() { _loaded = false; _cache = null; _prefetch = null; }
+function invalidate() { _loaded = false; _cache = null; _prefetch = null; _clashIdx = null; }
 
 function loadDashboard(force) {
   var loading = document.getElementById('dashboardLoading');
@@ -1366,7 +1405,7 @@ function loadDashboard(force) {
 
   function fetchFresh() {
     var p = getCuti();
-    _prefetch = p.then(function(rows) { _cache = rows; _loaded = true; return rows; })
+    _prefetch = p.then(function(rows) { _cache = rows; _loaded = true; _clashIdx = null; return rows; })
                  .catch(function(err) { _prefetch = null; throw err; });
     p.then(done).catch(function(err) { loading.textContent = '❌ Gagal memuat data: ' + err.message; })
      .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
@@ -1443,8 +1482,13 @@ function matchFilters(r) {
   return true;
 }
 
+var _searchTimer = null;
 document.getElementById('searchInput').addEventListener('input', function() {
-  filterState.search = this.value.trim().toLowerCase(); applyFilters();
+  var v = this.value.trim().toLowerCase();
+  clearTimeout(_searchTimer);                 // tunggu user berhenti mengetik
+  _searchTimer = setTimeout(function() {
+    filterState.search = v; applyFilters();
+  }, 140);
 });
 document.getElementById('monthFilter').addEventListener('change', function() {
   filterState.month = this.value; applyFilters();
@@ -1457,7 +1501,7 @@ function applyFilters() {
   var filtered = (filterState.role !== 'ALL' || filterState.search || filterState.month !== 'ALL');
   rc.innerHTML = 'Menampilkan <strong>' + rows.length + '</strong> dari ' + _cache.length + ' pengajuan' + (filtered ? ' · terfilter' : '');
   renderStats(rows);
-  renderTable(rows, buildIntervals(_cache)); // bentrok dihitung terhadap SEMUA data
+  renderTable(rows, clashIndex());  // indeks ter-cache: filter/pencarian tetap ringan
 }
 
 function renderSkeletonStats() {
@@ -1636,10 +1680,10 @@ function periodeCell(sRaw, eRaw) {
 }
 function passportCell(v) {
   var s = String(v || '');
-  if (!s) return '<span class="pill-dash">–</span>';
+  if (!s) return '<span class="pill pill-dash">–</span>';
   var ambil = !/tidak/i.test(s);
   return '<span class="pill ' + (ambil ? 'pill-pass-yes' : 'pill-pass-no') + '" title="' + esc(s) + '">' +
-    (ambil ? '🛂 Ambil' : '— Tidak') + '</span>';
+    (ambil ? 'Ambil' : 'Tidak') + '</span>';
 }
 
 function copyCell(rowId) {
@@ -1656,13 +1700,15 @@ function renderTable(rows, intervals) {
   }
   var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
   var parts = [];
-  rows.forEach(function(r, ri) {
+  var total = rows.length;
+  var shown = (_showAllRows || total <= ROW_LIMIT) ? rows : rows.slice(0, ROW_LIMIT);
+  shown.forEach(function(r, ri) {
     var has2 = !!(r.start2Raw || r.perihal2);
     var sp = has2 ? ' rowspan="2"' : '';
     var alt = (ri % 2 === 1) ? ' rec-alt' : '';   // selang-seling per record
     parts.push('<tr class="rec' + alt + '">' +
       '<td' + sp + '><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
-      '<td' + sp + ' class="cell-name">' + esc(r.nama) + '</td>' +
+      '<td' + sp + '><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
       '<td>' + periodeCell(r.start1Raw, r.end1Raw) + '</td>' +
       '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
       '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
@@ -1682,8 +1728,15 @@ function renderTable(rows, intervals) {
       '</tr>');
     }
   });
+  if (shown.length < total) {
+    parts.push('<tr class="more-row"><td colspan="11">' +
+      '<button class="btn btn-secondary btn-sm" type="button" onclick="showAllRows()">Tampilkan semua ' + total + ' pengajuan</button>' +
+      '<span class="more-note">Menampilkan ' + shown.length + ' terbaru agar tabel tetap ringan.</span>' +
+      '</td></tr>');
+  }
   tbody.innerHTML = parts.join('');
 }
+function showAllRows() { _showAllRows = true; applyFilters(); }
 
 // status change (task-select)
 document.getElementById('tableBody').addEventListener('change', function(e) {
@@ -1721,7 +1774,7 @@ function keyToDate(k) { return new Date(k * 86400000); }
 
 function ensureData(cb) {
   if (_cache) { cb(); return; }
-  var p = _prefetch || getCuti().then(function(r) { _cache = r; _loaded = true; return r; });
+  var p = _prefetch || getCuti().then(function(r) { _cache = r; _loaded = true; _clashIdx = null; return r; });
   p.then(function() { cb(); }).catch(function() { _cache = _cache || []; cb(); });
 }
 
@@ -1778,16 +1831,22 @@ function calToday() { calRef = new Date(); calRef.setDate(1); renderCalendar(); 
 
 // Segmen bentrok: rentang hari berurutan di mana kumpulan staff (ROLE & perihal sama)
 // tetap sama dan berjumlah >= 2 orang.
-function computeClashSegments(leaves) {
+function computeClashSegments(leaves, winStart, winEnd) {
   var segs = [];
   var roles = {};
   leaves.forEach(function (l) { if (l.role) roles[l.role] = 1; });
   Object.keys(roles).forEach(function (role) {
     CLASH_PERIHAL.forEach(function (perihal) {
-      var ivs = leaves.filter(function (l) { return l.perihal === perihal && l.role === role; });
+      var ivs = leaves.filter(function (l) {
+        if (l.perihal !== perihal || l.role !== role) return false;
+        // hanya cuti yang menyentuh jendela tampil (hemat perhitungan)
+        if (winStart != null && (l.s > winEnd || l.e < winStart)) return false;
+        return true;
+      });
       if (ivs.length < 2) return;
       var minD = Infinity, maxD = -Infinity;
       ivs.forEach(function (l) { if (l.s < minD) minD = l.s; if (l.e > maxD) maxD = l.e; });
+      if (winStart != null) { minD = Math.max(minD, winStart); maxD = Math.min(maxD, winEnd); }
       var curKey = null, curNames = null, curStart = null;
       for (var d = minD; d <= maxD; d++) {
         var names = [];
@@ -1868,7 +1927,7 @@ function renderCalendar() {
     grid.innerHTML = html || '<div class="cal-empty">Belum ada data cuti.</div>';
 
     // Daftar rincian bentrok yg terlihat di rentang kalender ini
-    var segs = computeClashSegments(leaves).filter(function (sg) { return sg.s <= gridEnd && sg.e >= gridStart; });
+    var segs = computeClashSegments(leaves, gridStart, gridEnd);
     renderClashList(segs);
   });
 }
@@ -1876,7 +1935,7 @@ function renderCalendar() {
 
 // ── Init ──────────────────────────────────────────────────────
 _prefetch = getCuti().then(function(rows) {
-  _cache = rows; _loaded = true;
+  _cache = rows; _loaded = true; _clashIdx = null;
   if (document.getElementById('view-dashboard').classList.contains('active')) {
     document.getElementById('dashboardLoading').style.display = 'none';
     renderFilters(); applyFilters();
