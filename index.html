@@ -220,6 +220,9 @@
     text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
   }
   .fsec-note { font-size: 12px; color: var(--muted); margin-top: 11px; }
+  .fsec-note strong { color: var(--ink-soft); font-weight: 700; }
+  .fsec-note.note-hi { color: var(--amber); }
+  .fsec-note.note-hi strong { color: var(--amber); }
   .fp-foot {
     display: flex; justify-content: flex-end; gap: 10px;
     padding: 15px 24px; border-top: 1px solid var(--line); background: var(--surface-2);
@@ -510,7 +513,7 @@
               <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
             </div>
           </div>
-          <p class="fsec-note">Batas durasi per pengajuan — CS &amp; KAPTEN maks. 14 hari, KASIR maks. 12 hari.</p>
+          <p class="fsec-note" id="limitNote">Batas durasi per pengajuan — CS &amp; KAPTEN maks. 14 hari, KASIR maks. 12 hari.</p>
         </section>
 
         <section class="fsec">
@@ -804,27 +807,49 @@ function parseDurasi(str) {
   var m = String(str || '').match(/(\d+)/);
   return m ? parseInt(m[1], 10) : 0;
 }
-// Total cuti = durasi cuti 1 + cuti 2 + hari tambahan
-function computeTotal(durasiList, tambahan) {
-  var base = 0;
-  (durasiList || []).forEach(function(d) { base += (typeof d === 'number' ? d : parseDurasi(d)); });
-  var extra = parseTambahanDays(tambahan);
-  return { base: base, extra: extra, total: base + extra };
+// Total cuti = jumlah hari rentang tanggal (cuti 1 + cuti 2).
+// extra = berapa hari dari jatah tambahan yang benar-benar terpakai
+// (yaitu kelebihan di atas batas normal role), BUKAN ditambahkan lagi ke total.
+function computeTotal(durasiList, tambahan, role) {
+  var max = MAX_DURASI[role] || 0;
+  var allowance = parseTambahanDays(tambahan);
+  var total = 0, lebih = 0;
+  (durasiList || []).forEach(function(d) {
+    var n = (typeof d === 'number' ? d : parseDurasi(d));
+    total += n;
+    if (max) lebih += Math.max(0, n - max);
+  });
+  var used = Math.min(lebih, allowance);
+  return { total: total, base: total - used, extra: used, allowance: allowance };
 }
 
 // Validasi daftar cuti → kembalikan durasi[] atau lempar Error
-function validateLeaves(role, leaves) {
+function validateLeaves(role, leaves, extraDays) {
   if (!MAX_DURASI[role]) throw new Error('Role tidak valid.');
+  extraDays = extraDays || 0;
   var max = MAX_DURASI[role];
-  var durasi = [];
+  var limit = max + extraDays;          // batas efektif setelah penambahan
+  var durasi = [], totalLebih = 0;
   for (var i = 0; i < leaves.length; i++) {
     var lv = leaves[i];
     if (!lv.perihal || lv.perihal === ADD) throw new Error('Pilih perihal untuk semua cuti.');
     if (!lv.start || !lv.end) throw new Error('Isi tanggal mulai dan selesai untuk semua cuti.');
     var days = dayKey(lv.end) - dayKey(lv.start) + 1;
     if (days <= 0) throw new Error('Tanggal selesai tidak boleh sebelum tanggal mulai.');
-    if (days > max) throw new Error('Durasi maksimal role ' + role + ' adalah ' + max + ' hari. Diajukan: ' + days + ' hari.');
+    if (days > limit) {
+      throw new Error(extraDays > 0
+        ? 'Durasi maksimal role ' + role + ' adalah ' + max + ' hari + tambahan ' + extraDays +
+          ' hari = ' + limit + ' hari. Diajukan: ' + days + ' hari.'
+        : 'Durasi maksimal role ' + role + ' adalah ' + max + ' hari. Diajukan: ' + days +
+          ' hari. Pilih "Tambahan Cuti" bila ingin melebihi batas ini.');
+    }
+    totalLebih += Math.max(0, days - max);
     durasi.push(days);
+  }
+  // Hari tambahan adalah jatah bersama, tidak berlaku ganda untuk 2 cuti
+  if (totalLebih > extraDays) {
+    throw new Error('Kelebihan durasi ' + totalLebih + ' hari melebihi tambahan yang dipilih (' +
+      extraDays + ' hari). Pilih tambahan yang lebih besar atau kurangi tanggal.');
   }
   if (leaves.length === 2 && leaves[0].perihal === leaves[1].perihal)
     throw new Error('Jika mengajukan 2 cuti, perihalnya harus berbeda.');
@@ -1051,20 +1076,40 @@ function updateTotalBox() {
     var s = b.querySelector('.start-date').value, e = b.querySelector('.end-date').value;
     if (s && e) { var d = dayKey(e) - dayKey(s) + 1; if (d > 0) durasi.push(d); }
   });
-  var t = computeTotal(durasi, tambahan);
+  var role = document.getElementById('role').value;
+  var t = computeTotal(durasi, tambahan, role);
   val.innerHTML = t.total + ' <span>Hari</span>';
   box.classList.toggle('has-extra', t.extra > 0);
-  if (t.base === 0) {
-    det.textContent = t.extra > 0
-      ? 'Tambahan ' + t.extra + ' hari diterima — lengkapi tanggal cuti'
+  if (t.total === 0) {
+    det.textContent = t.allowance > 0
+      ? 'Tambahan ' + t.allowance + ' hari siap dipakai — lengkapi tanggal cuti'
       : 'Lengkapi tanggal cuti terlebih dahulu';
   } else if (t.extra > 0) {
-    det.textContent = 'Cuti ' + t.base + ' hari + tambahan ' + t.extra + ' hari (disetujui)';
+    det.textContent = 'Termasuk ' + t.extra + ' hari dari tambahan (disetujui)';
+  } else if (t.allowance > 0) {
+    det.textContent = 'Tambahan ' + t.allowance + ' hari dipilih, belum terpakai';
   } else {
-    det.textContent = durasi.length > 1 ? 'Gabungan cuti 1 & cuti 2' : 'Tanpa tambahan hari';
+    det.textContent = durasi.length > 1 ? 'Gabungan cuti 1 & cuti 2' : 'Dalam batas normal';
+  }
+
+  // Perbarui catatan batas efektif (maks role + hari tambahan)
+  var note = document.getElementById('limitNote');
+  if (note) {
+    if (MAX_DURASI[role]) {
+      var max = MAX_DURASI[role], limit = max + t.allowance;
+      note.innerHTML = t.allowance > 0
+        ? 'Batas durasi ' + role + ': <strong>' + max + ' hari + ' + t.allowance + ' hari tambahan = ' +
+          limit + ' hari</strong> — tanggal cuti boleh sampai ' + limit + ' hari.'
+        : 'Batas durasi ' + role + ': <strong>maks. ' + max + ' hari</strong>. Pilih “Tambahan Cuti” bila ingin melebihi.';
+      note.classList.toggle('note-hi', t.allowance > 0);
+    } else {
+      note.textContent = 'Batas durasi per pengajuan — CS & KAPTEN maks. 14 hari, KASIR maks. 12 hari.';
+      note.classList.remove('note-hi');
+    }
   }
 }
 document.getElementById('tambahan').addEventListener('change', updateTotalBox);
+document.getElementById('role').addEventListener('change', updateTotalBox);
 
 document.getElementById('submitBtn').addEventListener('click', function() {
   var role = document.getElementById('role').value;
@@ -1079,7 +1124,7 @@ document.getElementById('submitBtn').addEventListener('click', function() {
   var leaves = gatherLeaves(formC);
   if (leaves.length === 0) return showMsg('error', 'Tambahkan minimal 1 cuti.');
   var durasi;
-  try { durasi = validateLeaves(role, leaves); }
+  try { durasi = validateLeaves(role, leaves, parseTambahanDays(tambahan)); }
   catch (err) { return showMsg('error', err.message); }
 
   var btn = this;
@@ -1173,7 +1218,7 @@ document.getElementById('e_save').addEventListener('click', function() {
   var leaves = gatherLeaves(eC);
   if (leaves.length === 0) return eShow('error', 'Minimal 1 cuti.');
   var durasi;
-  try { durasi = validateLeaves(role, leaves); } catch (err) { return eShow('error', err.message); }
+  try { durasi = validateLeaves(role, leaves, parseTambahanDays(tambahan)); } catch (err) { return eShow('error', err.message); }
 
   var patch = buildRowPayload(editingId, role, nama, keterangan, tambahan, leaves, durasi, task1);
   delete patch.id; delete patch.id_pengajuan; // id tidak diubah
@@ -1359,12 +1404,12 @@ function clashCell(perihal, startRaw, endRaw, nama, intervals) {
   return '<span class="pill ' + cls + '" title="' + esc(title) + '">⚠ ' + info.count + ' staff</span>';
 }
 function totalCell(r) {
-  var t = computeTotal([r.durasi1, r.durasi2], r.tambahan);
+  var t = computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role);
   if (t.total <= 0) return '<span class="pill pill-dash">–</span>';
   var cls = t.extra > 0 ? 'pill-total plus' : 'pill-total';
   var rincian = t.extra > 0
-    ? 'Cuti ' + t.base + ' hari + tambahan ' + t.extra + ' hari = ' + t.total + ' hari'
-    : 'Total ' + t.total + ' hari';
+    ? 'Total ' + t.total + ' hari — ' + t.extra + ' hari di antaranya dari tambahan'
+    : 'Total ' + t.total + ' hari (dalam batas normal)';
   var label = t.total + ' Hari' + (t.extra > 0 ? ' (+' + t.extra + ')' : '');
   return '<span class="pill ' + cls + '" title="' + esc(rincian) + '">' + esc(label) + '</span>';
 }
