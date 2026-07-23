@@ -551,7 +551,7 @@
     <div class="dash-head">
       <div>
         <h2>Data Pengajuan Cuti</h2>
-        <p>Kolom <strong>Bentrok</strong> menghitung staff lain dengan CUTI LOKAL/INDO di tanggal yang beririsan.</p>
+        <p>Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.</p>
       </div>
       <div class="dash-actions">
         <div class="ldr-picker">
@@ -677,7 +677,7 @@
     <div class="dash-head">
       <div>
         <h2>Kalender Cuti</h2>
-        <p>Hari yang berwarna adalah <strong>hari bentrok</strong> — angkanya menunjukkan berapa staff cuti barengan. Rinciannya ada di daftar bawah.</p>
+        <p>Hari berwarna = <strong>hari bentrok</strong>, angkanya menunjukkan berapa staff <strong>satu role</strong> cuti barengan. Rinciannya di daftar bawah.</p>
       </div>
     </div>
 
@@ -992,23 +992,23 @@ function buildIntervals(rows) {
   rows.forEach(function(r) {
     [[r.perihal1, r.start1Raw, r.end1Raw], [r.perihal2, r.start2Raw, r.end2Raw]].forEach(function(t) {
       if (CLASH_PERIHAL.indexOf(t[0]) !== -1 && t[1] && t[2]) {
-        out.push({ nama: r.nama, perihal: t[0], s: dayKey(t[1]), e: dayKey(t[2]) });
+        out.push({ nama: r.nama, role: r.role, perihal: t[0], s: dayKey(t[1]), e: dayKey(t[2]) });
       }
     });
   });
   return out;
 }
-function clashInfo(perihal, startRaw, endRaw, nama, intervals) {
+function clashInfo(perihal, startRaw, endRaw, nama, intervals, role) {
   if (CLASH_PERIHAL.indexOf(perihal) === -1 || !startRaw || !endRaw) return null;
   var s = dayKey(startRaw), e = dayKey(endRaw);
   var maxConcurrent = 1, others = {};
   // Untuk tiap hari dalam rentang cuti ini, hitung berapa staff (termasuk diri)
-  // yg cuti dgn perihal sama di hari itu. Ambil angka tertinggi.
+  // dgn ROLE SAMA & perihal sama yg cuti di hari itu. Ambil angka tertinggi.
   for (var d = s; d <= e; d++) {
     var onDay = {}; onDay[nama] = 1;
     for (var i = 0; i < intervals.length; i++) {
       var iv = intervals[i];
-      if (iv.perihal === perihal && iv.s <= d && d <= iv.e) {
+      if (iv.perihal === perihal && iv.role === role && iv.s <= d && d <= iv.e) {
         onDay[iv.nama] = 1;
         if (iv.nama !== nama) others[iv.nama] = 1;
       }
@@ -1495,12 +1495,12 @@ function taskCls(v) {
   if (u === 'SELESAI CUTI') return 'task-SELESAI';
   return 'task-DONE';
 }
-function clashCell(perihal, startRaw, endRaw, nama, intervals) {
-  var info = clashInfo(perihal, startRaw, endRaw, nama, intervals);
+function clashCell(perihal, startRaw, endRaw, nama, intervals, role) {
+  var info = clashInfo(perihal, startRaw, endRaw, nama, intervals, role);
   if (!info) return '<span class="pill pill-dash">–</span>';
   if (info.count <= 1) return '<span class="pill pill-clash-ok">✓ Aman</span>';
   var cls = info.count >= 3 ? 'pill-clash-alert' : 'pill-clash-warn';
-  var title = 'Cuti bersamaan dengan: ' + info.names.join(', ');
+  var title = 'Sesama ' + role + ' cuti bersamaan: ' + info.names.join(', ');
   return '<span class="pill ' + cls + '" title="' + esc(title) + '">⚠ ' + info.count + ' staff</span>';
 }
 function totalCell(r) {
@@ -1666,7 +1666,7 @@ function renderTable(rows, intervals) {
       '<td>' + periodeCell(r.start1Raw, r.end1Raw) + '</td>' +
       '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
       '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
-      '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals) + '</td>' +
+      '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals, r.role) + '</td>' +
       '<td' + sp + '>' + totalCell(r) + '</td>' +
       '<td' + sp + '>' + passportCell(r.keterangan) + '</td>' +
       '<td' + sp + '>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
@@ -1678,7 +1678,7 @@ function renderTable(rows, intervals) {
         '<td>' + periodeCell(r.start2Raw, r.end2Raw) + '</td>' +
         '<td><span class="pill pill-durasi">' + esc(r.durasi2) + '</span></td>' +
         '<td><span class="pill pill-perihal">' + esc(r.perihal2) + '</span></td>' +
-        '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals) + '</td>' +
+        '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals, r.role) + '</td>' +
       '</tr>');
     }
   });
@@ -1744,17 +1744,18 @@ function computeClashDays(leaves) {
   var byDay = {};
   leaves.forEach(function(lv) {
     if (CLASH_PERIHAL.indexOf(lv.perihal) === -1) return;
+    var key = (lv.role || '-') + ' • ' + lv.perihal;   // bentrok dihitung PER ROLE
     for (var d = lv.s; d <= lv.e; d++) {
       byDay[d] = byDay[d] || {};
-      byDay[d][lv.perihal] = byDay[d][lv.perihal] || {};
-      byDay[d][lv.perihal][lv.nama] = 1;
+      byDay[d][key] = byDay[d][key] || {};
+      byDay[d][key][lv.nama] = 1;
     }
   });
   var clash = {};
   Object.keys(byDay).forEach(function(d) {
-    Object.keys(byDay[d]).forEach(function(p) {
-      var n = Object.keys(byDay[d][p]).length;
-      if (n >= 2) { clash[d] = clash[d] || {}; clash[d][p] = n; }
+    Object.keys(byDay[d]).forEach(function(k) {
+      var n = Object.keys(byDay[d][k]).length;
+      if (n >= 2) { clash[d] = clash[d] || {}; clash[d][k] = n; }
     });
   });
   return clash;
@@ -1775,28 +1776,35 @@ function fmtKey(k) {
 function calShift(n) { calRef.setMonth(calRef.getMonth() + n); renderCalendar(); }
 function calToday() { calRef = new Date(); calRef.setDate(1); renderCalendar(); }
 
-// Segmen bentrok: rentang hari berurutan di mana kumpulan staff (perihal sama) tetap & berjumlah >= 2
+// Segmen bentrok: rentang hari berurutan di mana kumpulan staff (ROLE & perihal sama)
+// tetap sama dan berjumlah >= 2 orang.
 function computeClashSegments(leaves) {
   var segs = [];
-  CLASH_PERIHAL.forEach(function (perihal) {
-    var ivs = leaves.filter(function (l) { return l.perihal === perihal; });
-    if (!ivs.length) return;
-    var minD = Infinity, maxD = -Infinity;
-    ivs.forEach(function (l) { if (l.s < minD) minD = l.s; if (l.e > maxD) maxD = l.e; });
-    var curKey = null, curNames = null, curStart = null;
-    for (var d = minD; d <= maxD; d++) {
-      var names = [];
-      for (var i = 0; i < ivs.length; i++) if (ivs[i].s <= d && d <= ivs[i].e) names.push(ivs[i].nama);
-      names.sort();
-      var key = names.join('|');
-      if (key !== curKey) {
-        if (curNames && curNames.length >= 2) segs.push({ perihal: perihal, s: curStart, e: d - 1, names: curNames });
-        curKey = key; curNames = names; curStart = d;
+  var roles = {};
+  leaves.forEach(function (l) { if (l.role) roles[l.role] = 1; });
+  Object.keys(roles).forEach(function (role) {
+    CLASH_PERIHAL.forEach(function (perihal) {
+      var ivs = leaves.filter(function (l) { return l.perihal === perihal && l.role === role; });
+      if (ivs.length < 2) return;
+      var minD = Infinity, maxD = -Infinity;
+      ivs.forEach(function (l) { if (l.s < minD) minD = l.s; if (l.e > maxD) maxD = l.e; });
+      var curKey = null, curNames = null, curStart = null;
+      for (var d = minD; d <= maxD; d++) {
+        var names = [];
+        for (var i = 0; i < ivs.length; i++) if (ivs[i].s <= d && d <= ivs[i].e) names.push(ivs[i].nama);
+        names.sort();
+        var key = names.join('|');
+        if (key !== curKey) {
+          if (curNames && curNames.length >= 2)
+            segs.push({ role: role, perihal: perihal, s: curStart, e: d - 1, names: curNames });
+          curKey = key; curNames = names; curStart = d;
+        }
       }
-    }
-    if (curNames && curNames.length >= 2) segs.push({ perihal: perihal, s: curStart, e: maxD, names: curNames });
+      if (curNames && curNames.length >= 2)
+        segs.push({ role: role, perihal: perihal, s: curStart, e: maxD, names: curNames });
+    });
   });
-  segs.sort(function (a, b) { return a.s - b.s; });
+  segs.sort(function (a, b) { return a.s - b.s || String(a.role).localeCompare(b.role); });
   return segs;
 }
 
@@ -1816,6 +1824,7 @@ function renderClashList(segments) {
       '<span class="clash-dot ' + dot + '"></span>' +
       '<div class="clash-main"><div class="clash-names">' + esc(nm) + '</div>' +
       '<div class="clash-meta">' + esc(sg.perihal) + ' · ' + esc(tgl) + '</div></div>' +
+      '<span class="pill pill-role ' + roleCls(sg.role) + '">' + esc(sg.role) + '</span>' +
       '<span class="clash-badge ' + lv + '">' + sg.names.length + ' staff</span>' +
     '</div>';
   }).join('');
