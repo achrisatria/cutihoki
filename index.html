@@ -530,6 +530,17 @@
   .pill-clash-warn  { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-bd); cursor: help; font-weight: 700; }
   .pill-clash-alert { background: var(--red-bg);   color: var(--red);   border-color: var(--red-bd);   cursor: help; font-weight: 700; }
 
+  /* ── Sel nomor rekening ─────────────────────────────────────── */
+  .rek-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
+  .rek-cell .rek-no {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; font-weight: 700; letter-spacing: .02em; color: var(--ink);
+  }
+  .rek-cell .rek-bank {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+    color: var(--muted); text-transform: uppercase;
+  }
+
   /* ── Tooltip detail bentrok ─────────────────────────────────── */
   .clash-tip {
     position: fixed; z-index: 130; max-width: 320px; min-width: 210px;
@@ -718,6 +729,7 @@
     <button class="tab" id="tabOngoing" onclick="switchTab('ongoing')">🏝️ Sedang Cuti <em class="tab-count" id="ongoingCount">0</em></button>
     <button class="tab" id="tabArchive" onclick="switchTab('archive')">✅ Selesai Cuti <em class="tab-count" id="archiveCount">0</em></button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
+    <button class="tab" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
   </div>
 
   <!-- VIEW DASHBOARD -->
@@ -846,6 +858,125 @@
     </div>
   </div>
 
+  <!-- VIEW GANTI REKENING -->
+  <div class="view" id="view-rekening">
+    <div class="dash-head">
+      <div>
+        <h2>Pengajuan Ganti Rekening</h2>
+        <p>Nomor paspor &amp; rekening bersifat <strong>sensitif</strong> — pastikan angkanya benar sebelum dikirim.</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-primary btn-sm" id="rekToggleBtn" type="button" onclick="toggleRekForm()">＋ Ajukan Ganti Rekening</button>
+        <button class="btn btn-secondary btn-sm" id="rekRefreshBtn" onclick="loadRekening(true)">🔄 Muat ulang</button>
+      </div>
+    </div>
+
+    <!-- Panel form (toggle) -->
+    <div class="form-panel" id="rekFormPanel">
+      <div class="fp-head">
+        <div class="fp-mark">✦</div>
+        <div class="fp-title">
+          <h3>Pengajuan Ganti Rekening Baru</h3>
+          <p>Isi rekening lama dan rekening baru selengkapnya agar format siap disalin.</p>
+        </div>
+        <button class="fp-close" type="button" onclick="toggleRekForm(false)" aria-label="Tutup form">✕</button>
+      </div>
+
+      <div class="fp-body">
+        <section class="fsec">
+          <span class="fsec-label"><em>01</em>Data Staff</span>
+          <div class="grid" style="max-width: 720px;">
+            <div class="field">
+              <label>No. Paspor</label>
+              <input id="r_paspor" type="text" placeholder="Contoh: C123456" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>Nama Staff</label>
+              <input id="r_nama" type="text" placeholder="Contoh: HOKIJITU" autocomplete="off">
+            </div>
+          </div>
+        </section>
+
+        <section class="fsec">
+          <span class="fsec-label"><em>02</em>Rekening Sebelumnya</span>
+          <div class="grid">
+            <div class="field">
+              <label>Nomor Rekening</label>
+              <input id="r_rekLama" type="text" inputmode="numeric" placeholder="12345674897" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>Bank</label>
+              <select id="r_bankLama" data-cat="BANK"></select>
+            </div>
+            <div class="field">
+              <label>Nama Pemilik Rekening</label>
+              <input id="r_pemilikLama" type="text" placeholder="Nama sesuai buku tabungan" autocomplete="off">
+            </div>
+          </div>
+        </section>
+
+        <section class="fsec">
+          <span class="fsec-label"><em>03</em>Rekening Terbaru</span>
+          <div class="grid">
+            <div class="field">
+              <label>Nomor Rekening</label>
+              <input id="r_rekBaru" type="text" inputmode="numeric" placeholder="98765432100" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>Bank</label>
+              <select id="r_bankBaru" data-cat="BANK"></select>
+            </div>
+            <div class="field">
+              <label>Nama Pemilik Rekening</label>
+              <input id="r_pemilikBaru" type="text" placeholder="Nama sesuai buku tabungan" autocomplete="off">
+            </div>
+          </div>
+          <p class="fsec-note" id="r_note">Nomor rekening hanya boleh berisi angka.</p>
+          <div class="msg" id="r_formMsg"></div>
+        </section>
+      </div>
+
+      <div class="fp-foot">
+        <button class="btn btn-secondary" type="button" onclick="toggleRekForm(false)">Batal</button>
+        <button class="btn btn-primary" id="r_submitBtn" type="button">📤 Kirim pengajuan</button>
+      </div>
+    </div>
+
+    <div class="stat-box" id="rekStatBox"></div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <span id="rekChips"></span>
+      </div>
+      <div class="search-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="rekSearch" type="text" placeholder="Cari nama, paspor, atau no. rekening…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="result-count" id="rekResultCount"></div>
+
+    <div id="rekLoading" style="display:none; color:var(--muted); padding:20px 0;">Memuat data…</div>
+
+    <div class="table-wrap" id="rekContent" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th class="c-nama">Nama Staff</th>
+            <th>No. Paspor</th>
+            <th>Rekening Sebelumnya</th>
+            <th>Rekening Terbaru</th>
+            <th class="c-status">Status</th>
+            <th class="c-copy">Copy</th>
+            <th class="c-aksi">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="rekTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- VIEW KALENDER -->
   <div class="view" id="view-calendar">
     <div class="dash-head">
@@ -927,6 +1058,38 @@
 </div>
 
 <!-- Modal Salin (cadangan) -->
+<div class="overlay" id="rekEditOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Ubah pengajuan ganti rekening</h3>
+    </div>
+    <div class="modal-body">
+      <div class="grid">
+        <div class="field"><label>No. Paspor</label><input id="re_paspor" type="text"></div>
+        <div class="field"><label>Nama Staff</label><input id="re_nama" type="text"></div>
+        <div class="field"><label>Status</label><select id="re_task"></select></div>
+      </div>
+      <p class="fsec-note" style="margin-top:2px;">Rekening Sebelumnya</p>
+      <div class="grid">
+        <div class="field"><label>Nomor Rekening</label><input id="re_rekLama" type="text" inputmode="numeric"></div>
+        <div class="field"><label>Bank</label><select id="re_bankLama" data-cat="BANK"></select></div>
+        <div class="field"><label>Nama Pemilik</label><input id="re_pemilikLama" type="text"></div>
+      </div>
+      <p class="fsec-note" style="margin-top:2px;">Rekening Terbaru</p>
+      <div class="grid">
+        <div class="field"><label>Nomor Rekening</label><input id="re_rekBaru" type="text" inputmode="numeric"></div>
+        <div class="field"><label>Bank</label><select id="re_bankBaru" data-cat="BANK"></select></div>
+        <div class="field"><label>Nama Pemilik</label><input id="re_pemilikBaru" type="text"></div>
+      </div>
+      <div class="msg" id="re_msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeRekEdit()">Batal</button>
+      <button class="btn btn-primary" id="re_save" type="button">💾 Simpan perubahan</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="copyOverlay">
   <div class="modal" style="max-width:520px" role="dialog" aria-modal="true">
     <div class="modal-head">
@@ -1064,7 +1227,7 @@
   // ── Data logic ────────────────────────────────────────────────
   function getConfig() {
     return sbGet('dropdown_options', 'select=category,value&order=id.asc').then(function(rows) {
-      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [] };
+      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [] };
       rows.forEach(function(r) { if (cfg[r.category]) cfg[r.category].push(r.value); });
       return cfg;
     });
@@ -1230,7 +1393,7 @@
   }
 
   // ── State ─────────────────────────────────────────────────────
-  var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [] };
+  var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [] };
   var ADD = '__ADD__';
   var _cache = null, _loaded = false, _prefetch = null;
   var filterState = { role: 'ALL', search: '', month: 'ALL', segment: 'AKTIF' };
@@ -1287,6 +1450,7 @@
       loadDashboard(false);
     }
     if (view === 'calendar') renderCalendar();
+    if (view === 'rekening') loadRekening(false);
   }
 
   // Sesuaikan judul, keterangan, dan tombol sesuai segmen yang dibuka
@@ -2177,8 +2341,398 @@
   document.getElementById('copyOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopy(); });
   document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); }
+    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); }
   });
+
+  // ══════════════════════════════════════════════════════════════
+  // MODUL GANTI REKENING
+  // ══════════════════════════════════════════════════════════════
+  var REK_STATUSES = ['WAITING', 'DONE'];
+  var _rekCache = null, _rekLoaded = false;
+  var rekFilter = { status: 'ALL', search: '' };
+  var rekEditingId = null;
+
+  function rekTaskList() { return CONFIG.TASK_REK.length ? CONFIG.TASK_REK : REK_STATUSES; }
+
+  function getRekening() {
+    return sbGet('rekening', 'select=*&order=created_at.desc').then(function(rows) {
+      return rows.map(function(r) {
+        return {
+          rowId: r.id, id: r.id_pengajuan || r.id, timestamp: r.created_at || '',
+          paspor: r.no_paspor || '', nama: r.nama || '',
+          bankLama: r.bank_lama || '', rekLama: r.rek_lama || '', pemilikLama: r.pemilik_lama || '',
+          bankBaru: r.bank_baru || '', rekBaru: r.rek_baru || '', pemilikBaru: r.pemilik_baru || '',
+          task: r.task || 'WAITING'
+        };
+      });
+    });
+  }
+
+  function genRekId() {
+    var now = new Date();
+    function pad(n) { return String(n).padStart(2, '0'); }
+    var rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+    return 'REK-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' +
+      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + rand;
+  }
+
+  // Buang spasi/strip yang biasa diketik orang, sisakan angka saja
+  function cleanRek(v) { return String(v || '').replace(/[\s\-\.]/g, ''); }
+
+  // Kumpulkan & validasi isi form. Lempar Error bila ada yang salah.
+  function gatherRek(prefix) {
+    function val(id) { var el = document.getElementById(prefix + id); return el ? String(el.value || '').trim() : ''; }
+    var d = {
+      paspor: val('paspor').toUpperCase(),
+      nama: val('nama').toUpperCase(),
+      rekLama: cleanRek(val('rekLama')), bankLama: val('bankLama'), pemilikLama: val('pemilikLama').toUpperCase(),
+      rekBaru: cleanRek(val('rekBaru')), bankBaru: val('bankBaru'), pemilikBaru: val('pemilikBaru').toUpperCase()
+    };
+    if (!d.paspor) throw new Error('Isi nomor paspor.');
+    if (!d.nama) throw new Error('Isi nama staff.');
+    if (!d.rekLama) throw new Error('Isi nomor rekening sebelumnya.');
+    if (!/^\d+$/.test(d.rekLama)) throw new Error('Nomor rekening sebelumnya hanya boleh berisi angka.');
+    if (d.rekLama.length < 6) throw new Error('Nomor rekening sebelumnya terlalu pendek (minimal 6 angka).');
+    if (!d.bankLama || d.bankLama === ADD) throw new Error('Pilih bank rekening sebelumnya.');
+    if (!d.pemilikLama) throw new Error('Isi nama pemilik rekening sebelumnya.');
+    if (!d.rekBaru) throw new Error('Isi nomor rekening terbaru.');
+    if (!/^\d+$/.test(d.rekBaru)) throw new Error('Nomor rekening terbaru hanya boleh berisi angka.');
+    if (d.rekBaru.length < 6) throw new Error('Nomor rekening terbaru terlalu pendek (minimal 6 angka).');
+    if (!d.bankBaru || d.bankBaru === ADD) throw new Error('Pilih bank rekening terbaru.');
+    if (!d.pemilikBaru) throw new Error('Isi nama pemilik rekening terbaru.');
+    return d;
+  }
+
+  function rekPayload(id, d, task) {
+    return {
+      id: id, id_pengajuan: id, no_paspor: d.paspor, nama: d.nama,
+      bank_lama: d.bankLama, rek_lama: d.rekLama, pemilik_lama: d.pemilikLama,
+      bank_baru: d.bankBaru, rek_baru: d.rekBaru, pemilik_baru: d.pemilikBaru,
+      task: task || 'WAITING'
+    };
+  }
+
+  // ── Form ──────────────────────────────────────────────────────
+  function toggleRekForm(force) {
+    var panel = document.getElementById('rekFormPanel');
+    var btn = document.getElementById('rekToggleBtn');
+    var open = (force === undefined) ? !panel.classList.contains('open') : !!force;
+    panel.classList.toggle('open', open);
+    btn.innerHTML = open ? '✕ Tutup form' : '＋ Ajukan Ganti Rekening';
+    btn.classList.toggle('btn-primary', !open);
+    btn.classList.toggle('btn-secondary', open);
+    if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else rekMsg('', '');
+  }
+  function rekMsg(type, text) {
+    var el = document.getElementById('r_formMsg');
+    el.className = 'msg ' + (type || ''); el.textContent = text || '';
+    if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function resetRekForm() {
+    ['r_paspor','r_nama','r_rekLama','r_pemilikLama','r_rekBaru','r_pemilikBaru'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
+    fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
+    rekMsg('', '');
+    rekLiveNote();
+  }
+
+  // Catatan langsung: ingatkan bila rekening baru sama persis dengan yang lama
+  function rekLiveNote() {
+    var note = document.getElementById('r_note');
+    if (!note) return;
+    var a = cleanRek(document.getElementById('r_rekLama').value);
+    var b = cleanRek(document.getElementById('r_rekBaru').value);
+    var bankA = document.getElementById('r_bankLama').value;
+    var bankB = document.getElementById('r_bankBaru').value;
+    if (a && b && a === b && bankA === bankB) {
+      note.innerHTML = '⚠️ Rekening terbaru <strong>sama persis</strong> dengan rekening sebelumnya — pastikan ini memang disengaja.';
+      note.classList.add('note-hi');
+    } else {
+      note.textContent = 'Nomor rekening hanya boleh berisi angka.';
+      note.classList.remove('note-hi');
+    }
+  }
+  ['r_rekLama','r_rekBaru','r_bankLama','r_bankBaru'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', rekLiveNote);
+  });
+
+  document.getElementById('r_submitBtn').addEventListener('click', function() {
+    var d;
+    try { d = gatherRek('r_'); } catch (err) { return rekMsg('error', err.message); }
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+    var id = genRekId();
+    sbPost('rekening', rekPayload(id, d, 'WAITING'), { 'Prefer': 'return=minimal' }).then(function() {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      rekMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
+      toast('Pengajuan ganti rekening tersimpan', 'ok');
+      resetRekForm(); toggleRekForm(false);
+      _rekLoaded = false; loadRekening(true);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      rekMsg('error', 'Gagal menyimpan: ' + err.message);
+    });
+  });
+
+  // ── Muat & render ─────────────────────────────────────────────
+  function loadRekening(force) {
+    var loading = document.getElementById('rekLoading');
+    var content = document.getElementById('rekContent');
+    var refresh = document.getElementById('rekRefreshBtn');
+    if (!force && _rekLoaded && _rekCache) { renderRekAll(); content.style.display = 'block'; return; }
+
+    loading.style.display = 'block'; loading.textContent = 'Memuat data…';
+    content.style.display = 'none';
+    document.getElementById('rekStatBox').innerHTML = renderSkeletonStats();
+    if (refresh) refresh.disabled = true;
+
+    getRekening().then(function(rows) {
+      _rekCache = rows; _rekLoaded = true;
+      loading.style.display = 'none';
+      document.getElementById('rekStatBox').innerHTML = '';
+      renderRekAll(); content.style.display = 'block';
+    }).catch(function(err) {
+      loading.textContent = '❌ Gagal memuat data: ' + err.message;
+      document.getElementById('rekStatBox').innerHTML = '';
+    }).finally(function() { if (refresh) refresh.disabled = false; });
+  }
+
+  function renderRekAll() { renderRekChips(); applyRekFilters(); updateRekCount(); }
+
+  function updateRekCount() {
+    var el = document.getElementById('rekCount');
+    if (!el) return;
+    // Badge tab = jumlah yang masih WAITING (yang perlu ditindaklanjuti)
+    var n = (_rekCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'WAITING'; }).length;
+    el.textContent = n;
+    el.style.display = n ? '' : 'none';
+  }
+
+  function renderRekChips() {
+    var wrap = document.getElementById('rekChips');
+    var list = ['ALL'].concat(rekTaskList());
+    wrap.innerHTML = list.map(function(s) {
+      var active = rekFilter.status === s ? ' active' : '';
+      return '<button class="chip' + active + '" data-rekstatus="' + esc(s) + '">' + esc(s === 'ALL' ? 'Semua' : s) + '</button>';
+    }).join('');
+    wrap.querySelectorAll('.chip').forEach(function(c) {
+      c.addEventListener('click', function() {
+        rekFilter.status = c.dataset.rekstatus; renderRekChips(); applyRekFilters();
+      });
+    });
+  }
+
+  var _rekSearchTimer = null;
+  document.getElementById('rekSearch').addEventListener('input', function() {
+    var v = this.value.trim().toLowerCase();
+    clearTimeout(_rekSearchTimer);
+    _rekSearchTimer = setTimeout(function() { rekFilter.search = v; applyRekFilters(); }, 140);
+  });
+
+  function matchRek(r) {
+    if (rekFilter.status !== 'ALL' && String(r.task).toUpperCase() !== rekFilter.status.toUpperCase()) return false;
+    if (rekFilter.search) {
+      var hay = (r.nama + ' ' + r.paspor + ' ' + r.rekLama + ' ' + r.rekBaru + ' ' + r.id).toLowerCase();
+      if (hay.indexOf(rekFilter.search) === -1) return false;
+    }
+    return true;
+  }
+
+  function applyRekFilters() {
+    if (!_rekCache) return;
+    var rows = _rekCache.filter(matchRek);
+    var filtered = (rekFilter.status !== 'ALL' || rekFilter.search);
+    document.getElementById('rekResultCount').innerHTML =
+      'Menampilkan <strong>' + rows.length + '</strong> dari ' + _rekCache.length + ' pengajuan' + (filtered ? ' · terfilter' : '');
+    renderRekStats(rows);
+    renderRekTable(rows);
+  }
+
+  function renderRekStats(rows) {
+    var waiting = 0, done = 0;
+    rows.forEach(function(r) {
+      if (String(r.task).toUpperCase() === 'WAITING') waiting++; else done++;
+    });
+    document.getElementById('rekStatBox').innerHTML =
+      statCard('Total Pengajuan', rows.length, 'var(--brand-ink)', 'var(--brand-050)', '🏦') +
+      statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
+      statCard('Done', done, 'var(--green)', 'var(--green-bg)', '✅');
+  }
+
+  function rekTaskCls(v) { return String(v || '').toUpperCase() === 'WAITING' ? 'task-WAITING' : 'task-SELESAI'; }
+
+  // Tampilkan nomor rekening + bank dalam satu sel
+  function rekCell(nomor, bank, pemilik) {
+    if (!nomor) return '<span class="pill pill-dash">–</span>';
+    return '<span class="rek-cell" title="' + esc(pemilik) + '">' +
+      '<span class="rek-no">' + esc(nomor) + '</span>' +
+      '<span class="rek-bank">' + esc(bank) + '</span>' +
+    '</span>';
+  }
+
+  function renderRekTable(rows) {
+    var tbody = document.getElementById('rekTableBody');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Belum ada pengajuan ganti rekening.</td></tr>';
+      return;
+    }
+    var list = rekTaskList();
+    tbody.innerHTML = rows.map(function(r, i) {
+      var opts = list.map(function(t) {
+        return '<option' + (t === r.task ? ' selected' : '') + '>' + esc(t) + '</option>';
+      }).join('');
+      return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
+        '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
+        '<td><span class="pill pill-perihal">' + esc(r.paspor) + '</span></td>' +
+        '<td>' + rekCell(r.rekLama, r.bankLama, r.pemilikLama) + '</td>' +
+        '<td>' + rekCell(r.rekBaru, r.bankBaru, r.pemilikBaru) + '</td>' +
+        '<td><select class="task-select ' + rekTaskCls(r.task) + '" data-rekrow="' + esc(r.rowId) +
+          '" data-status="' + esc(r.task) + '">' + opts + '</select></td>' +
+        '<td><button class="copy-btn" type="button" title="Salin format pengajuan" onclick="copyRek(\'' + esc(r.rowId) + '\', this)">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+          '<span>Salin</span></button></td>' +
+        '<td><span class="row-actions">' +
+          '<button class="icon-btn" title="Ubah" onclick="openRekEdit(\'' + esc(r.rowId) + '\')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          '</button>' +
+          '<button class="icon-btn danger" title="Hapus" onclick="deleteRek(\'' + esc(r.rowId) + '\',\'' + esc(r.nama) + '\')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</span></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Ubah status ───────────────────────────────────────────────
+  document.getElementById('rekTableBody').addEventListener('change', function(e) {
+    var sel = e.target;
+    if (!sel.classList.contains('task-select')) return;
+    var rowId = sel.dataset.rekrow, value = sel.value, oldVal = sel.getAttribute('data-status');
+    if (value === oldVal) return;
+    var nama = '';
+    (_rekCache || []).forEach(function(r) { if (r.rowId === rowId) nama = r.nama; });
+
+    confirmDialog({
+      title: 'Ubah Status Ganti Rekening',
+      warn: 'HANYA LEADER DAN CS LINE YANG MENGUBAH STATUS',
+      text: 'Ubah status ' + (nama ? nama + ' ' : '') + 'dari "' + oldVal + '" menjadi "' + value + '"?',
+      okLabel: 'Ya, ubah status', okClass: 'btn-primary', cancelLabel: 'Batal'
+    }, function() {
+      sel.classList.add('task-saving');
+      sbPatch('rekening', 'id=eq.' + encodeURIComponent(rowId), { task: value }).then(function() {
+        sel.classList.remove('task-saving');
+        sel.className = 'task-select ' + rekTaskCls(value);
+        sel.setAttribute('data-status', value);
+        (_rekCache || []).forEach(function(r) { if (r.rowId === rowId) r.task = value; });
+        applyRekFilters(); updateRekCount();
+        toast('Status diperbarui', 'ok');
+      }).catch(function(err) {
+        sel.classList.remove('task-saving'); sel.value = oldVal;
+        toast('Gagal update status: ' + err.message, 'err');
+      });
+    }, function() { sel.value = oldVal; });
+  });
+
+  // ── Edit ──────────────────────────────────────────────────────
+  function openRekEdit(rowId) {
+    var r = null;
+    (_rekCache || []).forEach(function(x) { if (x.rowId === rowId) r = x; });
+    if (!r) return;
+    rekEditingId = rowId;
+    document.getElementById('re_paspor').value = r.paspor;
+    document.getElementById('re_nama').value = r.nama;
+    document.getElementById('re_rekLama').value = r.rekLama;
+    document.getElementById('re_pemilikLama').value = r.pemilikLama;
+    document.getElementById('re_rekBaru').value = r.rekBaru;
+    document.getElementById('re_pemilikBaru').value = r.pemilikBaru;
+    fillSelect(document.getElementById('re_bankLama'), 'BANK', r.bankLama);
+    fillSelect(document.getElementById('re_bankBaru'), 'BANK', r.bankBaru);
+    var t = document.getElementById('re_task');
+    t.innerHTML = rekTaskList().map(function(v) {
+      return '<option' + (v === r.task ? ' selected' : '') + '>' + esc(v) + '</option>';
+    }).join('');
+    var m = document.getElementById('re_msg'); m.className = 'msg'; m.textContent = '';
+    document.getElementById('rekEditOverlay').classList.add('open');
+  }
+  function closeRekEdit() { document.getElementById('rekEditOverlay').classList.remove('open'); rekEditingId = null; }
+
+  document.getElementById('re_save').addEventListener('click', function() {
+    if (!rekEditingId) return;
+    var el = document.getElementById('re_msg');
+    var d;
+    try { d = gatherRek('re_'); }
+    catch (err) { el.className = 'msg error'; el.textContent = err.message; return; }
+    var patch = rekPayload(rekEditingId, d, document.getElementById('re_task').value);
+    delete patch.id; delete patch.id_pengajuan;
+    var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
+    sbPatch('rekening', 'id=eq.' + encodeURIComponent(rekEditingId), patch).then(function() {
+      btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+      closeRekEdit(); toast('Perubahan tersimpan', 'ok');
+      _rekLoaded = false; loadRekening(true);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+      el.className = 'msg error'; el.textContent = 'Gagal menyimpan: ' + err.message;
+    });
+  });
+
+  // ── Hapus ─────────────────────────────────────────────────────
+  function deleteRek(rowId, label) {
+    confirmDialog({
+      title: 'Hapus Pengajuan',
+      warn: 'DATA AKAN DIHAPUS PERMANEN DARI DATABASE DAN TIDAK BISA DIKEMBALIKAN',
+      text: 'Hapus pengajuan ganti rekening milik "' + label + '"?',
+      okLabel: 'Ya, hapus permanen', okClass: 'btn-danger'
+    }, function() {
+      sbDelete('rekening', 'id=eq.' + encodeURIComponent(rowId)).then(function(hapus) {
+        if (!hapus || hapus.length === 0) {
+          toast('Data tidak terhapus — periksa izin akses (RLS) di Supabase', 'err');
+          return;
+        }
+        if (_rekCache) {
+          for (var i = 0; i < _rekCache.length; i++) {
+            if (_rekCache[i].rowId === rowId) { _rekCache.splice(i, 1); break; }
+          }
+          applyRekFilters(); updateRekCount();
+        }
+        toast('Pengajuan dihapus permanen', 'ok');
+      }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
+    });
+  }
+
+  // ── Format Copy ───────────────────────────────────────────────
+  function buildRekFormat(r) {
+    return [
+      'NO PASPOR : ' + r.paspor,
+      'NAMA STAFF : ' + r.nama,
+      '',
+      'NOMOR REKENING SEBELUM NYA : ' + r.rekLama + ' (' + r.bankLama + ')',
+      'NAMA PEMILIK REKENING : ' + r.pemilikLama,
+      '',
+      'NOMOR REKENING TERBARU NYA : ' + r.rekBaru + ' (' + r.bankBaru + ')',
+      'NAMA PEMILIK REKENING : ' + r.pemilikBaru
+    ].join('\n');
+  }
+
+  function copyRek(rowId, btn) {
+    var r = null;
+    (_rekCache || []).forEach(function(x) { if (x.rowId === rowId) r = x; });
+    if (!r) return;
+    var text = buildRekFormat(r);
+    copyText(text).then(function() {
+      toast('Format pengajuan disalin', 'ok');
+      if (btn) {
+        var label = btn.querySelector('span'), asli = label ? label.textContent : '';
+        btn.classList.add('done'); if (label) label.textContent = 'Tersalin';
+        setTimeout(function() { btn.classList.remove('done'); if (label) label.textContent = asli; }, 1600);
+      }
+    }).catch(function() { showCopyFallback(text); });
+  }
+
+  document.getElementById('rekEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeRekEdit(); });
 
   // ── KALENDER ──────────────────────────────────────────────────
   var calRef = new Date(); calRef.setDate(1);
@@ -2363,6 +2917,9 @@
     fillSelect(document.getElementById('role'), 'ROLE', '');
     fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
     fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
+    fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
+    fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
+    renderRekChips();
     addFormLeave(false);
     fillLdr();
     renderFilters();
