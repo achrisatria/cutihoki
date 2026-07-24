@@ -41,9 +41,10 @@
     --stripe:    var(--bg-row-alt);
 
     /* ── Border ─────────────────────────────────────────────────── */
-    --border:        #D8E3F0;     /* border tabel umum                    */
-    --border-strong: #C8D7EA;     /* border yang lebih tegas              */
-    --border-header: #BFD0E8;     /* border bawah header                  */
+    --border:        #C8D4E8;     /* border tabel umum — lebih jelas      */
+    --border-strong: #B4C6DE;     /* border yang lebih tegas              */
+    --border-header: #A8BEDC;     /* border bawah header — lebih solid    */
+    --border-record: #ADBFD8;     /* garis pemisah antar record staff     */
     --hairline:      rgba(10,24,48,.06);
 
     /* Alias lama */
@@ -169,7 +170,7 @@
   }
 
   /* ── Page body wrapper ───────────────────────────────────────────── */
-  .container { max-width: 1440px; margin: 0 auto; padding: 24px 28px 64px; }
+  .container { max-width: 1440px; margin: 0 auto; padding: 24px 24px 64px; }
 
   /* ── Segmented tabs ─────────────────────────────────────────────── */
   .tabs {
@@ -507,15 +508,16 @@
      ══════════════════════════════════════════════════════════════════ */
   .table-wrap {
     background: var(--bg-table);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border-strong);   /* border container lebih jelas */
     border-radius: var(--radius-lg);
     /* shadow tipis floating — tidak terlalu berat */
     box-shadow:
-      0 1px 3px rgba(10,24,48,.04),
-      0 8px 24px -8px rgba(10,24,48,.10),
-      0 24px 56px -20px rgba(10,24,48,.14);
+      0 1px 3px rgba(10,24,48,.05),
+      0 8px 24px -8px rgba(10,24,48,.11),
+      0 24px 56px -20px rgba(10,24,48,.15);
     overflow: auto;
     max-height: calc(100vh - var(--header-h) - 48px);
+    width: 100%;           /* gunakan seluruh lebar container */
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
   }
@@ -556,7 +558,7 @@
     letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
     padding: 14px 12px 12px;
-    border-bottom: 1.5px solid var(--border-header);
+    border-bottom: 2px solid var(--border-header);
     white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
   }
@@ -580,15 +582,21 @@
     background: var(--bg-table);
     transition: background .14s ease;
   }
+  /* Garis pemisah antar record (antar staff) — tegas tapi tidak kasar */
+  tbody tr.rec td {
+    border-top: 1.5px solid var(--border-record);
+  }
+  /* Baris pertama tidak perlu border atas */
+  tbody tr.rec:first-child td { border-top: none; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr.row-cuti2 td { border-top: none; height: 40px; }
 
   /* Satu pengajuan = satu blok: hapus garis antara baris 1 & 2 */
   tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: none; }
 
-  /* Zebra sangat subtle — beda warna nyaris tak terlihat, membantu navigasi vertikal */
+  /* Zebra sangat subtle — membantu navigasi vertikal tanpa mengganggu border-record */
   tbody tr.rec-alt td,
-  tbody tr.rec-alt + tr.row-cuti2 td { background: var(--bg-row-alt); }
+  tbody tr.rec-alt + tr.row-cuti2 td { background: #F4F8FD; }
 
   /* Hover: sorot SELURUH blok (baris 1 + baris 2 bila ada) */
   tbody tr.rec:hover td,
