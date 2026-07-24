@@ -286,21 +286,15 @@
     margin-inline: auto;
     box-sizing: border-box;
     overflow-x: auto;  /* ZOOM-STABLE: horizontal scroll within wrapper when needed */
-    overflow-y: auto;
-    height: calc(100dvh - var(--header-h) - 170px);
-    min-height: 300px;
-    max-height: 760px;
+    overflow-y: visible;
     position: relative;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    /* ZOOM-STABLE: stable scrollbar-gutter — no layout shift when scrollbar appears */
-    scrollbar-gutter: stable;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
     isolation: isolate;
     -webkit-overflow-scrolling: touch;
   }
-  .table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+  /* horizontal-only scrollbar for table-wrap */
+  .table-wrap::-webkit-scrollbar { height: 8px; }
   .table-wrap::-webkit-scrollbar-track { background: transparent; }
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
@@ -628,9 +622,6 @@
     .cal-day { min-height: 54px; padding: 6px; }
     .dnum { font-size: 12px; }
     .table-wrap {
-      height: calc(100dvh - var(--header-h) - 150px);
-      min-height: 260px;
-      max-height: none;
       border-radius: 14px;
     }
     table { width: 100%; min-width: 0; }
