@@ -41,10 +41,12 @@
     --border:        #C8D3E3;
     --border-strong: #A8B9CE;
     --border-header: #93AABF;
-    --border-record: #A0B4CC;
     --hairline:      rgba(10,24,48,.07);
     --line:          var(--border);
     --line-strong:   var(--border-strong);
+
+    /* Table — satu sistem separator terpusat */
+    --table-divider: 1px solid var(--border-strong);
 
     /* Brand */
     --brand:      #1668E3;
@@ -325,8 +327,8 @@
     padding: 0 10px;
     height: 50px;
     text-align: center;
-    /* Default: light hairline between ordinary rows */
-    border-bottom: 1px solid var(--border);
+    /* No default border — separator is applied by the unified system below */
+    border-bottom: none;
     vertical-align: middle;
     overflow: hidden;
     background: var(--bg-table);
@@ -340,41 +342,31 @@
   tbody tr.row-cuti2 td { height: 42px; }
 
   /* ══════════════════════════════════════════════════════════════════
-     RECORD GROUP BORDERS
+     SISTEM SEPARATOR HORIZONTAL — SATU SUMBER TERPUSAT
      ─────────────────────────────────────────────────────────────────
-     A "record" may span two <tr> rows: tr.rec + optional tr.row-cuti2.
-     Rules:
-       • No inner hairline between rec and row-cuti2 (they are one block).
-       • Thick record-separator line appears BELOW the last row of each block.
-       • For rowspan="2" cells (Role, Nama, Total, …) border-bottom renders
-         at the physical bottom of the full span — i.e. below row-cuti2 —
-         which is exactly the correct position.
-       • Last row of tbody never shows a bottom border.
+     Seluruh garis horizontal pada tabel dikontrol oleh satu variabel:
+       --table-divider: 1px solid var(--border-strong)
+
+     Prinsip:
+       • Separator HANYA muncul di akhir setiap record block.
+       • Tidak ada garis di dalam satu block (antara rec + row-cuti2).
+       • Rowspan cells mendapat border-bottom yang jatuh di posisi visual
+         bawah span — yaitu tepat di bawah row-cuti2 — sama persis dengan
+         baris-baris non-rowspan di row-cuti2.
+       • Satu warna, satu ketebalan, satu style di seluruh tabel.
+       • Baris terakhir tidak memiliki separator (tepi bawah tabel bersih).
      ══════════════════════════════════════════════════════════════════ */
 
-  /* 1. Non-rowspan cells in tr.rec: suppress inner hairline */
-  tbody tr.rec:has(+ tr.row-cuti2) td:not([rowspan]) {
-    border-bottom: none;
-  }
+  /* Separator: akhir record satu baris, atau akhir row-cuti2 */
+  tbody tr.rec:not(:has(+ tr.row-cuti2)) td,
+  tbody tr.row-cuti2 td { border-bottom: var(--table-divider); }
 
-  /* 2. Rowspan cells in tr.rec: show record separator
-        (appears visually below row-cuti2 because of rowspan=2) */
-  tbody tr.rec:has(+ tr.row-cuti2) td[rowspan] {
-    border-bottom: 2px solid var(--border-record);
-  }
+  /* Separator: rowspan cells pada record dua baris
+     (border-bottom jatuh di posisi visual bawah span = di bawah row-cuti2) */
+  tbody tr.rec:has(+ tr.row-cuti2) td[rowspan] { border-bottom: var(--table-divider); }
 
-  /* 3. All cells in row-cuti2: record separator */
-  tbody tr.row-cuti2 td {
-    border-bottom: 2px solid var(--border-record);
-  }
-
-  /* 4. Single-row records (no row-cuti2): record separator on all cells */
-  tbody tr.rec:not(:has(+ tr.row-cuti2)) td {
-    border-bottom: 2px solid var(--border-record);
-  }
-
-  /* 5. Absolute last row of tbody: no bottom border (clean table edge) */
-  tbody tr:last-child td { border-bottom: none !important; }
+  /* Baris terakhir tbody: tidak ada separator — tepi bawah tabel bersih */
+  tbody tr:last-child td { border-bottom: none; }
 
   /* ── Alignment ───────────────────────────────────────────────────── */
   /* Left-align: Nama (col 2) and Periode (col 3) in main row */
@@ -434,7 +426,7 @@
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
   tr.row-cuti2 .periode { color: var(--text-muted); }
   .empty { text-align: center; color: var(--text-muted); padding: 54px 0 !important; font-size: 14px; }
-  .more-row td { height: auto !important; padding: 16px 14px !important; text-align: center; background: var(--surface-2) !important; border-bottom: none !important; }
+  .more-row td { height: auto !important; padding: 16px 14px !important; text-align: center; background: var(--surface-2) !important; border-bottom: none; }
   .more-note { display: block; margin-top: 7px; font-size: 12px; color: var(--text-muted); }
 
   /* ══════════════════════════════════════════════════════════════════
