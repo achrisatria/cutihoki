@@ -91,7 +91,8 @@
     /* Spacing tabel — satu sumber untuk header, body, dan row-cuti2. */
     --cell-px: 10px;        /* padding kiri-kanan SEMUA kolom (th & td) */
     --cell-py: 9px;         /* padding atas-bawah DEFAULT — satu angka untuk semua baris */
-    --cuti-gap: 3px;        /* jarak dalam antara cuti 1 & cuti 2 (setengah per sisi) */
+    --cuti-gap: 4px;        /* padding tiap sisi dari hairline tengah (4+1px+4 = 9 = --cell-py) */
+    --cuti-line: 1px solid rgba(10,24,48,.07); /* hairline separator antara cuti 1 & 2 */
     --table-cell-x: var(--cell-px); /* alias lama agar kode lain tidak patah */
     --table-content-gap: 6px;
     --table-control-gap: 6px;
@@ -390,27 +391,32 @@
   tbody tr.row-cuti2 td:nth-child(1) { text-align: center; }
 
   /* ── Rapatkan tanggal cuti 1 & cuti 2 ───────────────────────────── */
-  /* Prinsip simetri:
-       • Jarak LUAR atas  (di atas cuti 1)  = --cell-py  = 9px
-       • Jarak DALAM      (antara cuti 1&2) = --cuti-gap = 3px (per sisi)
-       • Jarak LUAR bawah (di bawah cuti 2) = --cell-py  = 9px
-     Atas == Bawah secara matematis karena sama-sama --cell-py.           */
+  /* Prinsip presisi — semua jarak sama:
+       • Luar atas  (di atas cuti 1)      = --cell-py              =  9px
+       • Dalam atas (cuti 1 → hairline)   = --cuti-gap             =  4px
+       • Hairline                         = --cuti-line             =  1px
+       • Dalam bawah (hairline → cuti 2)  = --cuti-gap             =  4px
+       • Luar bawah (di bawah cuti 2)     = --cell-py              =  9px
+     Simetri penuh: 9 | teks | 4+1px+4 | teks | 9
+     Teks cuti 1 bottom-align → mendekat ke hairline dari atas.
+     Teks cuti 2 top-align    → mendekat ke hairline dari bawah.     */
 
   /* Cuti 1 — non-rowspan (kolom 3–6: Periode, Durasi, Perihal, Bentrok) */
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(3),
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(4),
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(5),
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(6) {
-    vertical-align: top;
-    padding-top:    var(--cell-py);   /* 9px — jarak luar atas */
-    padding-bottom: var(--cuti-gap);  /* 3px — menuju cuti 2   */
+    vertical-align: bottom;
+    padding-top:    var(--cell-py);   /* 9px — jarak luar atas          */
+    padding-bottom: var(--cuti-gap);  /* 4px — antara teks & hairline   */
+    border-bottom:  var(--cuti-line); /* 1px hairline — titik tengah    */
   }
 
   /* Cuti 2 — semua sel baris kedua */
   tbody tr.row-cuti2 td {
     vertical-align: top;
-    padding-top:    var(--cuti-gap);  /* 3px — dari cuti 1     */
-    padding-bottom: var(--cell-py);   /* 9px — jarak luar bawah */
+    padding-top:    var(--cuti-gap);  /* 4px — antara hairline & teks   */
+    padding-bottom: var(--cell-py);   /* 9px — jarak luar bawah         */
   }
 
   /* ══════════════════════════════════════════════════════════════════
