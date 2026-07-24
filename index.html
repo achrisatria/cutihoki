@@ -533,7 +533,9 @@
     width: 100%; border-collapse: collapse; font-size: 12.5px;
     table-layout: fixed;
     /* min-width mencegah kolom runtuh — dipakai horizontal scroll bila layar sempit */
-    min-width: 1220px;
+    /* min-width = sum fixed cols + buffer untuk 20% NAMA
+       70+205+68+112+90+108+74+130+90+78 = 1025px fixed → total ≥ 1260px */
+    min-width: 1260px;
   }
 
   /* ── Lebar kolom (PRIORITAS: NAMA → PERIODE → PERIHAL → BENTROK → STATUS | compact sisanya) */
@@ -543,7 +545,7 @@
   .c-durasi  { width: 68px;  }   /* compact — "14 Hari"                   */
   .c-perihal { width: 112px; }   /* menengah — nama jenis cuti            */
   .c-bentrok { width: 90px;  }   /* cukup untuk "2 staff" / "Aman"        */
-  .c-total   { width: 90px;  }   /* compact highlight — badge navy        */
+  .c-total   { width: 108px; }   /* cukup untuk "14 Hari (+2)" dua badge  */
   .c-pass    { width: 74px;  }   /* compact — "Ambil" / "Tidak"           */
   .c-status  { width: 130px; }   /* cukup untuk dropdown + label          */
   .c-copy    { width: 90px;  }   /* compact — tombol Salin                */
@@ -557,7 +559,7 @@
     font-size: 9.5px; font-weight: 800;
     letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
-    padding: 14px 12px 12px;
+    padding: 13px 10px 11px;  /* selaras dengan body td padding: 0 10px */
     border-bottom: 2px solid var(--border-header);
     white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
@@ -574,7 +576,7 @@
 
   /* ── Baris data ─────────────────────────────────────────────────── */
   tbody td {
-    padding: 0 12px;
+    padding: 0 10px;          /* padding horizontal seragam */
     height: 50px;
     text-align: center;
     border-bottom: 1px solid var(--border);
@@ -582,19 +584,25 @@
     background: var(--bg-table);
     transition: background .14s ease;
   }
-  /* Garis pemisah antar record (antar staff) — tegas tapi tidak kasar */
-  tbody tr.rec td {
-    border-top: 1.5px solid var(--border-record);
-  }
-  /* Baris pertama tidak perlu border atas */
-  tbody tr.rec:first-child td { border-top: none; }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr.row-cuti2 td { border-top: none; height: 40px; }
+  /* Presisi kolom: breathing room lebih di tepi kiri & kanan tabel */
+  thead th:first-child, tbody td:first-child { padding-left: 16px; padding-right: 8px; }
+  thead th:last-child,  tbody td:last-child  { padding-left: 8px;  padding-right: 16px; }
+  /* TOTAL — padding minimalis agar dua badge (14 Hari + +2) tidak gepeng */
+  thead th.c-total, tbody td.c-total { padding-left: 6px; padding-right: 6px; }
+  /* ── Pemisah antar record (antar staff):
+       Gunakan border-bottom tebal pada baris TERAKHIR setiap record,
+       bukan border-top — sehingga tidak memotong amber spine di baris pertama. */
+  tbody tr.rec td           { border-bottom: 1px solid var(--border); }
+  tbody tr.row-cuti2 td     { border-bottom: 2px solid var(--border-record); height: 40px; border-top: none; }
+  /* Record tanpa row-cuti2: border-bottom langsung dari rec */
+  tbody tr.rec:not(:has(+ tr.row-cuti2)) td { border-bottom: 2px solid var(--border-record); }
+  /* Baris terakhir tabel tidak perlu border bawah */
+  tbody tr:last-child td { border-bottom: none !important; }
 
-  /* Satu pengajuan = satu blok: hapus garis antara baris 1 & 2 */
+  /* Satu pengajuan = satu blok: hapus garis antara baris 1 & 2 dalam blok */
   tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: none; }
 
-  /* Zebra sangat subtle — membantu navigasi vertikal tanpa mengganggu border-record */
+  /* Zebra sangat subtle — membantu navigasi vertikal */
   tbody tr.rec-alt td,
   tbody tr.rec-alt + tr.row-cuti2 td { background: #F4F8FD; }
 
@@ -609,13 +617,26 @@
   tbody tr.rec td:nth-child(3) { text-align: left; }
   tbody tr.row-cuti2 td:nth-child(1) { text-align: left; }
 
-  /* ✦ CONFLICT SPINE — tepi kiri baris menyala hanya bila ada bentrok */
+  /* ✦ CONFLICT SPINE — garis amber/merah di tepi kiri, menerus di KEDUA baris blok
+       Pendekatan: box-shadow inset pada td:first-child rec + row-cuti2 berikutnya
+       border-bottom pada rec tidak dipotong karena spine ada di sisi kiri (x-axis berbeda) */
+  /* WARN — amber */
   tbody tr.rec:has(.pill-clash-warn) td:first-child,
   tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child {
     box-shadow: inset 3px 0 0 var(--amber);
   }
+  /* Perpanjang spine ke row-cuti2 di bawahnya */
+  tbody tr.rec:has(.pill-clash-warn) + tr.row-cuti2 td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) + tr.row-cuti2 td:first-child {
+    box-shadow: inset 3px 0 0 var(--amber);
+  }
+  /* ALERT — merah */
   tbody tr.rec:has(.pill-clash-alert) td:first-child,
   tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child {
+    box-shadow: inset 3px 0 0 var(--red);
+  }
+  tbody tr.rec:has(.pill-clash-alert) + tr.row-cuti2 td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) + tr.row-cuti2 td:first-child {
     box-shadow: inset 3px 0 0 var(--red);
   }
 
