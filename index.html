@@ -299,22 +299,19 @@
     font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
     padding: 13px 10px 11px;
-    /* Garis bawah header: box-shadow menggantikan border-bottom agar sticky
-       tidak kehilangan garis saat discroll (known browser bug dg border-collapse) */
-    box-shadow: inset 0 -2px 0 var(--border-header);
-    border-right: 1px solid var(--border);
+    border-bottom: 2px solid var(--border-header);
     white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
   }
   thead th.c-nama, thead th.c-periode { text-align: left; }
   /* Tepi kiri-kanan tabel */
   thead th:first-child { padding-left: 16px; }
-  thead th:last-child  { padding-right: 16px; border-right: none; box-shadow: inset 0 -2px 0 var(--border-header); }
+  thead th:last-child  { padding-right: 16px; }
   thead th.c-total     { padding-left: 6px; padding-right: 6px; }
 
   thead th::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 0;
-    /* Shadow dihapus agar tidak melukis di atas baris tbody pertama */
+    content: ""; position: absolute; left: 0; right: 0; bottom: -12px; height: 12px;
+    background: linear-gradient(180deg, rgba(10,24,48,.04), transparent);
     pointer-events: none;
   }
 
@@ -323,40 +320,28 @@
     padding: 0 10px;
     height: 50px;
     text-align: center;
-    border-top: none;       /* separator ditarik ke border-top rec berikutnya */
-    border-bottom: none;
-    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     vertical-align: middle; overflow: hidden;
     background: var(--bg-table);
     transition: background .14s ease;
   }
   /* Presisi padding tepi kiri & kanan */
   tbody td:first-child { padding-left: 16px; padding-right: 8px; }
-  tbody td:last-child  { padding-left: 8px;  padding-right: 16px; border-right: none; }
+  tbody td:last-child  { padding-left: 8px;  padding-right: 16px; }
   /* TOTAL: ruang ekstra untuk dua badge "14 Hari (+2)" */
   tbody td.c-total     { padding-left: 6px; padding-right: 6px; }
 
-  /* Sub-baris: tidak ada garis atas/bawah (menyatu dengan baris rec-nya) */
-  tbody tr.row-cuti2 td  {
-    height: 40px;
-    border-top: none;
-    border-bottom: none;
-    border-right: 1px solid var(--border);
-  }
-  tbody tr.row-cuti2 td:last-child { border-right: none; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.row-cuti2 td  { border-top: none; height: 40px; }
 
-  /* ── Pemisah antar-record: border-top pada baris awal record (kecuali pertama)
-     Pendekatan ini bebas rowspan bug dan tidak butuh :has() untuk membuangnya. */
-  tbody tr.rec:not(:first-child) td {
-    border-top: 1px solid var(--border);
-  }
+  /* Satu blok = satu staff — tidak ada border antar baris dalam blok */
+  tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: none; }
 
-  /* Dalam satu blok 2-baris: hilangkan garis tengah HANYA pada sel non-rowspan
-     (col Periode/Durasi/Perihal/Bentrok). Sel rowspan tetap punya border bawah
-     yang sejajar dengan baris row-cuti2 → garis antar blok konsisten di semua kolom. */
-  /* (border-bottom rule lama dihapus — sudah digantikan oleh border-top rec) */
-
-  tbody tr:last-child td { border-bottom: none !important; }
+  /* Pemisah antar staff: border-bottom tebal di baris TERAKHIR tiap blok.
+     Dibuat lebih gelap dari border biasa agar jelas terlihat. */
+  tbody tr.row-cuti2 td                          { border-bottom: 2px solid var(--border-record); }
+  tbody tr.rec:not(:has(+ tr.row-cuti2)) td      { border-bottom: 2px solid var(--border-record); }
+  tbody tr:last-child td                          { border-bottom: none !important; }
 
   /* Zebra subtle */
   tbody tr.rec-alt td,
@@ -391,18 +376,42 @@
     box-shadow: inset 3px 0 0 var(--red);
   }
 
-  /* Case B: clash HANYA ada di baris row-cuti2 (bukan di rec)
-     Terapkan spine ke td:first-child BARIS REC-nya (rowspan=2 → mencakup kedua baris).
-     Pendekatan ini menghilangkan garis coklat antara kolom NAMA & PERIODE CUTI. */
-  tbody tr.rec:has(+ tr.row-cuti2:has(.pill-clash-warn)) td:first-child {
+  /* Case B: clash ada di baris row-cuti2 */
+  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child,
+  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
+    position: relative;
+    overflow: visible;
+  }
+  /* Spine pada row-cuti2 itu sendiri */
+  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child {
     box-shadow: inset 3px 0 0 var(--amber);
   }
-  tbody tr.rec:has(+ tr.row-cuti2:has(.pill-clash-alert)) td:first-child {
+  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
     box-shadow: inset 3px 0 0 var(--red);
   }
+  /* ::before memanjang ke atas (50px = tinggi baris rec) — menutupi baris rec */
+  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child::before {
+    content: ""; position: absolute;
+    left: 0; width: 3px;
+    top: -50px; height: 50px;   /* naik ke baris rec persis di atasnya */
+    background: var(--amber);
+    z-index: 1;
+  }
+  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child::before {
+    content: ""; position: absolute;
+    left: 0; width: 3px;
+    top: -50px; height: 50px;
+    background: var(--red);
+    z-index: 1;
+  }
 
-  /* Case C dihapus: sudah tercakup oleh Case A (spine rowspan=2 covers sub-row)
-     dan Case B baru (spine di-redirect ke rec td:first-child). */
+  /* Case C: rec punya clash DAN row-cuti2-nya juga perlu spine */
+  tbody tr.rec:has(.pill-clash-warn) + tr.row-cuti2 td:first-child {
+    box-shadow: inset 3px 0 0 var(--amber);
+  }
+  tbody tr.rec:has(.pill-clash-alert) + tr.row-cuti2 td:first-child {
+    box-shadow: inset 3px 0 0 var(--red);
+  }
 
   /* ── Teks sel ─────────────────────────────────────────────────────── */
   .cell-name { font-weight: 600; color: var(--text-primary); font-size: 13px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
