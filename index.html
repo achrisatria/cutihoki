@@ -288,7 +288,8 @@
     position: relative;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    scrollbar-gutter: stable;
+    /* Sisakan ruang scrollbar secara simetris di kiri dan kanan. */
+    scrollbar-gutter: stable both-edges;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
     isolation: isolate;
