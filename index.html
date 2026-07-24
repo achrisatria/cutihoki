@@ -150,7 +150,8 @@
   /* ── Page ─────────────────────────────────────────────────────────── */
   .container {
     width: 100%;
-    max-width: none;
+    /* ZOOM-STABLE: cap width so layout stays compact at low zoom (50-75%) */
+    max-width: 1680px;
     margin-inline: auto;
     padding: clamp(16px, 2vw, 24px) var(--page-gutter) 64px;
   }
@@ -289,7 +290,6 @@
     overflow-y: visible;
     position: relative;
     isolation: isolate;
-    -webkit-overflow-scrolling: touch;
   }
   /* horizontal-only scrollbar for table-wrap */
   .table-wrap::-webkit-scrollbar { height: 8px; }
@@ -334,9 +334,10 @@
     /* box-shadow replaces border-bottom so sticky works correctly with border-collapse:separate */
     box-shadow: 0 2px 0 var(--border-header), 0 6px 14px -10px rgba(10,24,48,.22);
     white-space: nowrap;
-    position: sticky; top: 0; z-index: 10;
+    /* ZOOM-STABLE: stick just below app-header (page now scrolls, not the table) */
+    position: sticky; top: var(--header-h); z-index: 10;
   }
-  thead th.c-nama, thead th.c-periode { text-align: center; }
+  thead th.c-nama, thead th.c-periode { text-align: left; }
 
   /* ── Body cells ──────────────────────────────────────────────────── */
   tbody td {
@@ -384,9 +385,9 @@
   /* ── Alignment ───────────────────────────────────────────────────── */
   /* Left-align: Nama (col 2) and Periode (col 3) in main row */
   tbody tr.rec td:nth-child(2),
-  tbody tr.rec td:nth-child(3) { text-align: center; }
+  tbody tr.rec td:nth-child(3) { text-align: left; }
   /* Left-align: Periode (first cell) in second row */
-  tbody tr.row-cuti2 td:nth-child(1) { text-align: center; }
+  tbody tr.row-cuti2 td:nth-child(1) { text-align: left; }
 
   /* ══════════════════════════════════════════════════════════════════
      ZEBRA STRIPING
