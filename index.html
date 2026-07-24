@@ -333,7 +333,14 @@
   /* TOTAL: ruang ekstra untuk dua badge "14 Hari (+2)" */
   tbody td.c-total     { padding-left: 6px; padding-right: 6px; }
 
-  tbody tr.row-cuti2 td  { height: 40px; }
+  /* Sub-baris: tidak ada border-top (sudah ditutup border-bottom baris rec) */
+  tbody tr.row-cuti2 td  { height: 40px; border-top: none; }
+
+  /* Dalam satu blok 2-baris: hilangkan garis tengah HANYA pada sel non-rowspan
+     (col Periode/Durasi/Perihal/Bentrok). Sel rowspan tetap punya border bawah
+     yang sejajar dengan baris row-cuti2 → garis antar blok konsisten di semua kolom. */
+  tbody tr.rec:has(+ tr.row-cuti2) td:not([rowspan]) { border-bottom: none; }
+
   tbody tr:last-child td { border-bottom: none !important; }
 
   /* Zebra subtle */
