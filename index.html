@@ -300,14 +300,13 @@
     color: var(--text-secondary);
     padding: 13px 10px 11px;
     border-bottom: 2px solid var(--border-header);
-    border-right: 1px solid var(--border);
     white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
   }
   thead th.c-nama, thead th.c-periode { text-align: left; }
   /* Tepi kiri-kanan tabel */
   thead th:first-child { padding-left: 16px; }
-  thead th:last-child  { padding-right: 16px; border-right: none; }
+  thead th:last-child  { padding-right: 16px; }
   thead th.c-total     { padding-left: 6px; padding-right: 6px; }
 
   thead th::after {
@@ -322,14 +321,13 @@
     height: 50px;
     text-align: center;
     border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
     vertical-align: middle; overflow: hidden;
     background: var(--bg-table);
     transition: background .14s ease;
   }
   /* Presisi padding tepi kiri & kanan */
   tbody td:first-child { padding-left: 16px; padding-right: 8px; }
-  tbody td:last-child  { padding-left: 8px;  padding-right: 16px; border-right: none; }
+  tbody td:last-child  { padding-left: 8px;  padding-right: 16px; }
   /* TOTAL: ruang ekstra untuk dua badge "14 Hari (+2)" */
   tbody td.c-total     { padding-left: 6px; padding-right: 6px; }
 
@@ -339,9 +337,10 @@
   /* Satu blok = satu staff — tidak ada border antar baris dalam blok */
   tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: none; }
 
-  /* Pemisah antar staff: sama dengan border baris biasa */
-  tbody tr.row-cuti2 td                          { border-bottom: 1px solid var(--border); }
-  tbody tr.rec:not(:has(+ tr.row-cuti2)) td      { border-bottom: 1px solid var(--border); }
+  /* Pemisah antar staff: border-bottom tebal di baris TERAKHIR tiap blok.
+     Dibuat lebih gelap dari border biasa agar jelas terlihat. */
+  tbody tr.row-cuti2 td                          { border-bottom: 2px solid var(--border-record); }
+  tbody tr.rec:not(:has(+ tr.row-cuti2)) td      { border-bottom: 2px solid var(--border-record); }
   tbody tr:last-child td                          { border-bottom: none !important; }
 
   /* Zebra subtle */
