@@ -89,7 +89,9 @@
     --page-gutter: clamp(24px, 4vw, 56px);
 
     /* Spacing tabel — satu sumber untuk header, body, dan row-cuti2. */
-    --table-cell-x: 8px; /* ZOOM-STABLE: fixed px, no vw inside table */
+    --cell-px: 10px;        /* padding kiri-kanan SEMUA kolom (th & td) */
+    --cell-py: 0px;         /* padding atas-bawah default (tinggi diatur via height) */
+    --table-cell-x: var(--cell-px); /* alias lama agar kode lain tidak patah */
     --table-content-gap: 6px;
     --table-control-gap: 6px;
   }
@@ -330,7 +332,7 @@
     font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
     height: 42px;
-    padding: 0 var(--table-cell-x);
+    padding: var(--cell-py) var(--cell-px);
     /* box-shadow replaces border-bottom so sticky works correctly with border-collapse:separate */
     box-shadow: 0 2px 0 var(--border-header), 0 6px 14px -10px rgba(10,24,48,.22);
     white-space: nowrap;
@@ -340,7 +342,7 @@
 
   /* ── Body cells ──────────────────────────────────────────────────── */
   tbody td {
-    padding: 0 var(--table-cell-x);
+    padding: var(--cell-py) var(--cell-px);
     height: 38px;
     text-align: center;
     /* No default border — separator is applied by the unified system below */
@@ -446,7 +448,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { font-weight: 600; text-align: left; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -460,7 +462,7 @@
      ══════════════════════════════════════════════════════════════════ */
   /* ZOOM-STABLE: pills — compact horizontal padding, still readable */
   .pill {
-    display: inline-flex; align-items: left; justify-content: left; gap: 5px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
     font-size: 11px; font-weight: 600; letter-spacing: .004em;
     padding: 3px 8px;
     min-height: 22px;
