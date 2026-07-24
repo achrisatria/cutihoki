@@ -585,6 +585,179 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   }
+
+  /* ── Audit refinement: table command-center pass ─────────────────────
+     These rules are presentation-only. The existing DOM, inline handlers,
+     API calls and rendering logic remain untouched. */
+  html { overflow-x: hidden; }
+  body { overflow-x: hidden; }
+  .container { width: min(100%, 1440px); }
+  .table-wrap {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Do not reserve a permanent empty strip beside the table. The stable
+       gutter made the right edge stop short when the horizontal scroll was
+       at its maximum position. */
+    scrollbar-gutter: auto;
+    -webkit-overflow-scrolling: touch;
+    isolation: isolate;
+    /* Continuous table spine. This belongs to the scroll container rather
+       than individual cells, so safe rows and rowspan boundaries cannot
+       interrupt the brown line. */
+    border-left: 3px solid var(--amber);
+  }
+  /* Separate borders keep the shared rowspan cell and its overlays from
+     being cut by the collapsed-border conflict resolution algorithm. */
+  table {
+    width: max(100%, 1320px);
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  thead th {
+    height: 46px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    box-shadow: 0 1px 0 var(--border-header), 0 8px 12px -10px rgba(10,24,48,.38);
+    background: linear-gradient(180deg, #edf3fb 0%, #e4ecf7 100%);
+  }
+  thead th::after { bottom: -9px; height: 9px; }
+  tbody td {
+    height: 52px;
+    padding-left: 11px;
+    padding-right: 11px;
+    border-bottom-color: #d2dbe7;
+  }
+  tbody tr.row-cuti2 td { height: 44px; }
+  tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: 0; }
+  tbody tr.row-cuti2 td { border-bottom: 2px solid var(--border-record); }
+  tbody tr.rec:not(:has(+ tr.row-cuti2)) td { border-bottom: 2px solid var(--border-record); }
+  tbody tr:last-child td { border-bottom: 0 !important; }
+  tbody tr.rec-alt td,
+  tbody tr.rec-alt + tr.row-cuti2 td { background: #f6f9fd; }
+  tbody tr.rec:hover td,
+  tbody tr.rec:hover + tr.row-cuti2 td,
+  tbody tr.rec:has(+ tr.row-cuti2:hover) td,
+  tbody tr.row-cuti2:hover td { background: #edf5ff !important; }
+  tbody td:first-child { padding-left: 17px; }
+  tbody td:last-child { padding-right: 17px; }
+  .cell-name { max-width: 100%; }
+  .pill {
+    min-height: 25px;
+    justify-content: center;
+    line-height: 1.15;
+    vertical-align: middle;
+  }
+  .pill-perihal { max-width: 100%; }
+  .task-select {
+    min-width: 114px;
+    min-height: 28px;
+    line-height: 1.2;
+  }
+  .copy-btn { min-height: 29px; justify-content: center; }
+  .row-actions { justify-content: center; }
+
+  /* The role cell is rowspan="2", so the single spine belongs on that
+     shared cell. This also fixes a second-row-only clash without relying
+     on a pseudo-element extending across a table row. */
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child,
+  tbody tr.rec:has(.pill-clash-warn) td:first-child {
+    box-shadow: inset 3px 0 0 var(--amber);
+  }
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child,
+  tbody tr.rec:has(.pill-clash-alert) td:first-child {
+    box-shadow: inset 3px 0 0 var(--red);
+  }
+  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child,
+  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
+    box-shadow: none;
+    position: static;
+    overflow: hidden;
+  }
+  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child::before,
+  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child::before { display: none; }
+  tbody tr.rec:has(.pill-clash-warn) + tr.row-cuti2 td:first-child,
+  tbody tr.rec:has(.pill-clash-alert) + tr.row-cuti2 td:first-child { box-shadow: none; }
+
+  /* Keep the record separator continuous across rowspan cells. A two-row
+     record has its shared cells in the first tr, so the separator must sit
+     on those cells as well as on the four cells in row-cuti2. */
+  tbody tr.rec:has(+ tr.row-cuti2) td[rowspan] {
+    border-bottom: 2px solid var(--border-record);
+  }
+  tbody tr.row-cuti2:last-child td {
+    border-bottom: 2px solid var(--border-record);
+  }
+
+  /* The conflict marker is an overlay inside the shared role cell. It spans
+     the complete rowspan and sits above record separators, so the vertical
+     line cannot be visually cut at the boundary between two staff rows. */
+  tbody tr.rec:has(.pill-clash-warn) td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child {
+    position: relative;
+    overflow: visible;
+    border-left: 0 !important;
+    box-shadow: none !important;
+    z-index: 3;
+  }
+  tbody tr.rec:has(.pill-clash-alert) td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child {
+    position: relative;
+    overflow: visible;
+    border-left: 0 !important;
+    box-shadow: none !important;
+    z-index: 3;
+  }
+  tbody tr.rec:has(.pill-clash-warn) td:first-child::before,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child::before,
+  tbody tr.rec:has(.pill-clash-alert) td:first-child::before,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    z-index: 20;
+    pointer-events: none;
+    border-radius: 0;
+  }
+  tbody tr.rec:has(.pill-clash-warn) td:first-child::before,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child::before {
+    background: var(--amber);
+  }
+  tbody tr.rec:has(.pill-clash-alert) td:first-child::before,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child::before {
+    background: var(--red);
+  }
+
+  /* Keep the continuous spine visible above row backgrounds and separators.
+     It is intentionally a single container edge, not a per-record marker. */
+  .table-wrap {
+    box-shadow:
+      inset 3px 0 0 var(--amber),
+      0 1px 3px rgba(10,24,48,.05),
+      0 8px 24px -8px rgba(10,24,48,.11),
+      0 24px 56px -20px rgba(10,24,48,.15);
+  }
+
+  @media (max-width: 720px) {
+    .container { padding-left: 12px; padding-right: 12px; }
+    .table-wrap {
+      border-radius: 14px;
+      max-width: 100%;
+      max-height: none;
+    }
+    table { min-width: 1320px; }
+    thead th { height: 44px; padding-left: 9px; padding-right: 9px; }
+    tbody td { padding-left: 9px; padding-right: 9px; }
+    tbody td:first-child { padding-left: 14px; }
+    tbody td:last-child { padding-right: 14px; }
+    .filter-bar { align-items: stretch; }
+    .filter-divider { display: none; }
+  }
 </style>
 </head>
 <body>
