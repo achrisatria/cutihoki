@@ -341,7 +341,7 @@
   /* ── Body cells ──────────────────────────────────────────────────── */
   tbody td {
     padding: 0 var(--table-cell-x);
-    height: 40px;
+    height: 38px;
     text-align: center;
     /* No default border — separator is applied by the unified system below */
     border-bottom: none;
@@ -351,8 +351,8 @@
     transition: background .14s ease;
     box-sizing: border-box;
   }
-  /* Second cuti row is slightly shorter */
-  tbody tr.row-cuti2 td { height: 32px; }
+  /* Second cuti row — same height for perfectly symmetric top/bottom spacing */
+  tbody tr.row-cuti2 td { height: 38px; }
 
   /* ══════════════════════════════════════════════════════════════════
      SISTEM SEPARATOR HORIZONTAL — SATU SUMBER TERPUSAT
