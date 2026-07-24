@@ -323,8 +323,8 @@
     padding: 0 10px;
     height: 50px;
     text-align: center;
-    border-top: none;                         /* cegah garis ganda dari collapse */
-    border-bottom: 1px solid var(--border);
+    border-top: none;       /* separator ditarik ke border-top rec berikutnya */
+    border-bottom: none;
     border-right: 1px solid var(--border);
     vertical-align: middle; overflow: hidden;
     background: var(--bg-table);
@@ -336,19 +336,25 @@
   /* TOTAL: ruang ekstra untuk dua badge "14 Hari (+2)" */
   tbody td.c-total     { padding-left: 6px; padding-right: 6px; }
 
-  /* Sub-baris: border-top none eksplisit & border-right konsisten */
+  /* Sub-baris: tidak ada garis atas/bawah (menyatu dengan baris rec-nya) */
   tbody tr.row-cuti2 td  {
     height: 40px;
     border-top: none;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
     border-right: 1px solid var(--border);
   }
   tbody tr.row-cuti2 td:last-child { border-right: none; }
 
+  /* ── Pemisah antar-record: border-top pada baris awal record (kecuali pertama)
+     Pendekatan ini bebas rowspan bug dan tidak butuh :has() untuk membuangnya. */
+  tbody tr.rec:not(:first-child) td {
+    border-top: 1px solid var(--border);
+  }
+
   /* Dalam satu blok 2-baris: hilangkan garis tengah HANYA pada sel non-rowspan
      (col Periode/Durasi/Perihal/Bentrok). Sel rowspan tetap punya border bawah
      yang sejajar dengan baris row-cuti2 → garis antar blok konsisten di semua kolom. */
-  tbody tr.rec:has(+ tr.row-cuti2) td:not([rowspan]) { border-bottom: none; }
+  /* (border-bottom rule lama dihapus — sudah digantikan oleh border-top rec) */
 
   tbody tr:last-child td { border-bottom: none !important; }
 
@@ -385,42 +391,18 @@
     box-shadow: inset 3px 0 0 var(--red);
   }
 
-  /* Case B: clash ada di baris row-cuti2 */
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child,
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
-    position: relative;
-    overflow: visible;
-  }
-  /* Spine pada row-cuti2 itu sendiri */
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child {
+  /* Case B: clash HANYA ada di baris row-cuti2 (bukan di rec)
+     Terapkan spine ke td:first-child BARIS REC-nya (rowspan=2 → mencakup kedua baris).
+     Pendekatan ini menghilangkan garis coklat antara kolom NAMA & PERIODE CUTI. */
+  tbody tr.rec:has(+ tr.row-cuti2:has(.pill-clash-warn)) td:first-child {
     box-shadow: inset 3px 0 0 var(--amber);
   }
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
+  tbody tr.rec:has(+ tr.row-cuti2:has(.pill-clash-alert)) td:first-child {
     box-shadow: inset 3px 0 0 var(--red);
-  }
-  /* ::before memanjang ke atas (50px = tinggi baris rec) — menutupi baris rec */
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child::before {
-    content: ""; position: absolute;
-    left: 0; width: 3px;
-    top: -50px; height: 50px;   /* naik ke baris rec persis di atasnya */
-    background: var(--amber);
-    z-index: 1;
-  }
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child::before {
-    content: ""; position: absolute;
-    left: 0; width: 3px;
-    top: -50px; height: 50px;
-    background: var(--red);
-    z-index: 1;
   }
 
-  /* Case C: rec punya clash DAN row-cuti2-nya juga perlu spine */
-  tbody tr.rec:has(.pill-clash-warn) + tr.row-cuti2 td:first-child {
-    box-shadow: inset 3px 0 0 var(--amber);
-  }
-  tbody tr.rec:has(.pill-clash-alert) + tr.row-cuti2 td:first-child {
-    box-shadow: inset 3px 0 0 var(--red);
-  }
+  /* Case C dihapus: sudah tercakup oleh Case A (spine rowspan=2 covers sub-row)
+     dan Case B baru (spine di-redirect ke rec td:first-child). */
 
   /* ── Teks sel ─────────────────────────────────────────────────────── */
   .cell-name { font-weight: 600; color: var(--text-primary); font-size: 13px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
