@@ -90,7 +90,8 @@
 
     /* Spacing tabel — satu sumber untuk header, body, dan row-cuti2. */
     --cell-px: 10px;        /* padding kiri-kanan SEMUA kolom (th & td) */
-    --cell-py: 0px;         /* padding atas-bawah default (tinggi diatur via height) */
+    --cell-py: 9px;         /* padding atas-bawah DEFAULT — satu angka untuk semua baris */
+    --cuti-gap: 3px;        /* jarak dalam antara cuti 1 & cuti 2 (setengah per sisi) */
     --table-cell-x: var(--cell-px); /* alias lama agar kode lain tidak patah */
     --table-content-gap: 6px;
     --table-control-gap: 6px;
@@ -342,8 +343,8 @@
 
   /* ── Body cells ──────────────────────────────────────────────────── */
   tbody td {
-    padding: var(--cell-py) var(--cell-px);
-    height: 38px;
+    padding: var(--cell-py) var(--cell-px); /* 9px atas-bawah, 10px kiri-kanan — SEMUA kolom sama */
+    height: auto;
     text-align: center;
     /* No default border — separator is applied by the unified system below */
     border-bottom: none;
@@ -353,8 +354,6 @@
     transition: background .14s ease;
     box-sizing: border-box;
   }
-  /* Second cuti row — same height for perfectly symmetric top/bottom spacing */
-  tbody tr.row-cuti2 td { height: 38px; }
 
   /* ══════════════════════════════════════════════════════════════════
      SISTEM SEPARATOR HORIZONTAL — SATU SUMBER TERPUSAT
@@ -391,22 +390,27 @@
   tbody tr.row-cuti2 td:nth-child(1) { text-align: center; }
 
   /* ── Rapatkan tanggal cuti 1 & cuti 2 ───────────────────────────── */
-  /* Bila ada row-cuti2, geser konten periode cuti 1 ke bawah sel     */
-  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(3) {
-    vertical-align: bottom;
-    padding-bottom: 5px;
-  }
-  /* Durasi & perihal cuti 1 juga ikut turun agar satu garis */
+  /* Prinsip simetri:
+       • Jarak LUAR atas  (di atas cuti 1)  = --cell-py  = 9px
+       • Jarak DALAM      (antara cuti 1&2) = --cuti-gap = 3px (per sisi)
+       • Jarak LUAR bawah (di bawah cuti 2) = --cell-py  = 9px
+     Atas == Bawah secara matematis karena sama-sama --cell-py.           */
+
+  /* Cuti 1 — non-rowspan (kolom 3–6: Periode, Durasi, Perihal, Bentrok) */
+  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(3),
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(4),
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(5),
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(6) {
-    vertical-align: bottom;
-    padding-bottom: 5px;
+    vertical-align: top;
+    padding-top:    var(--cell-py);   /* 9px — jarak luar atas */
+    padding-bottom: var(--cuti-gap);  /* 3px — menuju cuti 2   */
   }
-  /* Cuti 2: naik ke atas sel */
+
+  /* Cuti 2 — semua sel baris kedua */
   tbody tr.row-cuti2 td {
     vertical-align: top;
-    padding-top: 5px;
+    padding-top:    var(--cuti-gap);  /* 3px — dari cuti 1     */
+    padding-bottom: var(--cell-py);   /* 9px — jarak luar bawah */
   }
 
   /* ══════════════════════════════════════════════════════════════════
