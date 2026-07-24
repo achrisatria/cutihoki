@@ -510,15 +510,27 @@
   .c-copy { width: 110px; } .c-aksi { width: 90px; }
   tbody td {
     padding: 0 12px; height: 48px; text-align: center;
-    border-bottom: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--line);
     vertical-align: middle; overflow: hidden;
     background: var(--paper);
     transition: background .14s ease;
   }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr.rec-alt td { background: var(--stripe); }
-  tbody tr:hover td, tbody tr.rec-alt:hover td { background: #F2F7FF; }
   tbody tr.row-cuti2 td { border-top: none; height: 38px; }
+
+  /* SATU PENGAJUAN = SATU BLOK.
+     Warna kedua barisnya selalu sama, dan tidak ada garis pemisah di dalamnya —
+     jadi cuti 1 & cuti 2 terbaca sebagai milik orang yang sama. */
+  tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: none; }
+
+  /* Zebra dimatikan: tinggi tiap pengajuan berbeda-beda, sehingga selang-seling
+     justru terlihat acak. Pemisah antar pengajuan sudah cukup dilakukan garis. */
+
+  /* Sorot SELURUH blok saat kursor berada di baris mana pun milik pengajuan itu */
+  tbody tr.rec:hover td,
+  tbody tr.rec:hover + tr.row-cuti2 td,
+  tbody tr.rec:has(+ tr.row-cuti2:hover) td,
+  tbody tr.row-cuti2:hover td { background: #F3F8FF; }
 
   /* Kolom teks rata kiri — mata memindai kolom teks dari tepi kiri.
      Baris cuti kedua punya jumlah sel berbeda, jadi ditarget terpisah. */
@@ -529,8 +541,14 @@
 
   /* ✦ CONFLICT SPINE — tepi kiri baris menyala hanya bila ada bentrok.
      Inilah satu-satunya tempat tabel meninggikan suara. */
-  tbody tr:has(.pill-clash-warn)  td:first-child { box-shadow: inset 3px 0 0 var(--amber); }
-  tbody tr:has(.pill-clash-alert) td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+  tbody tr.rec:has(.pill-clash-warn) td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child {
+    box-shadow: inset 3px 0 0 var(--amber);
+  }
+  tbody tr.rec:has(.pill-clash-alert) td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child {
+    box-shadow: inset 3px 0 0 var(--red);
+  }
   .cell-name {
     font-weight: 600; color: var(--ink); font-size: 13px;
     letter-spacing: -.006em;
