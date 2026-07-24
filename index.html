@@ -283,7 +283,7 @@
   /* ── Lebar kolom ─────────────────────────────────────────────────── */
   .c-role    { width: 72px;  }
   .c-nama    { width: 22%;   }
-  .c-periode { width: 198px; }
+  .c-periode { width: 224px; }
   .c-durasi  { width: 70px;  }
   .c-perihal { width: 110px; }
   .c-bentrok { width: 104px; }
@@ -294,7 +294,9 @@
   .c-aksi    { width: 72px;  }
 
   table {
-    width: max(100%, 1300px);
+    /* Fixed cols excl. c-nama (22%): 72+224+70+110+104+124+82+144+88+72 = 1090px
+       min = 1090 / 0.78 = 1398px → round up to 1400px                          */
+    width: max(100%, 1400px);
     border-collapse: separate;
     border-spacing: 0;
     font-size: 12.5px;
@@ -616,7 +618,7 @@
     .cal-day { min-height: 54px; padding: 6px; }
     .dnum { font-size: 12px; }
     .table-wrap { max-height: none; border-radius: 14px; }
-    table { min-width: 1300px; }
+    table { min-width: 1400px; }
     thead th { height: 42px; padding-left: 9px; padding-right: 9px; }
     tbody td { padding-left: 9px; padding-right: 9px; }
     tbody td:first-child { padding-left: 14px; }
