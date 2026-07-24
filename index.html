@@ -89,7 +89,7 @@
     --page-gutter: clamp(12px, 2vw, 24px);
 
     /* Spacing tabel — satu sumber untuk header, body, dan row-cuti2. */
-    --table-cell-x: clamp(6px, .7vw, 10px);
+    --table-cell-x: 8px; /* ZOOM-STABLE: fixed px, no vw inside table */
     --table-content-gap: 6px;
     --table-control-gap: 6px;
   }
@@ -285,7 +285,7 @@
     max-width: 100%;
     margin-inline: auto;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow-x: auto;  /* ZOOM-STABLE: horizontal scroll within wrapper when needed */
     overflow-y: auto;
     height: calc(100dvh - var(--header-h) - 170px);
     min-height: 300px;
@@ -293,7 +293,7 @@
     position: relative;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    /* Sisakan ruang scrollbar secara simetris di kiri dan kanan. */
+    /* ZOOM-STABLE: stable scrollbar-gutter — no layout shift when scrollbar appears */
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
@@ -306,23 +306,25 @@
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   /* ── Lebar kolom ─────────────────────────────────────────────────── */
-  .c-role    { width: 6%;  }
-  .c-nama    { width: 16%; }
-  .c-periode { width: 17%; }
+  /* ZOOM-STABLE: redistributed — action cols widened, totals still 100%       */
+  /* 7+15+15+6+9+8+9+7+11+7+7 = 100                                           */
+  .c-role    { width: 7%;  }
+  .c-nama    { width: 15%; }
+  .c-periode { width: 15%; }
   .c-durasi  { width: 6%;  }
   .c-perihal { width: 9%;  }
-  .c-bentrok { width: 9%;  }
-  .c-total   { width: 10%; }
+  .c-bentrok { width: 7%;  }
+  .c-total   { width: 9%;  }
   .c-pass    { width: 7%;  }
   .c-status  { width: 11%; }
-  .c-copy    { width: 5%;  }
-  .c-aksi    { width: 4%;  }
+  .c-copy    { width: 7%;  }
+  .c-aksi    { width: 7%;  }
 
   table {
     display: table;
     width: 100%;
     max-width: none;
-    min-width: 0;
+    min-width: 880px; /* ZOOM-STABLE: wrapper scrolls horizontally below this */
     border-collapse: separate;
     border-spacing: 0;
     font-size: 12.5px;
@@ -335,7 +337,7 @@
     text-align: center;
     font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
-    height: 44px;
+    height: 42px;
     padding: 0 var(--table-cell-x);
     /* box-shadow replaces border-bottom so sticky works correctly with border-collapse:separate */
     box-shadow: 0 2px 0 var(--border-header), 0 6px 14px -10px rgba(10,24,48,.22);
@@ -355,6 +357,7 @@
     overflow: hidden;
     background: var(--bg-table);
     transition: background .14s ease;
+    box-sizing: border-box;
   }
   /* Second cuti row is slightly shorter */
   tbody tr.row-cuti2 td { height: 42px; }
@@ -432,7 +435,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 13px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -444,17 +447,19 @@
   /* ══════════════════════════════════════════════════════════════════
      PILLS
      ══════════════════════════════════════════════════════════════════ */
+  /* ZOOM-STABLE: pills — compact horizontal padding, still readable */
   .pill {
-    display: inline-flex; align-items: center; justify-content: center; gap: var(--table-content-gap);
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
     font-size: 11px; font-weight: 600; letter-spacing: .004em;
-    padding: 4px 10px;
-    min-height: 24px;
+    padding: 3px 8px;
+    min-height: 22px;
     border-radius: var(--radius-pill);
     white-space: nowrap; max-width: 100%;
     overflow: hidden; text-overflow: ellipsis;
     border: 1px solid transparent;
     line-height: 1.2;
     vertical-align: middle;
+    box-sizing: border-box;
   }
 
   /* PASSPORT */
@@ -480,7 +485,7 @@
   .pill-total.plus { background: linear-gradient(180deg, #A26C0D 0%, #8A5A0A 100%); box-shadow: 0 1px 3px rgba(130,85,10,.26), 0 1px 0 rgba(255,255,255,.18) inset; }
 
   /* ROLE */
-  .pill-role { background: var(--slate-bg); color: var(--slate); font-weight: 800; font-size: 9.5px; letter-spacing: .08em; padding: 4px 9px; text-transform: uppercase; }
+  .pill-role { background: var(--slate-bg); color: var(--slate); font-weight: 800; font-size: 9px; letter-spacing: .06em; padding: 3px 7px; text-transform: uppercase; }
   .role-CS     { background: var(--role-cs-bg);  color: var(--role-cs);  border-color: var(--role-cs-bd); }
   .role-KAPTEN { background: var(--role-kap-bg); color: var(--role-kap); border-color: var(--role-kap-bd); }
   .role-KASIR  { background: var(--role-kas-bg); color: var(--role-kas); border-color: var(--role-kas-bd); }
@@ -512,7 +517,7 @@
     padding: 5px 26px 5px 11px;
     min-height: 28px;
     min-width: 0;
-    cursor: pointer; width: min(100%, 124px); margin-inline: auto;
+    cursor: pointer; width: min(100%, 116px); margin-inline: auto;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 9px center;
     transition: box-shadow .15s; line-height: 1.2;
@@ -525,13 +530,13 @@
   .task-saving  { opacity: .5; pointer-events: none; }
 
   /* Row actions */
-  .row-actions { display: inline-flex; gap: var(--table-control-gap); justify-content: center; }
-  .icon-btn { border: 1.5px solid var(--border); background: var(--surface); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; color: var(--text-secondary); transition: all .15s; flex: none; }
+  .row-actions { display: inline-flex; gap: 4px; justify-content: center; white-space: nowrap; flex-wrap: nowrap; }
+  .icon-btn { border: 1.5px solid var(--border); background: var(--surface); width: 24px; height: 24px; border-radius: 7px; cursor: pointer; display: grid; place-items: center; color: var(--text-secondary); transition: all .15s; flex: none; }
   .icon-btn:hover       { border-color: var(--brand-100); color: var(--brand); background: var(--brand-050); box-shadow: var(--shadow-xs); }
   .icon-btn.danger:hover { border-color: var(--red-bd); color: var(--red); background: var(--red-bg); }
 
   /* Copy button */
-  .copy-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--table-content-gap); border: 1.5px solid var(--border); background: #FAFCFF; color: var(--text-secondary); font: inherit; font-size: 11.5px; font-weight: 600; padding: 5px 10px; min-height: 28px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .copy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1.5px solid var(--border); background: #FAFCFF; color: var(--text-secondary); font: inherit; font-size: 11px; font-weight: 600; padding: 4px 8px; min-height: 26px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; max-width: 100%; }
   .copy-btn:hover { border-color: var(--brand-100); color: var(--brand-ink); background: var(--brand-050); box-shadow: var(--shadow-xs); }
   .copy-btn:active { transform: translateY(1px); }
   .copy-btn.done { border-color: var(--brand); background: var(--brand); color: #fff; }
