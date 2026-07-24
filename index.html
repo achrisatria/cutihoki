@@ -299,7 +299,9 @@
     font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
     padding: 13px 10px 11px;
-    border-bottom: 2px solid var(--border-header);
+    /* Garis bawah header: box-shadow menggantikan border-bottom agar sticky
+       tidak kehilangan garis saat discroll (known browser bug dg border-collapse) */
+    box-shadow: inset 0 -2px 0 var(--border-header);
     border-right: 1px solid var(--border);
     white-space: nowrap;
     position: sticky; top: 0; z-index: 2;
@@ -307,12 +309,12 @@
   thead th.c-nama, thead th.c-periode { text-align: left; }
   /* Tepi kiri-kanan tabel */
   thead th:first-child { padding-left: 16px; }
-  thead th:last-child  { padding-right: 16px; border-right: none; }
+  thead th:last-child  { padding-right: 16px; border-right: none; box-shadow: inset 0 -2px 0 var(--border-header); }
   thead th.c-total     { padding-left: 6px; padding-right: 6px; }
 
   thead th::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: -12px; height: 12px;
-    background: linear-gradient(180deg, rgba(10,24,48,.04), transparent);
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 0;
+    /* Shadow dihapus agar tidak melukis di atas baris tbody pertama */
     pointer-events: none;
   }
 
@@ -321,6 +323,7 @@
     padding: 0 10px;
     height: 50px;
     text-align: center;
+    border-top: none;                         /* cegah garis ganda dari collapse */
     border-bottom: 1px solid var(--border);
     border-right: 1px solid var(--border);
     vertical-align: middle; overflow: hidden;
@@ -333,8 +336,14 @@
   /* TOTAL: ruang ekstra untuk dua badge "14 Hari (+2)" */
   tbody td.c-total     { padding-left: 6px; padding-right: 6px; }
 
-  /* Sub-baris: tidak ada border-top (sudah ditutup border-bottom baris rec) */
-  tbody tr.row-cuti2 td  { height: 40px; border-top: none; }
+  /* Sub-baris: border-top none eksplisit & border-right konsisten */
+  tbody tr.row-cuti2 td  {
+    height: 40px;
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  tbody tr.row-cuti2 td:last-child { border-right: none; }
 
   /* Dalam satu blok 2-baris: hilangkan garis tengah HANYA pada sel non-rowspan
      (col Periode/Durasi/Perihal/Bentrok). Sel rowspan tetap punya border bawah
