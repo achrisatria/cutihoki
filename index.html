@@ -529,6 +529,37 @@
   .pill-clash-ok    { background: transparent;    color: var(--green); border-color: var(--green-bd); }
   .pill-clash-warn  { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-bd); cursor: help; font-weight: 700; }
   .pill-clash-alert { background: var(--red-bg);   color: var(--red);   border-color: var(--red-bd);   cursor: help; font-weight: 700; }
+
+  /* ── Tooltip detail bentrok ─────────────────────────────────── */
+  .clash-tip {
+    position: fixed; z-index: 130; max-width: 320px; min-width: 210px;
+    background: #0f172a; color: #fff; border-radius: 13px; padding: 11px 13px;
+    box-shadow: 0 14px 36px rgba(15,23,42,.30); font-size: 12px; line-height: 1.45;
+    opacity: 0; transform: translateY(5px); transition: opacity .13s ease, transform .13s ease;
+    pointer-events: none;
+  }
+  .clash-tip.show { opacity: 1; transform: translateY(0); }
+  .clash-tip .ct-head {
+    font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase;
+    color: #94a3b8; font-weight: 800; margin-bottom: 8px;
+  }
+  .clash-tip .ct-row {
+    display: flex; gap: 9px; align-items: flex-start;
+    padding: 6px 0; border-top: 1px solid rgba(255,255,255,.10);
+  }
+  .clash-tip .ct-row.first { border-top: 0; padding-top: 0; }
+  .clash-tip .ct-main { flex: 1; min-width: 0; }
+  .clash-tip .ct-nm { font-weight: 700; color: #fff; }
+  .clash-tip .ct-dt { color: #93c5fd; margin-top: 1px; }
+  .clash-tip .ct-d  {
+    background: rgba(255,255,255,.15); border-radius: 999px;
+    padding: 2px 8px; font-weight: 700; white-space: nowrap; font-size: 11px;
+  }
+  .clash-tip .ct-foot {
+    margin-top: 8px; padding-top: 7px;
+    border-top: 1px solid rgba(255,255,255,.10); color: #cbd5e1; font-size: 11px;
+  }
+  .clash-tip .ct-you { color: #fbbf24; font-weight: 700; }
   .pill-dash { color: var(--text-faint); font-weight: 400; }
 
   /* STATUS dropdown */
@@ -684,6 +715,7 @@
 
   <div class="tabs">
     <button class="tab active" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" id="tabOngoing" onclick="switchTab('ongoing')">🏝️ Sedang Cuti <em class="tab-count" id="ongoingCount">0</em></button>
     <button class="tab" id="tabArchive" onclick="switchTab('archive')">✅ Selesai Cuti <em class="tab-count" id="archiveCount">0</em></button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
   </div>
@@ -693,7 +725,7 @@
     <div class="dash-head">
       <div>
         <h2 id="dashTitle">Data Pengajuan Cuti</h2>
-        <p id="dashDesc">Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO</p>
+        <p id="dashDesc">Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.</p>
       </div>
       <div class="dash-actions">
         <div class="ldr-picker">
@@ -780,7 +812,7 @@
       <span class="filter-divider"></span>
       <div class="filter-group">
         <span class="filter-label">Bulan</span>
-        <select id="monthFilter" class="month-select"></select>
+        <select id="monthFilter" class="month-select" title="Dikelompokkan berdasarkan bulan tanggal MULAI cuti"></select>
       </div>
       <div class="search-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -930,9 +962,21 @@
 
   // Status yang dianggap "masih aktif" → memblokir pengajuan baru dari staff yg sama
   var ACTIVE_STATUSES = ['WAITING', 'SEDANG CUTI'];
+  // Status yang otomatis pindah ke menu "Sedang Cuti"
+  var ONGOING_STATUSES = ['SEDANG CUTI'];
+  function isOngoing(task) { return ONGOING_STATUSES.indexOf(String(task || '').toUpperCase()) !== -1; }
   // Status yang otomatis pindah ke menu "Selesai Cuti"
   var ARCHIVED_STATUSES = ['SELESAI CUTI'];
   function isArchived(task) { return ARCHIVED_STATUSES.indexOf(String(task || '').toUpperCase()) !== -1; }
+
+  // Satu sumber kebenaran: sebuah record milik menu (segmen) yang mana?
+  // Dashboard = sisanya (WAITING, DONE CATAT, dll) — jadi tiap record hanya ada di SATU menu.
+  function inSegment(r, segment) {
+    var t = r.task1;
+    if (segment === 'BERJALAN') return isOngoing(t);
+    if (segment === 'ARSIP')    return isArchived(t);
+    return !isOngoing(t) && !isArchived(t);
+  }
   // Perihal yg dihitung bentroknya
   var CLASH_PERIHAL = ['CUTI LOKAL', 'CUTI INDO'];
 
@@ -1232,13 +1276,13 @@
     document.querySelectorAll('.tab').forEach(function(t) {
       t.classList.toggle('active', t.id === 'tab' + view.charAt(0).toUpperCase() + view.slice(1));
     });
-    // Arsip memakai tampilan dashboard yang sama, hanya isinya yang berbeda
-    var target = (view === 'archive') ? 'dashboard' : view;
+    // Sedang Cuti & Selesai Cuti memakai tampilan dashboard yang sama, hanya isinya yang berbeda
+    var target = (view === 'archive' || view === 'ongoing') ? 'dashboard' : view;
     document.querySelectorAll('.view').forEach(function(v) {
       v.classList.toggle('active', v.id === 'view-' + target);
     });
-    if (view === 'dashboard' || view === 'archive') {
-      filterState.segment = (view === 'archive') ? 'ARSIP' : 'AKTIF';
+    if (target === 'dashboard') {
+      filterState.segment = (view === 'archive') ? 'ARSIP' : (view === 'ongoing') ? 'BERJALAN' : 'AKTIF';
       applySegmentUI();
       loadDashboard(false);
     }
@@ -1247,24 +1291,31 @@
 
   // Sesuaikan judul, keterangan, dan tombol sesuai segmen yang dibuka
   function applySegmentUI() {
-    var arsip = filterState.segment === 'ARSIP';
+    var seg = filterState.segment;
+    var judul = { AKTIF: 'Data Pengajuan Cuti', BERJALAN: 'Staff Sedang Cuti', ARSIP: 'Data Selesai Cuti' };
+    var desc = {
+      AKTIF: 'Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.',
+      BERJALAN: 'Pengajuan yang statusnya <strong>SEDANG CUTI</strong> otomatis pindah ke sini. Ubah ke <strong>SELESAI CUTI</strong> bila staff sudah kembali.',
+      ARSIP: 'Pengajuan yang statusnya <strong>SELESAI CUTI</strong> otomatis pindah ke sini.'
+    };
     var h = document.getElementById('dashTitle'), p = document.getElementById('dashDesc');
-    if (h) h.textContent = arsip ? 'Data Selesai Cuti' : 'Data Pengajuan Cuti';
-    if (p) p.innerHTML = arsip
-      ? 'Pengajuan yang statusnya <strong>SELESAI CUTI</strong> otomatis pindah ke sini.'
-      : 'Kolom <strong>Bentrok</strong> menghitung staff <strong>dengan role sama</strong> yang CUTI LOKAL/INDO di tanggal beririsan.';
+    if (h) h.textContent = judul[seg] || judul.AKTIF;
+    if (p) p.innerHTML = desc[seg] || desc.AKTIF;
+    // Form pengajuan hanya relevan di Dashboard
     var btn = document.getElementById('toggleFormBtn');
-    if (btn) btn.style.display = arsip ? 'none' : '';
-    if (arsip) toggleForm(false);          // form pengajuan tidak relevan di arsip
+    if (btn) btn.style.display = (seg === 'AKTIF') ? '' : 'none';
+    if (seg !== 'AKTIF') toggleForm(false);
   }
 
-  // Perbarui angka pada tab Arsip
+  // Perbarui angka pada tab Sedang Cuti & Selesai Cuti
   function updateTabCounts() {
-    var el = document.getElementById('archiveCount');
-    if (!el) return;
-    var n = (_cache || []).filter(function(r) { return isArchived(r.task1); }).length;
-    el.textContent = n;
-    el.style.display = n ? '' : 'none';
+    [['ongoingCount', 'BERJALAN'], ['archiveCount', 'ARSIP']].forEach(function(t) {
+      var el = document.getElementById(t[0]);
+      if (!el) return;
+      var n = (_cache || []).filter(function(r) { return inSegment(r, t[1]); }).length;
+      el.textContent = n;
+      el.style.display = n ? '' : 'none';
+    });
   }
 
   // ── Dropdown helpers ──────────────────────────────────────────
@@ -1621,31 +1672,33 @@
     });
   }
 
+  // Bulan sebuah pengajuan = bulan dari TANGGAL MULAI PALING AWAL.
+  // Satu pengajuan hanya masuk ke SATU bulan, walau cuti 2-nya di bulan lain.
+  // Contoh: Cuti Kerja 30 Sep–9 Okt + Cuti Lokal 10–11 Okt  →  September.
+  function startMonth(r) {
+    var awal = null;
+    [r.start1Raw, r.start2Raw].forEach(function(d) {
+      if (!d) return;
+      var v = String(d).slice(0, 10);            // 'YYYY-MM-DD'
+      // Format YYYY-MM-DD bisa dibandingkan langsung sebagai teks (urutannya sama
+      // dengan urutan tanggal), jadi tidak perlu konversi ke Date — bebas timezone.
+      if (v.length === 10 && (awal === null || v < awal)) awal = v;
+    });
+    return awal ? awal.slice(0, 7) : null;       // → 'YYYY-MM'
+  }
+
   // Bangun opsi dropdown Bulan dari rentang tanggal semua cuti
   function buildMonthOptions() {
-    // Hanya hitung data pada menu yang sedang dibuka (Dashboard / Selesai Cuti)
-    var data = (_cache || []).filter(function(r) {
-      return filterState.segment === 'ARSIP' ? isArchived(r.task1) : !isArchived(r.task1);
-    });
+    // Hanya hitung data pada menu yang sedang dibuka
+    var data = (_cache || []).filter(function(r) { return inSegment(r, filterState.segment); });
 
     var count = {}, minK = null, maxK = null;
     data.forEach(function(r) {
-      var bulanRecord = {};                       // bulan yg disentuh record ini
-      [[r.start1Raw, r.end1Raw], [r.start2Raw, r.end2Raw]].forEach(function(t) {
-        if (!t[0] || !t[1]) return;
-        var sd = keyToDate(dayKey(t[0])), ed = keyToDate(dayKey(t[1]));
-        var y = sd.getUTCFullYear(), m = sd.getUTCMonth();
-        var ey = ed.getUTCFullYear(), em = ed.getUTCMonth();
-        while (y < ey || (y === ey && m <= em)) {
-          bulanRecord[y + '-' + String(m + 1).padStart(2, '0')] = 1;
-          m++; if (m > 11) { m = 0; y++; }
-        }
-      });
-      Object.keys(bulanRecord).forEach(function(k) {
-        count[k] = (count[k] || 0) + 1;           // 1 record dihitung sekali per bulan
-        if (minK === null || k < minK) minK = k;
-        if (maxK === null || k > maxK) maxK = k;
-      });
+      var k = startMonth(r);
+      if (!k) return;                             // tanpa tanggal mulai → dilewati
+      count[k] = (count[k] || 0) + 1;             // 1 record = 1 bulan, dihitung sekali
+      if (minK === null || k < minK) minK = k;
+      if (maxK === null || k > maxK) maxK = k;
     });
 
     var sel = document.getElementById('monthFilter');
@@ -1685,26 +1738,14 @@
   }
   function renderFilters() { renderRoleChips(); buildMonthOptions(); }
 
-  function monthRange(ym) {
-    var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1;
-    return [ymdKey(y, m, 1), ymdKey(y, m, new Date(Date.UTC(y, m + 1, 0)).getUTCDate())];
-  }
+  // Cocokkan record dengan bulan terpilih — satu record hanya milik satu bulan.
   function recordInMonth(r, ym) {
     if (ym === 'ALL') return true;
-    var rng = monthRange(ym), lv = [[r.start1Raw, r.end1Raw], [r.start2Raw, r.end2Raw]];
-    for (var i = 0; i < lv.length; i++) {
-      if (lv[i][0] && lv[i][1]) {
-        var sk = dayKey(lv[i][0]), ek = dayKey(lv[i][1]);
-        if (sk <= rng[1] && rng[0] <= ek) return true;
-      }
-    }
-    return false;
+    return startMonth(r) === ym;
   }
   // Satu sumber kebenaran untuk semua filter
   function matchFilters(r) {
-    // Pisahkan Aktif vs Arsip berdasarkan status
-    if (filterState.segment === 'ARSIP') { if (!isArchived(r.task1)) return false; }
-    else if (isArchived(r.task1)) return false;
+    if (!inSegment(r, filterState.segment)) return false;   // Dashboard / Sedang Cuti / Selesai Cuti
     if (filterState.role !== 'ALL' && r.role !== filterState.role) return false;
     if (filterState.search) {
       var hay = (r.nama + ' ' + r.role + ' ' + r.id).toLowerCase();
@@ -1742,26 +1783,45 @@
     return h;
   }
   function renderStats(rows) {
-    var total = rows.length, waiting = 0, sedang = 0, selesai = 0, done = 0;
+    var total = rows.length, waiting = 0, done = 0;
     rows.forEach(function(r) {
       var t = (r.task1 || '').toUpperCase();
       if (t === 'WAITING') waiting++;
-      else if (t === 'SEDANG CUTI') sedang++;
-      else if (t === 'SELESAI CUTI') selesai++;
       else if (t === 'DONE CATAT') done++;
     });
     var box = document.getElementById('statBox');
-    if (filterState.segment === 'ARSIP') {
-      var hari = 0;
-      rows.forEach(function(r) { hari += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total; });
+
+    if (filterState.segment === 'BERJALAN') {
+      // Hitung berapa yang akan segera kembali (cuti berakhir dalam <= 3 hari)
+      var now = new Date();
+      var hariIni = ymdKey(now.getFullYear(), now.getMonth(), now.getDate());
+      var hari = 0, segera = 0;
+      rows.forEach(function(r) {
+        hari += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total;
+        var akhir = null;
+        [r.end1Raw, r.end2Raw].forEach(function(d) {
+          if (!d) return;
+          var k = dayKey(d);
+          if (akhir === null || k > akhir) akhir = k;
+        });
+        if (akhir !== null && akhir >= hariIni && akhir - hariIni <= 3) segera++;
+      });
+      box.innerHTML =
+        statCard('Total Sedang Cuti', total, 'var(--blue)', 'var(--blue-bg)', '🏝️') +
+        statCard('Total Hari Berjalan', hari, 'var(--brand-ink)', 'var(--brand-050)', '📅') +
+        statCard('Segera Kembali (≤3 hari)', segera, 'var(--amber)', 'var(--amber-bg)', '⏰');
+
+    } else if (filterState.segment === 'ARSIP') {
+      var hariArsip = 0;
+      rows.forEach(function(r) { hariArsip += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total; });
       box.innerHTML =
         statCard('Total Selesai Cuti', total, 'var(--green)', 'var(--green-bg)', '✅') +
-        statCard('Total Hari Diambil', hari, 'var(--brand-ink)', 'var(--brand-050)', '📅');
+        statCard('Total Hari Diambil', hariArsip, 'var(--brand-ink)', 'var(--brand-050)', '📅');
+
     } else {
       box.innerHTML =
         statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
         statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
-        statCard('Sedang Cuti', sedang, 'var(--blue)', 'var(--blue-bg)', '🏝️') +
         statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️');
     }
   }
@@ -1779,14 +1839,105 @@
     if (u === 'SELESAI CUTI') return 'task-SELESAI';
     return 'task-DONE';
   }
-  function clashCell(perihal, startRaw, endRaw, nama, intervals, role) {
+  function clashCell(perihal, startRaw, endRaw, nama, intervals, role, rowId, slot) {
     var info = clashInfo(perihal, startRaw, endRaw, nama, intervals, role);
     if (!info) return '<span class="pill pill-dash">–</span>';
     if (info.count <= 1) return '<span class="pill pill-clash-ok">✓ Aman</span>';
     var cls = info.count >= 3 ? 'pill-clash-alert' : 'pill-clash-warn';
-    var title = 'Sesama ' + role + ' cuti bersamaan: ' + info.names.join(', ');
-    return '<span class="pill ' + cls + '" title="' + esc(title) + '">⚠ ' + info.count + ' staff</span>';
+    // Detail lengkap dihitung saat di-hover (lihat clashDetail), jadi render tabel tetap ringan.
+    return '<span class="pill ' + cls + '" data-crow="' + esc(rowId) + '" data-cslot="' + slot +
+      '" tabindex="0" aria-label="Lihat detail bentrok">⚠ ' + info.count + ' staff</span>';
   }
+
+  // ── Detail bentrok (untuk tooltip) ────────────────────────────
+  // Cari irisan tanggal antara cuti baris ini dengan cuti staff lain
+  // yang ROLE & PERIHAL-nya sama.
+  function clashDetail(rowId, slot) {
+    var r = null;
+    for (var i = 0; i < (_cache || []).length; i++) if (_cache[i].rowId === rowId) { r = _cache[i]; break; }
+    if (!r) return null;
+
+    var perihal = slot === 2 ? r.perihal2 : r.perihal1;
+    var sRaw    = slot === 2 ? r.start2Raw : r.start1Raw;
+    var eRaw    = slot === 2 ? r.end2Raw   : r.end1Raw;
+    if (CLASH_PERIHAL.indexOf(perihal) === -1 || !sRaw || !eRaw) return null;
+
+    var s = dayKey(sRaw), e = dayKey(eRaw);
+    var list = clashIndex()[r.role + '|' + perihal] || [];
+    var items = [];
+    list.forEach(function(iv) {
+      if (iv.nama === r.nama) return;
+      var os = Math.max(s, iv.s), oe = Math.min(e, iv.e);   // irisan tanggal
+      if (os > oe) return;                                   // tidak beririsan
+      items.push({ nama: iv.nama, s: os, e: oe, days: oe - os + 1 });
+    });
+    if (!items.length) return null;
+    items.sort(function(a, b) { return a.s - b.s || a.nama.localeCompare(b.nama); });
+
+    return { role: r.role, perihal: perihal, nama: r.nama, s: s, e: e, items: items };
+  }
+
+  // Tanggal ringkas: "3 – 7 Okt 2026" atau "3 Okt 2026"
+  function rangeLabel(s, e) {
+    var ds = keyToDate(s), de = keyToDate(e);
+    var a = ds.getUTCDate() + ' ' + MONTHS_SHORT[ds.getUTCMonth()];
+    var b = de.getUTCDate() + ' ' + MONTHS_SHORT[de.getUTCMonth()];
+    if (ds.getUTCFullYear() !== de.getUTCFullYear()) a += ' ' + ds.getUTCFullYear();
+    return (s === e ? a : a + ' – ' + b) + ' ' + de.getUTCFullYear();
+  }
+
+  var _tipEl = null;
+  function tipEl() {
+    if (!_tipEl) { _tipEl = document.createElement('div'); _tipEl.className = 'clash-tip'; document.body.appendChild(_tipEl); }
+    return _tipEl;
+  }
+  function hideClashTip() { if (_tipEl) _tipEl.classList.remove('show'); }
+
+  function showClashTip(pill) {
+    var d = clashDetail(pill.getAttribute('data-crow'), +pill.getAttribute('data-cslot'));
+    if (!d) return;
+    var el = tipEl();
+    var rows = d.items.map(function(it, i) {
+      return '<div class="ct-row' + (i === 0 ? ' first' : '') + '">' +
+        '<div class="ct-main">' +
+          '<div class="ct-nm">' + esc(titleCase(shortName(it.nama))) + '</div>' +
+          '<div class="ct-dt">' + esc(rangeLabel(it.s, it.e)) + '</div>' +
+        '</div>' +
+        '<span class="ct-d">' + it.days + ' hari</span>' +
+      '</div>';
+    }).join('');
+    el.innerHTML =
+      '<div class="ct-head">Bentrok ' + esc(d.perihal) + ' · ' + esc(d.role) + '</div>' + rows +
+      '<div class="ct-foot">Cuti <span class="ct-you">' + esc(titleCase(shortName(d.nama))) + '</span>: ' +
+      esc(rangeLabel(d.s, d.e)) + '</div>';
+
+    // Tampilkan di atas pill; pindah ke bawah bila mepet tepi layar
+    el.style.left = '0px'; el.style.top = '-9999px'; el.classList.add('show');
+    var pr = pill.getBoundingClientRect(), tr = el.getBoundingClientRect();
+    var left = pr.left + pr.width / 2 - tr.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+    var top = pr.top - tr.height - 9;
+    if (top < 8) top = pr.bottom + 9;
+    el.style.left = Math.round(left) + 'px';
+    el.style.top  = Math.round(top) + 'px';
+  }
+
+  (function bindClashTip() {
+    var host = document.getElementById('tableBody');
+    function pillOf(t) { return t && t.closest ? t.closest('[data-crow]') : null; }
+    host.addEventListener('mouseover', function(e) { var p = pillOf(e.target); if (p) showClashTip(p); });
+    host.addEventListener('mouseout',  function(e) { if (pillOf(e.target)) hideClashTip(); });
+    host.addEventListener('focusin',   function(e) { var p = pillOf(e.target); if (p) showClashTip(p); });
+    host.addEventListener('focusout',  hideClashTip);
+    // Layar sentuh: tidak ada hover, jadi ketuk untuk membuka
+    host.addEventListener('click', function(e) {
+      var p = pillOf(e.target);
+      if (p) { showClashTip(p); e.stopPropagation(); } else hideClashTip();
+    });
+    document.addEventListener('click', hideClashTip);
+    window.addEventListener('scroll', hideClashTip, true);   // termasuk scroll di dalam tabel
+    window.addEventListener('resize', hideClashTip);
+  })();
   function totalCell(r) {
     var t = computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role);
     if (t.total <= 0) return '<span class="pill pill-dash">–</span>';
@@ -1952,7 +2103,7 @@
         '<td>' + periodeCell(r.start1Raw, r.end1Raw) + '</td>' +
         '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
         '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
-        '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals, r.role) + '</td>' +
+        '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals, r.role, r.rowId, 1) + '</td>' +
         '<td' + sp + '>' + totalCell(r) + '</td>' +
         '<td' + sp + '>' + passportCell(r.keterangan) + '</td>' +
         '<td' + sp + '>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
@@ -1964,7 +2115,7 @@
           '<td>' + periodeCell(r.start2Raw, r.end2Raw) + '</td>' +
           '<td><span class="pill pill-durasi">' + esc(r.durasi2) + '</span></td>' +
           '<td><span class="pill pill-perihal">' + esc(r.perihal2) + '</span></td>' +
-          '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals, r.role) + '</td>' +
+          '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals, r.role, r.rowId, 2) + '</td>' +
         '</tr>');
       }
     });
@@ -1986,13 +2137,14 @@
       sel.classList.remove('task-saving');
       sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
       if (_cache) for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; }
-      var pindahKeArsip = isArchived(value) && filterState.segment === 'AKTIF';
-      var kembaliAktif  = !isArchived(value) && filterState.segment === 'ARSIP';
-      applyFilters();          // baris otomatis berpindah antara Aktif ↔ Arsip
+      applyFilters();          // baris otomatis berpindah ke menu yang sesuai
       updateTabCounts();
-      toast(pindahKeArsip ? 'Status diperbarui — dipindahkan ke Selesai Cuti'
-          : kembaliAktif  ? 'Status diperbarui — dikembalikan ke Dashboard'
-          : 'Status diperbarui', 'ok');
+      // Beri tahu ke mana baris ini berpindah (bila memang keluar dari menu saat ini)
+      var tujuan = isOngoing(value) ? 'BERJALAN' : isArchived(value) ? 'ARSIP' : 'AKTIF';
+      var namaMenu = { BERJALAN: 'Sedang Cuti', ARSIP: 'Selesai Cuti', AKTIF: 'Dashboard' };
+      toast(tujuan !== filterState.segment
+        ? 'Status diperbarui — dipindahkan ke ' + namaMenu[tujuan]
+        : 'Status diperbarui', 'ok');
     }).catch(function(err) {
       sel.classList.remove('task-saving'); sel.value = oldVal; toast('Gagal update status: ' + err.message, 'err');
     });
