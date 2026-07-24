@@ -388,6 +388,25 @@
   /* Left-align: Periode (first cell) in second row */
   tbody tr.row-cuti2 td:nth-child(1) { text-align: center; }
 
+  /* ── Rapatkan tanggal cuti 1 & cuti 2 ───────────────────────────── */
+  /* Bila ada row-cuti2, geser konten periode cuti 1 ke bawah sel     */
+  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(3) {
+    vertical-align: bottom;
+    padding-bottom: 5px;
+  }
+  /* Durasi & perihal cuti 1 juga ikut turun agar satu garis */
+  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(4),
+  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(5),
+  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(6) {
+    vertical-align: bottom;
+    padding-bottom: 5px;
+  }
+  /* Cuti 2: naik ke atas sel */
+  tbody tr.row-cuti2 td {
+    vertical-align: top;
+    padding-top: 5px;
+  }
+
   /* ══════════════════════════════════════════════════════════════════
      ZEBRA STRIPING
      Every other full record block (rec + optional row-cuti2) is shaded.
