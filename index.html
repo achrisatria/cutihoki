@@ -86,6 +86,7 @@
     --radius-pill:999px;
 
     --header-h: 64px;
+    --page-gutter: clamp(12px, 2vw, 24px);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -128,7 +129,7 @@
   }
   .app-header-inner {
     max-width: none; margin: 0 auto;
-    padding: 0 28px; height: var(--header-h);
+    padding: 0 var(--page-gutter); height: var(--header-h);
     display: flex; align-items: center; gap: 16px; position: relative;
   }
   .brand-logo { flex: none; display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 4px; }
@@ -146,7 +147,7 @@
     width: 100%;
     max-width: none;
     margin-inline: auto;
-    padding: 24px 12px 64px;
+    padding: clamp(16px, 2vw, 24px) var(--page-gutter) 64px;
   }
 
   /* ── Tabs ─────────────────────────────────────────────────────────── */
@@ -279,12 +280,15 @@
     max-width: 100%;
     margin-inline: auto;
     box-sizing: border-box;
-    overflow: hidden;
     overflow-x: hidden;
     overflow-y: auto;
-    max-height: calc(100vh - var(--header-h) - 48px);
+    height: calc(100dvh - var(--header-h) - 170px);
+    min-height: 300px;
+    max-height: 760px;
     position: relative;
     overscroll-behavior: contain;
+    touch-action: pan-y;
+    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
     isolation: isolate;
@@ -601,9 +605,9 @@
 
   /* ── Responsive ──────────────────────────────────────────────────── */
   @media (max-width: 720px) {
-    .app-header-inner { padding: 0 16px; gap: 12px; }
+    .app-header-inner { padding: 0 var(--page-gutter); gap: 12px; }
     .header-badge { display: none; }
-    .container { padding: 16px 12px 48px; }
+    .container { padding: 16px var(--page-gutter) 48px; }
     .brand-divider { display: none; }
     .header-title h1 { font-size: 16px; }
     .tab { padding: 8px 13px; font-size: 12.5px; }
@@ -617,7 +621,12 @@
     .cal-legend { margin-left: 0; width: 100%; }
     .cal-day { min-height: 54px; padding: 6px; }
     .dnum { font-size: 12px; }
-    .table-wrap { max-height: none; border-radius: 14px; }
+    .table-wrap {
+      height: calc(100dvh - var(--header-h) - 150px);
+      min-height: 260px;
+      max-height: none;
+      border-radius: 14px;
+    }
     table { width: 100%; min-width: 0; }
     thead th { height: 42px; padding-left: 9px; padding-right: 9px; }
     tbody td { padding-left: 9px; padding-right: 9px; }
