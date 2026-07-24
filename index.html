@@ -38,10 +38,10 @@
     --stripe:   var(--bg-row-alt);
 
     /* Border */
-    --border:        #BFC9DA;   /* lebih solid — jelas terlihat */
+    --border:        #C8D3E3;
     --border-strong: #A8B9CE;
-    --border-header: #9AAEC6;   /* bawah header — paling tegas */
-    --border-record: #A0B4CC;   /* pemisah antar staff */
+    --border-header: #93AABF;
+    --border-record: #A0B4CC;
     --hairline:      rgba(10,24,48,.07);
     --line:          var(--border);
     --line-strong:   var(--border-strong);
@@ -88,6 +88,8 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { overflow-x: hidden; }
+
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     background:
@@ -96,6 +98,7 @@
     background-attachment: fixed;
     color: var(--text-primary);
     min-height: 100vh;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     font-feature-settings: "cv05" 1, "ss01" 1;
@@ -133,7 +136,7 @@
   @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(.8); } }
 
   /* ── Page ─────────────────────────────────────────────────────────── */
-  .container { max-width: 1440px; margin: 0 auto; padding: 24px 24px 64px; }
+  .container { max-width: 1440px; margin: 0 auto; padding: 24px 24px 64px; width: min(100%, 1440px); }
 
   /* ── Tabs ─────────────────────────────────────────────────────────── */
   .tabs { display: inline-flex; gap: 3px; background: rgba(255,255,255,.82); border: 1px solid var(--border); border-radius: 13px; padding: 4px; box-shadow: var(--shadow-sm); margin-bottom: 22px; backdrop-filter: blur(10px) saturate(140%); }
@@ -250,7 +253,7 @@
   .search-wrap input { padding-left: 36px; min-width: 220px; }
 
   /* ══════════════════════════════════════════════════════════════════
-     TABLE
+     TABLE WRAPPER
      ══════════════════════════════════════════════════════════════════ */
   .table-wrap {
     background: var(--bg-table);
@@ -261,172 +264,192 @@
       0 8px 24px -8px rgba(10,24,48,.11),
       0 24px 56px -20px rgba(10,24,48,.15);
     overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
     width: 100%;
     max-height: calc(100vh - var(--header-h) - 48px);
+    position: relative;
+    overscroll-behavior: contain;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
+    isolation: isolate;
+    -webkit-overflow-scrolling: touch;
   }
-  .table-wrap::-webkit-scrollbar { width: 9px; height: 9px; }
+  .table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
   .table-wrap::-webkit-scrollbar-track { background: transparent; }
-  .table-wrap::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; border: 3px solid var(--bg-table); }
+  .table-wrap::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  table {
-    width: 100%; border-collapse: collapse; font-size: 12.5px;
-    table-layout: fixed;
-    /* fixed-width columns total (excl. NAMA 20%):
-       70+205+68+112+90+108+74+130+90+78 = 1025px  →  min = 1025/0.80 = 1282 */
-    min-width: 1280px;
-  }
-
   /* ── Lebar kolom ─────────────────────────────────────────────────── */
-  .c-role    { width: 70px;  }
-  .c-nama    { width: 20%;   }
-  .c-periode { width: 205px; }
-  .c-durasi  { width: 68px;  }
-  .c-perihal { width: 112px; }
-  .c-bentrok { width: 90px;  }
-  .c-total   { width: 108px; }
-  .c-pass    { width: 74px;  }
-  .c-status  { width: 130px; }
-  .c-copy    { width: 90px;  }
-  .c-aksi    { width: 78px;  }
+  .c-role    { width: 72px;  }
+  .c-nama    { width: 22%;   }
+  .c-periode { width: 198px; }
+  .c-durasi  { width: 70px;  }
+  .c-perihal { width: 110px; }
+  .c-bentrok { width: 104px; }
+  .c-total   { width: 124px; }
+  .c-pass    { width: 82px;  }
+  .c-status  { width: 144px; }
+  .c-copy    { width: 88px;  }
+  .c-aksi    { width: 72px;  }
+
+  table {
+    width: max(100%, 1300px);
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    table-layout: fixed;
+  }
 
   /* ── Header ─────────────────────────────────────────────────────── */
   thead th {
-    background: linear-gradient(180deg, var(--bg-header) 0%, var(--bg-header2) 100%);
+    background: linear-gradient(180deg, #edf3fb 0%, #e3ecf6 100%);
     text-align: center;
     font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
     color: var(--text-secondary);
-    padding: 13px 10px 11px;
-    border-bottom: 2px solid var(--border-header);
+    height: 44px;
+    padding: 0 10px;
+    /* box-shadow replaces border-bottom so sticky works correctly with border-collapse:separate */
+    box-shadow: 0 2px 0 var(--border-header), 0 6px 14px -10px rgba(10,24,48,.22);
     white-space: nowrap;
-    position: sticky; top: 0; z-index: 2;
+    position: sticky; top: 0; z-index: 10;
   }
   thead th.c-nama, thead th.c-periode { text-align: left; }
-  /* Tepi kiri-kanan tabel */
   thead th:first-child { padding-left: 16px; }
   thead th:last-child  { padding-right: 16px; }
-  thead th.c-total     { padding-left: 6px; padding-right: 6px; }
 
-  thead th::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: -12px; height: 12px;
-    background: linear-gradient(180deg, rgba(10,24,48,.04), transparent);
-    pointer-events: none;
-  }
-
-  /* ── Baris data ─────────────────────────────────────────────────── */
+  /* ── Body cells ──────────────────────────────────────────────────── */
   tbody td {
     padding: 0 10px;
     height: 50px;
     text-align: center;
+    /* Default: light hairline between ordinary rows */
     border-bottom: 1px solid var(--border);
-    vertical-align: middle; overflow: hidden;
+    vertical-align: middle;
+    overflow: hidden;
     background: var(--bg-table);
     transition: background .14s ease;
   }
-  /* Presisi padding tepi kiri & kanan */
   tbody td:first-child { padding-left: 16px; padding-right: 8px; }
   tbody td:last-child  { padding-left: 8px;  padding-right: 16px; }
-  /* TOTAL: ruang ekstra untuk dua badge "14 Hari (+2)" */
   tbody td.c-total     { padding-left: 6px; padding-right: 6px; }
 
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr.row-cuti2 td  { border-top: none; height: 40px; }
+  /* Second cuti row is slightly shorter */
+  tbody tr.row-cuti2 td { height: 42px; }
 
-  /* Satu blok = satu staff — tidak ada border antar baris dalam blok */
-  tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: none; }
+  /* ══════════════════════════════════════════════════════════════════
+     RECORD GROUP BORDERS
+     ─────────────────────────────────────────────────────────────────
+     A "record" may span two <tr> rows: tr.rec + optional tr.row-cuti2.
+     Rules:
+       • No inner hairline between rec and row-cuti2 (they are one block).
+       • Thick record-separator line appears BELOW the last row of each block.
+       • For rowspan="2" cells (Role, Nama, Total, …) border-bottom renders
+         at the physical bottom of the full span — i.e. below row-cuti2 —
+         which is exactly the correct position.
+       • Last row of tbody never shows a bottom border.
+     ══════════════════════════════════════════════════════════════════ */
 
-  /* Pemisah antar staff: border-bottom tebal di baris TERAKHIR tiap blok.
-     Dibuat lebih gelap dari border biasa agar jelas terlihat. */
-  tbody tr.row-cuti2 td                          { border-bottom: 2px solid var(--border-record); }
-  tbody tr.rec:not(:has(+ tr.row-cuti2)) td      { border-bottom: 2px solid var(--border-record); }
-  tbody tr:last-child td                          { border-bottom: none !important; }
+  /* 1. Non-rowspan cells in tr.rec: suppress inner hairline */
+  tbody tr.rec:has(+ tr.row-cuti2) td:not([rowspan]) {
+    border-bottom: none;
+  }
 
-  /* Zebra subtle */
-  tbody tr.rec-alt td,
-  tbody tr.rec-alt + tr.row-cuti2 td { background: var(--bg-row-alt); }
+  /* 2. Rowspan cells in tr.rec: show record separator
+        (appears visually below row-cuti2 because of rowspan=2) */
+  tbody tr.rec:has(+ tr.row-cuti2) td[rowspan] {
+    border-bottom: 2px solid var(--border-record);
+  }
 
-  /* Hover seluruh blok */
-  tbody tr.rec:hover td,
-  tbody tr.rec:hover + tr.row-cuti2 td,
-  tbody tr.rec:has(+ tr.row-cuti2:hover) td,
-  tbody tr.row-cuti2:hover td { background: var(--bg-row-hover) !important; }
+  /* 3. All cells in row-cuti2: record separator */
+  tbody tr.row-cuti2 td {
+    border-bottom: 2px solid var(--border-record);
+  }
 
-  /* Rata kiri */
+  /* 4. Single-row records (no row-cuti2): record separator on all cells */
+  tbody tr.rec:not(:has(+ tr.row-cuti2)) td {
+    border-bottom: 2px solid var(--border-record);
+  }
+
+  /* 5. Absolute last row of tbody: no bottom border (clean table edge) */
+  tbody tr:last-child td { border-bottom: none !important; }
+
+  /* ── Alignment ───────────────────────────────────────────────────── */
+  /* Left-align: Nama (col 2) and Periode (col 3) in main row */
   tbody tr.rec td:nth-child(2),
   tbody tr.rec td:nth-child(3) { text-align: left; }
+  /* Left-align: Periode (first cell) in second row */
   tbody tr.row-cuti2 td:nth-child(1) { text-align: left; }
 
   /* ══════════════════════════════════════════════════════════════════
-     ✦ CONFLICT SPINE — garis amber/merah di tepi kiri baris bentrok.
-     
-     Strategi: terapkan amber pada td:first-child baris rec DAN row-cuti2.
-     
-     Untuk row-cuti2 yang memiliki bentrok, gunakan ::before yang
-     memanjang 50px ke ATAS (tinggi baris rec) sehingga spine terlihat
-     menerus meski selector sibling tidak selalu reliabel di semua browser.
+     ZEBRA STRIPING
+     Every other full record block (rec + optional row-cuti2) is shaded.
+     ══════════════════════════════════════════════════════════════════ */
+  tbody tr.rec-alt td,
+  tbody tr.rec-alt + tr.row-cuti2 td { background: var(--bg-row-alt); }
+
+  /* ══════════════════════════════════════════════════════════════════
+     HOVER — entire record block highlights together
+     ══════════════════════════════════════════════════════════════════ */
+  tbody tr.rec:hover td,
+  tbody tr.rec:hover + tr.row-cuti2 td,
+  tbody tr.rec:has(+ tr.row-cuti2:hover) td,
+  tbody tr.row-cuti2:hover td {
+    background: var(--bg-row-hover) !important;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     CONFLICT SPINE
+     ─────────────────────────────────────────────────────────────────
+     The Role cell (td:first-child in tr.rec) is rowspan="2" when the
+     record has two cuti rows. A single inset box-shadow on that cell
+     naturally covers the full visual height of both rows — no pseudo-
+     element trickery required.
+
+     For single-row records (no rowspan) the same shadow covers the
+     one row.
+
+     We intentionally do NOT apply any spine to row-cuti2 cells because
+     the rowspan cell already handles the full block.
      ══════════════════════════════════════════════════════════════════ */
 
-  /* Case A: clash ADA di baris rec sendiri */
-  tbody tr.rec:has(.pill-clash-warn) td:first-child {
-    box-shadow: inset 3px 0 0 var(--amber);
-  }
-  tbody tr.rec:has(.pill-clash-alert) td:first-child {
-    box-shadow: inset 3px 0 0 var(--red);
+  /* Amber spine — clash level 2 */
+  tbody tr.rec:has(.pill-clash-warn) td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child {
+    box-shadow: inset 4px 0 0 var(--amber);
   }
 
-  /* Case B: clash ada di baris row-cuti2 */
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child,
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
-    position: relative;
-    overflow: visible;
-  }
-  /* Spine pada row-cuti2 itu sendiri */
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child {
-    box-shadow: inset 3px 0 0 var(--amber);
-  }
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
-    box-shadow: inset 3px 0 0 var(--red);
-  }
-  /* ::before memanjang ke atas (50px = tinggi baris rec) — menutupi baris rec */
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child::before {
-    content: ""; position: absolute;
-    left: 0; width: 3px;
-    top: -50px; height: 50px;   /* naik ke baris rec persis di atasnya */
-    background: var(--amber);
-    z-index: 1;
-  }
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child::before {
-    content: ""; position: absolute;
-    left: 0; width: 3px;
-    top: -50px; height: 50px;
-    background: var(--red);
-    z-index: 1;
+  /* Red spine — clash level 3+ */
+  tbody tr.rec:has(.pill-clash-alert) td:first-child,
+  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child {
+    box-shadow: inset 4px 0 0 var(--red);
   }
 
-  /* Case C: rec punya clash DAN row-cuti2-nya juga perlu spine */
-  tbody tr.rec:has(.pill-clash-warn) + tr.row-cuti2 td:first-child {
-    box-shadow: inset 3px 0 0 var(--amber);
-  }
-  tbody tr.rec:has(.pill-clash-alert) + tr.row-cuti2 td:first-child {
-    box-shadow: inset 3px 0 0 var(--red);
-  }
-
-  /* ── Teks sel ─────────────────────────────────────────────────────── */
-  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 13px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  /* ── Cell text styles ────────────────────────────────────────────── */
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 13px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
   tr.row-cuti2 .periode { color: var(--text-muted); }
   .empty { text-align: center; color: var(--text-muted); padding: 54px 0 !important; font-size: 14px; }
-  .more-row td { height: auto !important; padding: 16px 14px !important; text-align: center; background: var(--surface-2) !important; }
+  .more-row td { height: auto !important; padding: 16px 14px !important; text-align: center; background: var(--surface-2) !important; border-bottom: none !important; }
   .more-note { display: block; margin-top: 7px; font-size: 12px; color: var(--text-muted); }
 
   /* ══════════════════════════════════════════════════════════════════
      PILLS
      ══════════════════════════════════════════════════════════════════ */
-  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; letter-spacing: .004em; padding: 4px 10px; border-radius: var(--radius-pill); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; border: 1px solid transparent; }
+  .pill {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 11px; font-weight: 600; letter-spacing: .004em;
+    padding: 4px 10px;
+    min-height: 24px;
+    border-radius: var(--radius-pill);
+    white-space: nowrap; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis;
+    border: 1px solid transparent;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
 
   /* PASSPORT */
   .pill-pass-yes, .pill-pass-no { padding-left: 8px; }
@@ -465,7 +488,7 @@
   .pill-durasi { background: transparent; color: var(--text-secondary); border-color: var(--border-strong); font-weight: 600; font-variant-numeric: tabular-nums; }
 
   /* PERIHAL */
-  .pill-perihal { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-bd); }
+  .pill-perihal { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-bd); max-width: 100%; }
   .pill-perihal::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .65; flex: none; }
 
   /* BENTROK */
@@ -475,7 +498,19 @@
   .pill-dash { color: var(--text-faint); font-weight: 400; }
 
   /* STATUS dropdown */
-  .task-select { -webkit-appearance: none; appearance: none; border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 5px 24px 5px 11px; cursor: pointer; width: 100%; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; transition: box-shadow .15s; }
+  .task-select {
+    -webkit-appearance: none; appearance: none;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    font-size: 11px; font-weight: 700; letter-spacing: .02em;
+    padding: 5px 26px 5px 11px;
+    min-height: 28px;
+    min-width: 118px;
+    cursor: pointer; width: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+    transition: box-shadow .15s; line-height: 1.2;
+  }
   .task-select:focus { box-shadow: 0 0 0 3px rgba(22,104,227,.15); outline: none; }
   .task-WAITING { background-color: var(--amber-bg); color: var(--amber);  border-color: var(--amber-bd); }
   .task-SEDANG  { background-color: var(--blue-bg);  color: var(--blue);   border-color: var(--blue-bd); }
@@ -484,13 +519,13 @@
   .task-saving  { opacity: .5; pointer-events: none; }
 
   /* Row actions */
-  .row-actions { display: inline-flex; gap: 5px; }
-  .icon-btn { border: 1.5px solid var(--border); background: var(--surface); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; color: var(--text-secondary); transition: all .15s; }
+  .row-actions { display: inline-flex; gap: 5px; justify-content: center; }
+  .icon-btn { border: 1.5px solid var(--border); background: var(--surface); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; color: var(--text-secondary); transition: all .15s; flex: none; }
   .icon-btn:hover       { border-color: var(--brand-100); color: var(--brand); background: var(--brand-050); box-shadow: var(--shadow-xs); }
   .icon-btn.danger:hover { border-color: var(--red-bd); color: var(--red); background: var(--red-bg); }
 
   /* Copy button */
-  .copy-btn { display: inline-flex; align-items: center; gap: 5px; border: 1.5px solid var(--border); background: #FAFCFF; color: var(--text-secondary); font: inherit; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .copy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1.5px solid var(--border); background: #FAFCFF; color: var(--text-secondary); font: inherit; font-size: 11.5px; font-weight: 600; padding: 5px 10px; min-height: 28px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
   .copy-btn:hover { border-color: var(--brand-100); color: var(--brand-ink); background: var(--brand-050); box-shadow: var(--shadow-xs); }
   .copy-btn:active { transform: translateY(1px); }
   .copy-btn.done { border-color: var(--brand); background: var(--brand); color: #fff; }
@@ -562,11 +597,11 @@
   .clash-badge.lv3 { background: var(--red-bg);   color: var(--red);   }
   .clash-none { padding: 32px 20px; text-align: center; color: var(--text-muted); font-size: 14px; }
 
-  /* Responsive */
+  /* ── Responsive ──────────────────────────────────────────────────── */
   @media (max-width: 720px) {
     .app-header-inner { padding: 0 16px; gap: 12px; }
     .header-badge { display: none; }
-    .container { padding: 16px 14px 48px; }
+    .container { padding: 16px 12px 48px; }
     .brand-divider { display: none; }
     .header-title h1 { font-size: 16px; }
     .tab { padding: 8px 13px; font-size: 12.5px; }
@@ -580,183 +615,18 @@
     .cal-legend { margin-left: 0; width: 100%; }
     .cal-day { min-height: 54px; padding: 6px; }
     .dnum { font-size: 12px; }
-    .table-wrap { max-height: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
-  }
-
-  /* ── Audit refinement: table command-center pass ─────────────────────
-     These rules are presentation-only. The existing DOM, inline handlers,
-     API calls and rendering logic remain untouched. */
-  html { overflow-x: hidden; }
-  body { overflow-x: hidden; }
-  .container { width: min(100%, 1440px); }
-  .table-wrap {
-    position: relative;
-    overflow-x: auto;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    /* Do not reserve a permanent empty strip beside the table. The stable
-       gutter made the right edge stop short when the horizontal scroll was
-       at its maximum position. */
-    scrollbar-gutter: auto;
-    -webkit-overflow-scrolling: touch;
-    isolation: isolate;
-    /* Continuous table spine. This belongs to the scroll container rather
-       than individual cells, so safe rows and rowspan boundaries cannot
-       interrupt the brown line. */
-    border-left: 3px solid var(--amber);
-  }
-  /* Separate borders keep the shared rowspan cell and its overlays from
-     being cut by the collapsed-border conflict resolution algorithm. */
-  table {
-    width: max(100%, 1320px);
-    min-width: 0;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-  thead th {
-    height: 46px;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    box-shadow: 0 1px 0 var(--border-header), 0 8px 12px -10px rgba(10,24,48,.38);
-    background: linear-gradient(180deg, #edf3fb 0%, #e4ecf7 100%);
-  }
-  thead th::after { bottom: -9px; height: 9px; }
-  tbody td {
-    height: 52px;
-    padding-left: 11px;
-    padding-right: 11px;
-    border-bottom-color: #d2dbe7;
-  }
-  tbody tr.row-cuti2 td { height: 44px; }
-  tbody tr.rec:has(+ tr.row-cuti2) td { border-bottom: 0; }
-  tbody tr.row-cuti2 td { border-bottom: 2px solid var(--border-record); }
-  tbody tr.rec:not(:has(+ tr.row-cuti2)) td { border-bottom: 2px solid var(--border-record); }
-  tbody tr:last-child td { border-bottom: 0 !important; }
-  tbody tr.rec-alt td,
-  tbody tr.rec-alt + tr.row-cuti2 td { background: #f6f9fd; }
-  tbody tr.rec:hover td,
-  tbody tr.rec:hover + tr.row-cuti2 td,
-  tbody tr.rec:has(+ tr.row-cuti2:hover) td,
-  tbody tr.row-cuti2:hover td { background: #edf5ff !important; }
-  tbody td:first-child { padding-left: 17px; }
-  tbody td:last-child { padding-right: 17px; }
-  .cell-name { max-width: 100%; }
-  .pill {
-    min-height: 25px;
-    justify-content: center;
-    line-height: 1.15;
-    vertical-align: middle;
-  }
-  .pill-perihal { max-width: 100%; }
-  .task-select {
-    min-width: 114px;
-    min-height: 28px;
-    line-height: 1.2;
-  }
-  .copy-btn { min-height: 29px; justify-content: center; }
-  .row-actions { justify-content: center; }
-
-  /* The role cell is rowspan="2", so the single spine belongs on that
-     shared cell. This also fixes a second-row-only clash without relying
-     on a pseudo-element extending across a table row. */
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child,
-  tbody tr.rec:has(.pill-clash-warn) td:first-child {
-    box-shadow: inset 3px 0 0 var(--amber);
-  }
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child,
-  tbody tr.rec:has(.pill-clash-alert) td:first-child {
-    box-shadow: inset 3px 0 0 var(--red);
-  }
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child,
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child {
-    box-shadow: none;
-    position: static;
-    overflow: hidden;
-  }
-  tbody tr.row-cuti2:has(.pill-clash-warn) td:first-child::before,
-  tbody tr.row-cuti2:has(.pill-clash-alert) td:first-child::before { display: none; }
-  tbody tr.rec:has(.pill-clash-warn) + tr.row-cuti2 td:first-child,
-  tbody tr.rec:has(.pill-clash-alert) + tr.row-cuti2 td:first-child { box-shadow: none; }
-
-  /* Keep the record separator continuous across rowspan cells. A two-row
-     record has its shared cells in the first tr, so the separator must sit
-     on those cells as well as on the four cells in row-cuti2. */
-  tbody tr.rec:has(+ tr.row-cuti2) td[rowspan] {
-    border-bottom: 2px solid var(--border-record);
-  }
-  tbody tr.row-cuti2:last-child td {
-    border-bottom: 2px solid var(--border-record);
-  }
-
-  /* The conflict marker is an overlay inside the shared role cell. It spans
-     the complete rowspan and sits above record separators, so the vertical
-     line cannot be visually cut at the boundary between two staff rows. */
-  tbody tr.rec:has(.pill-clash-warn) td:first-child,
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child {
-    position: relative;
-    overflow: visible;
-    border-left: 0 !important;
-    box-shadow: none !important;
-    z-index: 3;
-  }
-  tbody tr.rec:has(.pill-clash-alert) td:first-child,
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child {
-    position: relative;
-    overflow: visible;
-    border-left: 0 !important;
-    box-shadow: none !important;
-    z-index: 3;
-  }
-  tbody tr.rec:has(.pill-clash-warn) td:first-child::before,
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child::before,
-  tbody tr.rec:has(.pill-clash-alert) td:first-child::before,
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 4px;
-    z-index: 20;
-    pointer-events: none;
-    border-radius: 0;
-  }
-  tbody tr.rec:has(.pill-clash-warn) td:first-child::before,
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-warn) td:first-child::before {
-    background: var(--amber);
-  }
-  tbody tr.rec:has(.pill-clash-alert) td:first-child::before,
-  tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child::before {
-    background: var(--red);
-  }
-
-  /* Keep the continuous spine visible above row backgrounds and separators.
-     It is intentionally a single container edge, not a per-record marker. */
-  .table-wrap {
-    box-shadow:
-      inset 3px 0 0 var(--amber),
-      0 1px 3px rgba(10,24,48,.05),
-      0 8px 24px -8px rgba(10,24,48,.11),
-      0 24px 56px -20px rgba(10,24,48,.15);
-  }
-
-  @media (max-width: 720px) {
-    .container { padding-left: 12px; padding-right: 12px; }
-    .table-wrap {
-      border-radius: 14px;
-      max-width: 100%;
-      max-height: none;
-    }
-    table { min-width: 1320px; }
-    thead th { height: 44px; padding-left: 9px; padding-right: 9px; }
+    .table-wrap { max-height: none; border-radius: 14px; }
+    table { min-width: 1300px; }
+    thead th { height: 42px; padding-left: 9px; padding-right: 9px; }
     tbody td { padding-left: 9px; padding-right: 9px; }
     tbody td:first-child { padding-left: 14px; }
     tbody td:last-child { padding-right: 14px; }
     .filter-bar { align-items: stretch; }
     .filter-divider { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   }
 </style>
 </head>
