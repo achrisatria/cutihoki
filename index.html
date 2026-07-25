@@ -215,7 +215,7 @@
 
   /* ── Dashboard head ─────────────────────────────────────────────── */
   .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; width: 100%; max-width: 100%; box-sizing: border-box; }
-  .dash-head h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: 0em; color: var(--text-primary); }
+  .dash-head h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -.042em; color: var(--text-primary); }
   .dash-head p { color: var(--text-muted); font-size: 13px; margin-top: 3px; }
   .dash-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .ldr-picker { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: 10px; padding: 3px 4px 3px 12px; box-shadow: var(--shadow-sm); }
@@ -458,7 +458,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -770,7 +770,8 @@
             </div>
             <div class="field">
               <label>Nama Lengkap &amp; ID</label>
-              <input id="nama" type="text" placeholder="Contoh: HOKIJITU - X1234567">
+              <input id="nama" type="text" list="staffList" placeholder="Ketik atau pilih dari daftar…" autocomplete="off">
+              <datalist id="staffList"></datalist>
             </div>
           </div>
           <p class="fsec-note" id="limitNote">Batas durasi per pengajuan — CS &amp; KAPTEN maks. 14 hari, KASIR maks. 12 hari.</p>
@@ -1024,7 +1025,7 @@
     <div class="modal-body">
       <div class="grid" style="margin-bottom:14px;">
         <div class="field"><label>Role</label><select id="e_role" data-cat="ROLE"></select></div>
-        <div class="field"><label>Nama Lengkap &amp; ID</label><input id="e_nama" type="text"></div>
+        <div class="field"><label>Nama Lengkap &amp; ID</label><input id="e_nama" type="text" list="staffList" autocomplete="off"></div>
       </div>
       <div id="e_leaves"></div>
       <button class="add-leave-btn" id="e_addLeave" type="button" style="margin-bottom:14px;">＋ Tambah cuti kedua</button>
@@ -1227,7 +1228,7 @@
   // ── Data logic ────────────────────────────────────────────────
   function getConfig() {
     return sbGet('dropdown_options', 'select=category,value&order=id.asc').then(function(rows) {
-      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [] };
+      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
       rows.forEach(function(r) { if (cfg[r.category]) cfg[r.category].push(r.value); });
       return cfg;
     });
@@ -1393,7 +1394,7 @@
   }
 
   // ── State ─────────────────────────────────────────────────────
-  var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [] };
+  var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
   var ADD = '__ADD__';
   var _cache = null, _loaded = false, _prefetch = null;
   var filterState = { role: 'ALL', search: '', month: 'ALL', segment: 'AKTIF' };
@@ -1483,6 +1484,15 @@
   }
 
   // ── Dropdown helpers ──────────────────────────────────────────
+  // Isi daftar saran nama staff (dipakai oleh input <datalist>).
+  // Input tetap bisa diketik bebas; datalist hanya menyodorkan saran.
+  function fillStaffList() {
+    var dl = document.getElementById('staffList');
+    if (!dl) return;
+    var names = (CONFIG.STAFF || []).slice().sort(function(a, b) { return a.localeCompare(b); });
+    dl.innerHTML = names.map(function(v) { return '<option value="' + esc(v) + '"></option>'; }).join('');
+  }
+
   function fillSelect(sel, cat, selected, withAdd) {
     var list = CONFIG[cat] || [];
     var parts = ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih…</option>'];
@@ -1666,6 +1676,7 @@
       var payload = buildRowPayload(id, role, nama, keterangan, tambahan, leaves, durasi, 'WAITING');
       sbPost('cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
         btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+        rememberStaff(nama);
         showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
         toast('Pengajuan tersimpan', 'ok');
         resetForm(); invalidate(); toggleForm(false); loadDashboard(true);
@@ -1678,6 +1689,19 @@
       showMsg('error', 'Gagal memeriksa data: ' + err.message);
     });
   });
+
+  // Simpan nama baru ke daftar staff bila belum ada — supaya muncul di dropdown berikutnya.
+  // Dijalankan diam-diam: kegagalan di sini tidak boleh membatalkan pengajuan yang sudah tersimpan.
+  function rememberStaff(nama) {
+    var v = String(nama || '').trim();
+    if (!v) return;
+    // Cocokkan tanpa peduli huruf besar/kecil agar tidak menyimpan duplikat
+    var ada = (CONFIG.STAFF || []).some(function(s) { return s.toLowerCase() === v.toLowerCase(); });
+    if (ada) return;
+    addOption('STAFF', v).then(function(cfg) {
+      CONFIG = cfg; fillStaffList();
+    }).catch(function() { /* diamkan: bukan kesalahan fatal */ });
+  }
 
   function showMsg(type, text) {
     var el = document.getElementById('formMsg');
@@ -1749,6 +1773,7 @@
     var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
     sbPatch('cuti', 'id=eq.' + encodeURIComponent(editingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+      rememberStaff(nama);
       closeEdit(); toast('Perubahan tersimpan', 'ok'); invalidate(); loadDashboard(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
@@ -2919,6 +2944,7 @@
     fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
     fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
     fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
+    fillStaffList();
     renderRekChips();
     addFormLeave(false);
     fillLdr();
