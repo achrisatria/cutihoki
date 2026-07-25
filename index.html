@@ -1578,12 +1578,27 @@
       v.classList.toggle('active', v.id === 'view-' + target);
     });
     if (target === 'dashboard') {
-      filterState.segment = (view === 'archive') ? 'ARSIP' : (view === 'ongoing') ? 'BERJALAN' : 'AKTIF';
+      var segBaru = (view === 'archive') ? 'ARSIP' : (view === 'ongoing') ? 'BERJALAN' : 'AKTIF';
+      // Berpindah antar menu (Dashboard/Sedang Cuti/Selesai Cuti) → mulai bersih:
+      // reset semua filter & batas baris supaya tidak ada sisa filter dari menu sebelumnya
+      // yang membuat tabel tampak kosong tanpa sebab.
+      if (segBaru !== filterState.segment) resetDashboardFilters();
+      filterState.segment = segBaru;
       applySegmentUI();
       loadDashboard(false);
     }
     if (view === 'calendar') renderCalendar();
     if (view === 'rekening') loadRekening(false);
+  }
+
+  // Kembalikan semua filter dashboard ke kondisi awal (dipakai saat pindah menu)
+  function resetDashboardFilters() {
+    filterState.role = 'ALL';
+    filterState.search = '';
+    filterState.month = 'ALL';
+    filterState.status = 'ALL';
+    _showAllRows = false;                 // batasi baris lagi agar tabel tetap ringan
+    var si = document.getElementById('searchInput'); if (si) si.value = '';   // kosongkan kotak pencarian
   }
 
   // Sesuaikan judul, keterangan, dan tombol sesuai segmen yang dibuka
@@ -2230,7 +2245,7 @@
       return '<button class="chip' + active + '" data-role="' + esc(rl) + '">' + dot + esc(label) + '</button>';
     }).join('');
     wrap.querySelectorAll('.chip').forEach(function(c) {
-      c.addEventListener('click', function() { filterState.role = c.dataset.role; renderRoleChips(); applyFilters(); });
+      c.addEventListener('click', function() { filterState.role = c.dataset.role; _showAllRows = false; renderRoleChips(); applyFilters(); });
     });
   }
 
@@ -2354,14 +2369,14 @@
     var v = this.value.trim().toLowerCase();
     clearTimeout(_searchTimer);                 // tunggu user berhenti mengetik
     _searchTimer = setTimeout(function() {
-      filterState.search = v; applyFilters();
+      filterState.search = v; _showAllRows = false; applyFilters();
     }, 140);
   });
   document.getElementById('monthFilter').addEventListener('change', function() {
-    filterState.month = this.value; applyFilters();
+    filterState.month = this.value; _showAllRows = false; applyFilters();
   });
   document.getElementById('statusFilter').addEventListener('change', function() {
-    filterState.status = this.value; applyFilters();
+    filterState.status = this.value; _showAllRows = false; applyFilters();
   });
 
   function applyFilters() {
