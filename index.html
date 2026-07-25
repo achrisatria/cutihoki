@@ -1523,14 +1523,14 @@
   }
 
   // ── Clash (bentrok) ───────────────────────────────────────────
-  // Indeks bentrok: dikelompokkan per "ROLE|PERIHAL" supaya pencarian jauh lebih cepat
-  // (tidak perlu memindai seluruh data untuk setiap baris).
+  // Indeks bentrok: dikelompokkan per ROLE (CUTI LOKAL & INDO digabung), supaya
+  // "berapa orang role X yang cuti" dihitung menyeluruh — apa pun label lokal/indo-nya.
   function buildClashIndex(rows) {
     var idx = {};
     rows.forEach(function(r) {
       [[r.perihal1, r.start1Raw, r.end1Raw], [r.perihal2, r.start2Raw, r.end2Raw]].forEach(function(t) {
         if (CLASH_PERIHAL.indexOf(t[0]) !== -1 && t[1] && t[2]) {
-          var k = r.role + '|' + t[0];
+          var k = r.role;   // kunci hanya role → LOKAL & INDO satu kelompok
           (idx[k] = idx[k] || []).push({ nama: r.nama, role: r.role, perihal: t[0], s: dayKey(t[1]), e: dayKey(t[2]) });
         }
       });
@@ -1546,7 +1546,7 @@
   function clashInfo(perihal, startRaw, endRaw, nama, index, role) {
     if (CLASH_PERIHAL.indexOf(perihal) === -1 || !startRaw || !endRaw) return null;
     var s = dayKey(startRaw), e = dayKey(endRaw);
-    var list = (index && index[role + '|' + perihal]) || [];
+    var list = (index && index[role]) || [];
     // Saring dulu: hanya kandidat (role & perihal sama) yang rentangnya beririsan
     var cand = [], others = [];
     for (var i = 0; i < list.length; i++) {
@@ -1579,16 +1579,17 @@
   var CLASH_MAX_PEOPLE = { CS: 2, KASIR: 2, KAPTEN: 1 };
   var CLASH_MAX_OVERLAP_DAYS = 3;
 
-  // Ambil interval cuti aktif dari server untuk sebuah role (data TERKINI, bukan cache),
-  // dikelompokkan per perihal. Hanya CUTI LOKAL/INDO.
+  // Ambil interval cuti dari server untuk sebuah role (data TERKINI, bukan cache).
+  // CUTI LOKAL & INDO DIGABUNG jadi satu daftar — yang dihitung adalah "berapa orang
+  // role ini yang cuti", tanpa peduli label lokal/indo.
   function fetchRoleClashPool(role) {
     var qs = 'select=nama,perihal1,start1,end1,perihal2,start2,end2&role=eq.' + encodeURIComponent(role);
     return sbGet('cuti', qs).then(function(rows) {
-      var pool = {};   // perihal → [{nama, s, e}]
+      var pool = [];   // [{nama, s, e}]
       rows.forEach(function(r) {
         [[r.perihal1, r.start1, r.end1], [r.perihal2, r.start2, r.end2]].forEach(function(t) {
           if (CLASH_PERIHAL.indexOf(t[0]) !== -1 && t[1] && t[2]) {
-            (pool[t[0]] = pool[t[0]] || []).push({ nama: r.nama, s: dayKey(t[1]), e: dayKey(t[2]) });
+            pool.push({ nama: r.nama, s: dayKey(t[1]), e: dayKey(t[2]) });
           }
         });
       });
@@ -1601,16 +1602,16 @@
   function validateClashRules(nama, role, newSlots, pool) {
     var roleU = String(role || '').toUpperCase();
     var maxPeople = CLASH_MAX_PEOPLE[roleU] || 2;
+    // Interval milik orang lain (kecualikan diri sendiri). LOKAL & INDO sudah tergabung.
+    var others = pool.filter(function(iv) { return iv.nama !== nama; });
 
     for (var k = 0; k < newSlots.length; k++) {
       var slot = newSlots[k];
-      // Interval milik orang lain, role & perihal sama (kecualikan diri sendiri)
-      var list = (pool[slot.perihal] || []).filter(function(iv) { return iv.nama !== nama; });
 
       // ATURAN 1 — jumlah orang per tanggal (inklusif). Pemohon dihitung 1 orang.
       for (var d = slot.s; d <= slot.e; d++) {
         var names = {}; names[nama] = 1;
-        for (var i = 0; i < list.length; i++) if (list[i].s <= d && d <= list[i].e) names[list[i].nama] = 1;
+        for (var i = 0; i < others.length; i++) if (others[i].s <= d && d <= others[i].e) names[others[i].nama] = 1;
         var jumlah = Object.keys(names).length;
         if (jumlah > maxPeople) {
           if (roleU === 'KAPTEN') {
@@ -1624,8 +1625,8 @@
 
       // ATURAN 2 — durasi bentrok berpasangan maks 3 hari (hanya CS & KASIR).
       if (roleU !== 'KAPTEN') {
-        for (var j = 0; j < list.length; j++) {
-          var os = Math.max(slot.s, list[j].s), oe = Math.min(slot.e, list[j].e);
+        for (var j = 0; j < others.length; j++) {
+          var os = Math.max(slot.s, others[j].s), oe = Math.min(slot.e, others[j].e);
           if (os <= oe) {
             var durasi = oe - os + 1;
             if (durasi > CLASH_MAX_OVERLAP_DAYS) {
@@ -2619,13 +2620,13 @@
     if (CLASH_PERIHAL.indexOf(perihal) === -1 || !sRaw || !eRaw) return null;
 
     var s = dayKey(sRaw), e = dayKey(eRaw);
-    var list = clashIndex()[r.role + '|' + perihal] || [];
+    var list = clashIndex()[r.role] || [];
     var items = [];
     list.forEach(function(iv) {
       if (iv.nama === r.nama) return;
       var os = Math.max(s, iv.s), oe = Math.min(e, iv.e);   // irisan tanggal
       if (os > oe) return;                                   // tidak beririsan
-      items.push({ nama: iv.nama, s: os, e: oe, days: oe - os + 1 });
+      items.push({ nama: iv.nama, perihal: iv.perihal, s: os, e: oe, days: oe - os + 1 });
     });
     if (!items.length) return null;
     items.sort(function(a, b) { return a.s - b.s || a.nama.localeCompare(b.nama); });
