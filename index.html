@@ -459,7 +459,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -1212,6 +1212,36 @@
   var ARCHIVED_STATUSES = ['SELESAI CUTI'];
   function isArchived(task) { return ARCHIVED_STATUSES.indexOf(String(task || '').toUpperCase()) !== -1; }
 
+  // Status inti yang otomatisasi aplikasi bergantung padanya (segmentasi menu, cooldown, dll).
+  // Teks-teks ini TIDAK boleh diubah di database, atau logika otomatis akan berhenti mengenalinya.
+  // Daftar ini selalu tersedia di dropdown status walau konfigurasi TASK di DB tidak lengkap.
+  var CORE_STATUSES = ['WAITING', 'DONE CATAT', 'SEDANG CUTI', 'SELESAI CUTI'];
+
+  // Gabungkan konfigurasi TASK dari DB dengan status inti — status inti dijamin selalu ada.
+  // Urutan: ikuti CONFIG.TASK, lalu tambahkan status inti yang belum tercantum.
+  function taskOptions() {
+    var out = [], seen = {};
+    (CONFIG.TASK || []).forEach(function(s) {
+      var u = String(s).toUpperCase();
+      if (!seen[u]) { seen[u] = 1; out.push(s); }
+    });
+    CORE_STATUSES.forEach(function(s) {
+      if (!seen[s]) { seen[s] = 1; out.push(s); }
+    });
+    return out;
+  }
+
+  // Peringatkan admin bila status inti hilang/berubah teksnya di DB (kerusakan senyap → terlihat).
+  function checkCoreStatuses() {
+    var have = {};
+    (CONFIG.TASK || []).forEach(function(s) { have[String(s).toUpperCase()] = 1; });
+    var missing = CORE_STATUSES.filter(function(s) { return !have[s]; });
+    if (missing.length) {
+      toast('⚠ Status inti hilang dari konfigurasi: ' + missing.join(', ') +
+        '. Otomatisasi menu bisa terganggu — periksa data TASK di Supabase.', 'err');
+    }
+  }
+
   // Jeda wajib setelah cuti selesai sebelum staff boleh mengajukan lagi
   var COOLDOWN_MONTHS = 6;
 
@@ -1317,12 +1347,27 @@
     function p(x) { return String(x).padStart(2, '0'); }
     return ny + '-' + p(nm + 1) + '-' + p(nd);
   }
+  // Suffix acak yang praktis mustahil bertabrakan (12 karakter dari crypto bila ada).
+  // Dipakai sebagai ekor ID agar dua pengajuan di detik yang sama tetap unik.
+  function randSuffix(len) {
+    len = len || 12;
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // tanpa 0/O/1/I agar mudah dibaca
+    var out = '';
+    if (window.crypto && crypto.getRandomValues) {
+      var buf = new Uint8Array(len);
+      crypto.getRandomValues(buf);
+      for (var i = 0; i < len; i++) out += chars[buf[i] % chars.length];
+    } else {
+      for (var j = 0; j < len; j++) out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return out;
+  }
   function genId() {
     var now = new Date();
     function pad(n) { return String(n).padStart(2, '0'); }
-    var rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+    // Timestamp (mudah dibaca) + suffix acak 12 karakter (anti-tabrakan)
     return 'CUTI-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' +
-      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + rand;
+      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + randSuffix(12);
   }
 
   // ── Data logic ────────────────────────────────────────────────
@@ -2116,7 +2161,7 @@
     renumber(eC); eToggleAdd();
   });
   function fillTaskSelect(sel, selected) {
-    var list = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
+    var list = taskOptions();
     sel.innerHTML = list.map(function(v) { return '<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('');
   }
   function openEdit(rowId) {
@@ -2701,7 +2746,7 @@
       tbody.innerHTML = '<tr><td colspan="11" class="empty">Tidak ada pengajuan yang cocok dengan filter.</td></tr>';
       return;
     }
-    var taskList = CONFIG.TASK.length ? CONFIG.TASK : ['WAITING','SEDANG CUTI','SELESAI CUTI','DONE CATAT'];
+    var taskList = taskOptions();
     var parts = [];
     var total = rows.length;
     var shown = (_showAllRows || total <= ROW_LIMIT) ? rows : rows.slice(0, ROW_LIMIT);
@@ -2820,9 +2865,8 @@
   function genRekId() {
     var now = new Date();
     function pad(n) { return String(n).padStart(2, '0'); }
-    var rand = Math.random().toString(36).slice(2, 5).toUpperCase();
     return 'REK-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' +
-      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + rand;
+      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + randSuffix(12);
   }
 
   // Buang spasi/strip yang biasa diketik orang, sisakan angka saja
@@ -3363,6 +3407,7 @@
 
   getConfig().then(function(cfg) {
     CONFIG = cfg;
+    checkCoreStatuses();   // peringatkan bila status inti hilang/berubah di DB
     fillSelect(document.getElementById('role'), 'ROLE', '');
     fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
     fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
