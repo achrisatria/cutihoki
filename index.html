@@ -1570,6 +1570,97 @@
     return { count: maxConcurrent, names: others };
   }
 
+  // ── GERBANG VALIDASI BENTROK (blokir pengajuan sebelum tersimpan) ──
+  // Memakai ulang CLASH_PERIHAL, dayKey, dan semantik interval yang sama dengan
+  // indeks bentrok di atas — bukan sistem kedua. Aturan per role:
+  //   • KAPTEN      : maks 1 orang/tanggal → 1 hari bertabrakan saja sudah ditolak.
+  //   • CS & KASIR  : maks 2 orang/tanggal, DAN durasi bentrok berpasangan maks 3 hari.
+  // Hanya CUTI LOKAL & CUTI INDO yang dihitung; LOKAL vs INDO dipisah (sesuai kolom Bentrok).
+  var CLASH_MAX_PEOPLE = { CS: 2, KASIR: 2, KAPTEN: 1 };
+  var CLASH_MAX_OVERLAP_DAYS = 3;
+
+  // Ambil interval cuti aktif dari server untuk sebuah role (data TERKINI, bukan cache),
+  // dikelompokkan per perihal. Hanya CUTI LOKAL/INDO.
+  function fetchRoleClashPool(role) {
+    var qs = 'select=nama,perihal1,start1,end1,perihal2,start2,end2&role=eq.' + encodeURIComponent(role);
+    return sbGet('cuti', qs).then(function(rows) {
+      var pool = {};   // perihal → [{nama, s, e}]
+      rows.forEach(function(r) {
+        [[r.perihal1, r.start1, r.end1], [r.perihal2, r.start2, r.end2]].forEach(function(t) {
+          if (CLASH_PERIHAL.indexOf(t[0]) !== -1 && t[1] && t[2]) {
+            (pool[t[0]] = pool[t[0]] || []).push({ nama: r.nama, s: dayKey(t[1]), e: dayKey(t[2]) });
+          }
+        });
+      });
+      return pool;
+    });
+  }
+
+  // Validasi satu pengajuan terhadap pool. Kembalikan null bila lolos, atau string alasan bila ditolak.
+  // newSlots: [{perihal, s, e}] dari pengajuan baru (hanya perihal bentrok).
+  function validateClashRules(nama, role, newSlots, pool) {
+    var roleU = String(role || '').toUpperCase();
+    var maxPeople = CLASH_MAX_PEOPLE[roleU] || 2;
+
+    for (var k = 0; k < newSlots.length; k++) {
+      var slot = newSlots[k];
+      // Interval milik orang lain, role & perihal sama (kecualikan diri sendiri)
+      var list = (pool[slot.perihal] || []).filter(function(iv) { return iv.nama !== nama; });
+
+      // ATURAN 1 — jumlah orang per tanggal (inklusif). Pemohon dihitung 1 orang.
+      for (var d = slot.s; d <= slot.e; d++) {
+        var names = {}; names[nama] = 1;
+        for (var i = 0; i < list.length; i++) if (list[i].s <= d && d <= list[i].e) names[list[i].nama] = 1;
+        var jumlah = Object.keys(names).length;
+        if (jumlah > maxPeople) {
+          if (roleU === 'KAPTEN') {
+            return 'Pengajuan cuti ditolak. Terdapat bentrok jadwal cuti dengan ROLE KAPTEN lain pada tanggal ' +
+              formatDate(isoFromKey(d)) + '. ROLE KAPTEN hanya mengizinkan 1 orang cuti pada periode yang sama.';
+          }
+          return 'Pengajuan cuti ditolak. Pada tanggal ' + formatDate(isoFromKey(d)) + ', terdapat ' + jumlah +
+            ' orang ROLE ' + roleU + ' yang cuti bersamaan. Batas maksimal adalah ' + maxPeople + ' orang.';
+        }
+      }
+
+      // ATURAN 2 — durasi bentrok berpasangan maks 3 hari (hanya CS & KASIR).
+      if (roleU !== 'KAPTEN') {
+        for (var j = 0; j < list.length; j++) {
+          var os = Math.max(slot.s, list[j].s), oe = Math.min(slot.e, list[j].e);
+          if (os <= oe) {
+            var durasi = oe - os + 1;
+            if (durasi > CLASH_MAX_OVERLAP_DAYS) {
+              return 'Pengajuan cuti ditolak. Durasi bentrok cuti ROLE ' + roleU + ' adalah ' + durasi +
+                ' hari. Batas maksimal durasi bentrok adalah ' + CLASH_MAX_OVERLAP_DAYS + ' hari.';
+            }
+          }
+        }
+      }
+    }
+    return null;   // lolos semua aturan
+  }
+
+  // Ubah day-key kembali ke 'YYYY-MM-DD' (untuk pesan tanggal). Aman lintas bulan/tahun.
+  function isoFromKey(k) {
+    var d = new Date(k * 86400000);
+    function p(x) { return String(x).padStart(2, '0'); }
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate());
+  }
+
+  // Pemeriksa lengkap dipakai di alur submit: ambil pool terkini lalu validasi.
+  function checkClashOnSubmit(nama, role, leaves) {
+    // Hanya slot ber-perihal bentrok & tanggal lengkap yang divalidasi
+    var slots = [];
+    leaves.forEach(function(lv) {
+      if (CLASH_PERIHAL.indexOf(lv.perihal) !== -1 && lv.start && lv.end) {
+        slots.push({ perihal: lv.perihal, s: dayKey(lv.start), e: dayKey(lv.end) });
+      }
+    });
+    if (!slots.length) return Promise.resolve(null);   // tak ada cuti lokal/indo → tak perlu cek
+    return fetchRoleClashPool(role).then(function(pool) {
+      return validateClashRules(nama, role, slots, pool);
+    });
+  }
+
   // ── State ─────────────────────────────────────────────────────
   var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
   var ADD = '__ADD__';
@@ -2104,18 +2195,26 @@
           '. Sesuai aturan jeda ' + COOLDOWN_MONTHS + ' bulan, pengajuan berikutnya bisa dibuat mulai ' +
           formatDate(block.eligibleOn) + '.');
       }
-      btn.textContent = 'Mengirim…';
-      var id = genId();
-      var payload = buildRowPayload(id, role, nama, keterangan, tambahan, leaves, durasi, 'WAITING');
-      sbPost('cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
-        btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
-        rememberStaff(nama);
-        showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
-        toast('Pengajuan tersimpan', 'ok');
-        resetForm(); invalidate(); toggleForm(false); loadDashboard(true);
-      }).catch(function(err) {
-        btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
-        showMsg('error', 'Gagal menyimpan: ' + err.message);
+      // Lolos syarat pengajuan ulang → cek bentrok jadwal (aturan per role) dgn data terkini
+      btn.textContent = 'Memeriksa bentrok…';
+      return checkClashOnSubmit(nama, role, leaves).then(function(clashReason) {
+        if (clashReason) {
+          btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+          return showMsg('error', '⛔ ' + clashReason);
+        }
+        btn.textContent = 'Mengirim…';
+        var id = genId();
+        var payload = buildRowPayload(id, role, nama, keterangan, tambahan, leaves, durasi, 'WAITING');
+        return sbPost('cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
+          btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+          rememberStaff(nama);
+          showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
+          toast('Pengajuan tersimpan', 'ok');
+          resetForm(); invalidate(); toggleForm(false); loadDashboard(true);
+        }).catch(function(err) {
+          btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+          showMsg('error', 'Gagal menyimpan: ' + err.message);
+        });
       });
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
