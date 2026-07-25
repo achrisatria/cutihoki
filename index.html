@@ -149,6 +149,14 @@
   .header-title h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em; color: #fff; line-height: 1.2; }
   .header-title .sub { font-size: 12px; font-weight: 400; color: rgba(220,232,248,.52); margin-top: 3px; letter-spacing: .002em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .header-badge { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--radius-pill); background: rgba(0,183,255,.10); border: 1px solid rgba(0,183,255,.24); font-size: 10.5px; font-weight: 700; color: #7FD6FF; letter-spacing: .10em; text-transform: uppercase; }
+  .header-auth { flex: none; margin-left: auto; display: flex; align-items: center; }
+  .auth-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.28); border-radius: var(--radius-pill); padding: 7px 14px; font-size: 13px; font-weight: 700; font-family: inherit; transition: background .15s; }
+  .auth-btn:hover { background: rgba(255,255,255,.24); }
+  .auth-status { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 13px; font-weight: 600; }
+  .auth-status .auth-dot { width: 8px; height: 8px; border-radius: 50%; background: #34D399; box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+  .auth-logout { cursor: pointer; background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.28); border-radius: var(--radius-pill); padding: 4px 11px; font-size: 12px; font-weight: 700; font-family: inherit; margin-left: 2px; }
+  .auth-logout:hover { background: rgba(255,255,255,.26); }
+  body:not(.is-admin) .admin-only { display: none !important; }
   .header-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--spark); box-shadow: 0 0 8px rgba(0,183,255,.9); animation: pulse-dot 2s ease infinite; }
   @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(.8); } }
 
@@ -791,9 +799,64 @@
       <h1>Pengajuan Cuti Staff</h1>
       <div class="sub">Kelola pengajuan, pantau bentrok jadwal, dan proses status cuti tim.</div>
     </div>
-    <div class="header-badge">Live</div>
+    <div class="header-auth">
+      <button class="auth-btn" id="loginBtn" type="button" onclick="openLogin()">🔒 Login Admin</button>
+      <span class="auth-status" id="authStatus" style="display:none;">
+        <span class="auth-dot"></span><span id="authEmail">Admin</span>
+        <button class="auth-logout" type="button" onclick="doLogout()">Keluar</button>
+      </span>
+    </div>
   </div>
 </header>
+
+<!-- Modal editor aturan (admin) -->
+<div class="overlay" id="rulesOverlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head"><h3>Atur Aturan Cuti</h3></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Perubahan berlaku untuk validasi berikutnya. Semua nilai dalam satuan hari, bulan, atau jumlah orang.</p>
+      <p class="fsec-note" style="margin-top:2px;">Jeda &amp; batas durasi</p>
+      <div class="grid">
+        <div class="field"><label>Jeda setelah selesai (bulan)</label><input id="rule_cooldown_months" type="number" min="0" inputmode="numeric"></div>
+        <div class="field"><label>Maks. durasi bentrok (hari)</label><input id="rule_clash_max_overlap_days" type="number" min="1" inputmode="numeric"></div>
+      </div>
+      <p class="fsec-note" style="margin-top:2px;">Maks. orang cuti bersamaan / tanggal (per role)</p>
+      <div class="grid">
+        <div class="field"><label>CS</label><input id="rule_clash_max_people_cs" type="number" min="1" inputmode="numeric"></div>
+        <div class="field"><label>KASIR</label><input id="rule_clash_max_people_kasir" type="number" min="1" inputmode="numeric"></div>
+        <div class="field"><label>KAPTEN</label><input id="rule_clash_max_people_kapten" type="number" min="1" inputmode="numeric"></div>
+      </div>
+      <p class="fsec-note" style="margin-top:2px;">Maks. durasi cuti per pengajuan (hari, per role)</p>
+      <div class="grid">
+        <div class="field"><label>CS</label><input id="rule_max_durasi_cs" type="number" min="1" inputmode="numeric"></div>
+        <div class="field"><label>KASIR</label><input id="rule_max_durasi_kasir" type="number" min="1" inputmode="numeric"></div>
+        <div class="field"><label>KAPTEN</label><input id="rule_max_durasi_kapten" type="number" min="1" inputmode="numeric"></div>
+      </div>
+      <div class="msg" id="rulesMsg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeRules()">Batal</button>
+      <button class="btn btn-primary" id="rulesSave" type="button">💾 Simpan aturan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal login admin -->
+<div class="overlay" id="loginOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head"><h3>Login Admin</h3></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Masuk untuk mengelola data, staff, dan aturan. Tanpa login, dashboard hanya bisa dilihat dan menerima pengajuan.</p>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@hokijitu.local"></div>
+      <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeLogin()">Batal</button>
+      <button class="btn btn-primary" id="loginSubmit" type="button">Masuk</button>
+    </div>
+  </div>
+</div>
 
 <div class="container">
 
@@ -802,7 +865,7 @@
     <button class="tab" id="tabOngoing" onclick="switchTab('ongoing')">🏝️ Sedang Cuti <em class="tab-count" id="ongoingCount">0</em></button>
     <button class="tab" id="tabArchive" onclick="switchTab('archive')">✅ Selesai Cuti <em class="tab-count" id="archiveCount">0</em></button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
-    <button class="tab" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
+    <button class="tab admin-only" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
   </div>
 
   <!-- VIEW DASHBOARD -->
@@ -818,6 +881,7 @@
           <select id="ldrSelect" data-cat="LDR" title="Nama leader yang muncul pada format Copy"></select>
         </div>
         <button class="btn btn-primary btn-sm" id="toggleFormBtn" type="button" onclick="toggleForm()">＋ Ajukan Cuti</button>
+        <button class="btn btn-secondary btn-sm admin-only" id="rulesBtn" type="button" onclick="openRules()">⚙️ Atur Aturan</button>
         <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadDashboard(true)">🔄 Muat ulang</button>
       </div>
     </div>
@@ -1203,6 +1267,7 @@
   var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_3mByHkVTPwtukH40bOHvow_sB1WW6og';
 
+  // Aturan (rules) — nilai default; ditimpa oleh tabel settings saat load bila ada.
   var MAX_DURASI = { 'CS': 14, 'KAPTEN': 14, 'KASIR': 12 };
   var MONTHS = ['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
@@ -1265,9 +1330,113 @@
   var COPY_HEADER = 'HOKIJITU';        // baris judul paling atas
   var ACC_LDR     = 'VITTO GUNAWAN';   // nama leader yang meng-ACC
 
+  // ── AUTH ADMIN (Supabase Auth) ────────────────────────────────
+  // Sesi disimpan di localStorage agar admin tetap login setelah refresh.
+  var AUTH_KEY = 'hokijitu_admin_session';
+  var AUTH = null;   // { access_token, refresh_token, expires_at, email }
+
+  function loadSession() {
+    try { var s = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); if (s && s.access_token) AUTH = s; }
+    catch (e) { AUTH = null; }
+  }
+  function saveSession(s) { AUTH = s; try { localStorage.setItem(AUTH_KEY, JSON.stringify(s)); } catch (e) {} }
+  function clearSession() { AUTH = null; try { localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+  function isAdmin() { return !!(AUTH && AUTH.access_token); }
+
+  // Login dgn email+password → simpan sesi. Kembalikan Promise.
+  function authLogin(email, password) {
+    return fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    }).then(function(res) {
+      return res.json().then(function(data) {
+        if (!res.ok) throw new Error(data.error_description || data.msg || data.error || 'Login gagal');
+        saveSession({
+          access_token: data.access_token, refresh_token: data.refresh_token,
+          expires_at: Date.now() + (data.expires_in || 3600) * 1000,
+          email: (data.user && data.user.email) || email
+        });
+        return AUTH;
+      });
+    });
+  }
+  // Perpanjang sesi dgn refresh_token (token akses Supabase kedaluwarsa ~1 jam)
+  function authRefresh() {
+    if (!AUTH || !AUTH.refresh_token) return Promise.reject(new Error('no session'));
+    return fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: AUTH.refresh_token })
+    }).then(function(res) {
+      return res.json().then(function(data) {
+        if (!res.ok || !data.access_token) throw new Error('refresh gagal');
+        saveSession({
+          access_token: data.access_token, refresh_token: data.refresh_token,
+          expires_at: Date.now() + (data.expires_in || 3600) * 1000,
+          email: (data.user && data.user.email) || AUTH.email
+        });
+        return AUTH;
+      });
+    });
+  }
+  function authLogout() {
+    if (AUTH && AUTH.access_token) {
+      fetch(SUPABASE_URL + '/auth/v1/logout', {
+        method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + AUTH.access_token }
+      }).catch(function() {});
+    }
+    clearSession();
+  }
+
+  // ── UI login ──────────────────────────────────────────────────
+  function applyAuthUI() {
+    var admin = isAdmin();
+    document.body.classList.toggle('is-admin', admin);
+    var loginBtn = document.getElementById('loginBtn');
+    var status = document.getElementById('authStatus');
+    if (loginBtn) loginBtn.style.display = admin ? 'none' : '';
+    if (status) status.style.display = admin ? '' : 'none';
+    if (admin) { var em = document.getElementById('authEmail'); if (em) em.textContent = (AUTH && AUTH.email) || 'Admin'; }
+  }
+  function openLogin() {
+    document.getElementById('loginMsg').textContent = '';
+    document.getElementById('loginMsg').className = 'msg';
+    document.getElementById('loginOverlay').classList.add('open');
+    setTimeout(function(){ var e=document.getElementById('loginEmail'); if(e) e.focus(); }, 50);
+  }
+  function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+  function doLogout() {
+    authLogout(); applyAuthUI();
+    toast('Anda keluar dari mode admin', 'ok');
+    // Muat ulang tampilan agar kontrol admin & tab rekening tersembunyi kembali
+    invalidate(); switchTab('dashboard');
+  }
+  function submitLogin() {
+    var email = document.getElementById('loginEmail').value.trim();
+    var pass = document.getElementById('loginPass').value;
+    var msg = document.getElementById('loginMsg');
+    if (!email || !pass) { msg.className = 'msg error'; msg.textContent = 'Isi email dan password.'; return; }
+    var btn = document.getElementById('loginSubmit');
+    btn.disabled = true; btn.textContent = 'Masuk…';
+    authLogin(email, pass).then(function() {
+      btn.disabled = false; btn.textContent = 'Masuk';
+      document.getElementById('loginPass').value = '';
+      closeLogin(); applyAuthUI();
+      toast('Berhasil masuk sebagai admin', 'ok');
+      invalidate(); loadDashboard(true);   // muat ulang agar kontrol admin muncul
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = 'Masuk';
+      msg.className = 'msg error'; msg.textContent = 'Login gagal: ' + err.message;
+    });
+  }
+
   // ── Supabase REST helpers ─────────────────────────────────────
   function sbHeaders(extra) {
-    var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+    // Saat login admin, pakai token user (role 'authenticated') agar lolos RLS admin.
+    // Tanpa login, pakai anon key (role 'anon') — hanya boleh lihat & ajukan.
+    var bearer = (AUTH && AUTH.access_token) ? AUTH.access_token : SUPABASE_KEY;
+    var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearer, 'Content-Type': 'application/json' };
     if (extra) Object.keys(extra).forEach(function(k) { h[k] = extra[k]; });
     return h;
   }
@@ -1584,6 +1753,86 @@
   var CLASH_MAX_PEOPLE = { CS: 2, KASIR: 2, KAPTEN: 1 };
   var CLASH_MAX_OVERLAP_DAYS = 3;
 
+  // ── Aturan dari tabel settings (bisa diedit admin) ────────────
+  // Muat nilai aturan dari DB & terapkan ke konstanta yang dipakai validasi.
+  function loadRules() {
+    return sbGet('settings', 'select=key,value').then(function(rows) {
+      var m = {};
+      (rows || []).forEach(function(r) { m[r.key] = r.value; });
+      function num(k, def) { var v = parseInt(m[k], 10); return isNaN(v) ? def : v; }
+      COOLDOWN_MONTHS = num('cooldown_months', COOLDOWN_MONTHS);
+      CLASH_MAX_OVERLAP_DAYS = num('clash_max_overlap_days', CLASH_MAX_OVERLAP_DAYS);
+      CLASH_MAX_PEOPLE.CS = num('clash_max_people_cs', CLASH_MAX_PEOPLE.CS);
+      CLASH_MAX_PEOPLE.KASIR = num('clash_max_people_kasir', CLASH_MAX_PEOPLE.KASIR);
+      CLASH_MAX_PEOPLE.KAPTEN = num('clash_max_people_kapten', CLASH_MAX_PEOPLE.KAPTEN);
+      MAX_DURASI.CS = num('max_durasi_cs', MAX_DURASI.CS);
+      MAX_DURASI.KAPTEN = num('max_durasi_kapten', MAX_DURASI.KAPTEN);
+      MAX_DURASI.KASIR = num('max_durasi_kasir', MAX_DURASI.KASIR);
+      return m;
+    }).catch(function() { return {}; });   // tabel belum ada → pakai default, jangan gagalkan app
+  }
+  // Simpan satu aturan (admin). Kembalikan Promise.
+  function saveRule(key, value) {
+    return sbPatch('settings', 'key=eq.' + encodeURIComponent(key), { value: String(value) });
+  }
+
+  // ── UI editor aturan ──────────────────────────────────────────
+  var RULE_FIELDS = [
+    ['rule_cooldown_months', function(){return COOLDOWN_MONTHS;}],
+    ['rule_clash_max_overlap_days', function(){return CLASH_MAX_OVERLAP_DAYS;}],
+    ['rule_clash_max_people_cs', function(){return CLASH_MAX_PEOPLE.CS;}],
+    ['rule_clash_max_people_kasir', function(){return CLASH_MAX_PEOPLE.KASIR;}],
+    ['rule_clash_max_people_kapten', function(){return CLASH_MAX_PEOPLE.KAPTEN;}],
+    ['rule_max_durasi_cs', function(){return MAX_DURASI.CS;}],
+    ['rule_max_durasi_kasir', function(){return MAX_DURASI.KASIR;}],
+    ['rule_max_durasi_kapten', function(){return MAX_DURASI.KAPTEN;}]
+  ];
+  function openRules() {
+    if (!isAdmin()) return;
+    RULE_FIELDS.forEach(function(f) { var el = document.getElementById(f[0]); if (el) el.value = f[1](); });
+    var m = document.getElementById('rulesMsg'); m.className = 'msg'; m.textContent = '';
+    document.getElementById('rulesOverlay').classList.add('open');
+  }
+  function closeRules() { document.getElementById('rulesOverlay').classList.remove('open'); }
+  function submitRules() {
+    if (!isAdmin()) return;
+    var msg = document.getElementById('rulesMsg');
+    // Kumpulkan & validasi (semua bilangan bulat ≥ batas minimal wajar)
+    var vals = {};
+    for (var i = 0; i < RULE_FIELDS.length; i++) {
+      var id = RULE_FIELDS[i][0];
+      var raw = document.getElementById(id).value.trim();
+      var n = parseInt(raw, 10);
+      var minVal = (id === 'rule_cooldown_months') ? 0 : 1;   // cooldown boleh 0, sisanya ≥1
+      if (raw === '' || isNaN(n) || n < minVal) {
+        msg.className = 'msg error'; msg.textContent = 'Nilai tidak valid pada salah satu kolom (minimal ' + minVal + ').';
+        return;
+      }
+      vals[id.replace('rule_', '')] = n;
+    }
+    var btn = document.getElementById('rulesSave');
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    // Simpan semua key paralel
+    var keys = Object.keys(vals);
+    Promise.all(keys.map(function(k) { return saveRule(k, vals[k]); })).then(function() {
+      // Terapkan langsung ke konstanta di memori
+      COOLDOWN_MONTHS = vals.cooldown_months;
+      CLASH_MAX_OVERLAP_DAYS = vals.clash_max_overlap_days;
+      CLASH_MAX_PEOPLE.CS = vals.clash_max_people_cs;
+      CLASH_MAX_PEOPLE.KASIR = vals.clash_max_people_kasir;
+      CLASH_MAX_PEOPLE.KAPTEN = vals.clash_max_people_kapten;
+      MAX_DURASI.CS = vals.max_durasi_cs;
+      MAX_DURASI.KASIR = vals.max_durasi_kasir;
+      MAX_DURASI.KAPTEN = vals.max_durasi_kapten;
+      btn.disabled = false; btn.textContent = '💾 Simpan aturan';
+      closeRules(); toast('Aturan diperbarui', 'ok');
+      if (typeof updateTotalBox === 'function') updateTotalBox();   // segarkan catatan batas durasi
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '💾 Simpan aturan';
+      msg.className = 'msg error'; msg.textContent = 'Gagal menyimpan: ' + err.message;
+    });
+  }
+
   // Ambil interval cuti dari server untuk sebuah role (data TERKINI, bukan cache).
   // CUTI LOKAL & INDO DIGABUNG jadi satu daftar — yang dihitung adalah "berapa orang
   // role ini yang cuti", tanpa peduli label lokal/indo.
@@ -1831,7 +2080,7 @@
         return '<div class="combo-opt" data-val="' + esc(v) + '">' +
           '<span class="co-nm">' + highlight(q, p.nm) + '</span>' +
           (p.id ? '<span class="co-id">' + highlight(q, p.id) + '</span>' : '') +
-          '<span class="co-tools">' +
+          '<span class="co-tools admin-only">' +
             '<button type="button" class="co-ic" data-edit title="Ubah nama">' + EDIT_SVG + '</button>' +
             '<button type="button" class="co-ic danger" data-del title="Hapus dari daftar">' + DEL_SVG + '</button>' +
           '</span>' +
@@ -1855,7 +2104,7 @@
             '</div>' +
           '</div>';
       } else {
-        footEl.innerHTML = '<div class="combo-add" data-addnew>＋ Tambah Staff</div>';
+        footEl.innerHTML = '<div class="combo-add admin-only" data-addnew>＋ Tambah Staff</div>';
       }
     }
 
@@ -1866,7 +2115,7 @@
     function setMode(m) { mode = m; wrap.classList.toggle('editing-mode', m !== 'list'); }
 
     // ── Tambah staff baru (2 kolom → digabung jadi satu string "NAMA - ID") ──
-    function startAdd() {
+    function startAdd() { if (!isAdmin()) return;
       setMode('add'); renderFoot();
       var fNama = footEl.querySelector('.co-add-nama'), fId = footEl.querySelector('.co-add-id');
       focusSoon(fNama);
@@ -1899,7 +2148,7 @@
     }
 
     // ── Edit nama (dari baris) ──
-    function startEdit(row, val) {
+    function startEdit(row, val) { if (!isAdmin()) return;
       if (!row) return;
       setMode('edit'); editingVal = val;
       row.classList.add('editing');
@@ -1936,7 +2185,7 @@
       });
     }
 
-    function askDelete(val) {
+    function askDelete(val) { if (!isAdmin()) return;
       confirmDialog({
         title: 'Hapus dari Daftar',
         warn: 'Hanya menghapus dari daftar pilihan — data cuti yang sudah memakai nama ini tidak terpengaruh.',
@@ -2727,10 +2976,14 @@
   }
 
   function taskSelect(currentVal, rowId, taskList) {
+    // Non-admin: status ditampilkan statis (tak bisa diubah)
+    if (!isAdmin()) return '<span class="pill ' + taskCls(currentVal) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(currentVal) + '</span>';
     var opts = taskList.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
     return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
   }
   function actionCell(rowId, label) {
+    // Non-admin: tanpa tombol ubah/hapus
+    if (!isAdmin()) return '<span class="row-actions" style="color:var(--faint);font-size:12px;">—</span>';
     return '<span class="row-actions">' +
       '<button class="icon-btn" title="Ubah" onclick="openEdit(\'' + esc(rowId) + '\')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
@@ -3515,33 +3768,56 @@
 
 
   // ── Init ──────────────────────────────────────────────────────
-  _prefetch = getCuti().then(function(rows) {
-    _cache = rows; _loaded = true; _clashIdx = null;
-    if (document.getElementById('view-dashboard').classList.contains('active')) {
-      document.getElementById('dashboardLoading').style.display = 'none';
-      renderFilters(); applyFilters(); updateTabCounts();
-      document.getElementById('dashboardContent').style.display = 'block';
+  // Pulihkan sesi admin (bila ada) SEBELUM request pertama, agar token ikut terpakai.
+  loadSession();
+  function bootAuth() {
+    // Bila token sudah/hampir kedaluwarsa, coba perpanjang dulu
+    if (AUTH && AUTH.expires_at && AUTH.expires_at < Date.now() + 60000) {
+      return authRefresh().catch(function() { clearSession(); });
     }
-    return rows;
-  }).catch(function() { _prefetch = null; return null; });
+    return Promise.resolve();
+  }
 
-  getConfig().then(function(cfg) {
-    CONFIG = cfg;
-    checkCoreStatuses();   // peringatkan bila status inti hilang/berubah di DB
-    fillSelect(document.getElementById('role'), 'ROLE', '');
-    fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
-    fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
-    fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
-    fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
-    initCombos();
-    renderRekChips();
-    addFormLeave(false);
-    fillLdr();
-    renderFilters();
-    if (_cache && document.getElementById('view-dashboard').classList.contains('active')) applyFilters();
-  }).catch(function(err) {
-    toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
-    alert('Gagal memuat konfigurasi: ' + err.message + '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
+  // Listener tombol login & aturan
+  document.getElementById('loginSubmit').addEventListener('click', submitLogin);
+  document.getElementById('loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') submitLogin(); });
+  document.getElementById('loginOverlay').addEventListener('click', function(e){ if(e.target===this) closeLogin(); });
+  document.getElementById('rulesSave').addEventListener('click', submitRules);
+  document.getElementById('rulesOverlay').addEventListener('click', function(e){ if(e.target===this) closeRules(); });
+
+  bootAuth().then(function() {
+    applyAuthUI();
+
+    _prefetch = getCuti().then(function(rows) {
+      _cache = rows; _loaded = true; _clashIdx = null;
+      if (document.getElementById('view-dashboard').classList.contains('active')) {
+        document.getElementById('dashboardLoading').style.display = 'none';
+        renderFilters(); applyFilters(); updateTabCounts();
+        document.getElementById('dashboardContent').style.display = 'block';
+      }
+      return rows;
+    }).catch(function() { _prefetch = null; return null; });
+
+    loadRules();   // muat aturan dari settings (diam-diam pakai default bila belum ada)
+
+    getConfig().then(function(cfg) {
+      CONFIG = cfg;
+      checkCoreStatuses();
+      fillSelect(document.getElementById('role'), 'ROLE', '');
+      fillSelect(document.getElementById('keterangan'), 'KETERANGAN', '');
+      fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
+      fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
+      fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
+      initCombos();
+      renderRekChips();
+      addFormLeave(false);
+      fillLdr();
+      renderFilters();
+      if (_cache && document.getElementById('view-dashboard').classList.contains('active')) applyFilters();
+    }).catch(function(err) {
+      toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
+      alert('Gagal memuat konfigurasi: ' + err.message + '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
+    });
   });
   </script>
   </body>
