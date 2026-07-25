@@ -530,6 +530,48 @@
   .pill-clash-warn  { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-bd); cursor: help; font-weight: 700; }
   .pill-clash-alert { background: var(--red-bg);   color: var(--red);   border-color: var(--red-bd);   cursor: help; font-weight: 700; }
 
+  /* ── Combobox nama staff (dropdown custom) ──────────────────── */
+  .combo { position: relative; }
+  .combo-input { width: 100%; padding-right: 34px !important; }
+  .combo-arrow {
+    position: absolute; top: 0; right: 0; height: 100%; width: 32px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 0; cursor: pointer; color: var(--text-muted);
+    font-size: 11px; transition: transform .16s ease, color .16s ease;
+  }
+  .combo-arrow:hover { color: var(--brand); }
+  .combo.open .combo-arrow { transform: rotate(180deg); color: var(--brand); }
+
+  .combo-panel {
+    position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 5px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 11px; box-shadow: 0 12px 30px rgba(13,27,46,.14);
+    max-height: 264px; overflow-y: auto; padding: 5px;
+    display: none;
+  }
+  .combo.open .combo-panel { display: block; }
+
+  .combo-opt {
+    padding: 9px 11px; border-radius: 7px; cursor: pointer;
+    font-size: 13px; color: var(--text-secondary); line-height: 1.35;
+    display: flex; align-items: baseline; gap: 7px;
+  }
+  .combo-opt:hover, .combo-opt.active { background: var(--brand-050); color: var(--text-primary); }
+  .combo-opt .co-nm { font-weight: 600; color: var(--text-primary); }
+  .combo-opt .co-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px; color: var(--text-muted); margin-left: auto; white-space: nowrap;
+  }
+  .combo-opt mark { background: #FDE9BD; color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  .combo-empty { padding: 10px 11px; font-size: 12.5px; color: var(--text-muted); }
+  .combo-add {
+    padding: 9px 11px; border-radius: 7px; cursor: pointer; font-size: 12.5px;
+    color: var(--brand-ink); font-weight: 700; border-top: 1px solid var(--hairline);
+    margin-top: 3px; display: flex; align-items: center; gap: 6px;
+  }
+  .combo-add:hover, .combo-add.active { background: var(--brand-050); }
+
   /* ── Sel nomor rekening ─────────────────────────────────────── */
   .rek-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
   .rek-cell .rek-no {
@@ -770,8 +812,11 @@
             </div>
             <div class="field">
               <label>Nama Lengkap &amp; ID</label>
-              <input id="nama" type="text" list="staffList" placeholder="Ketik atau pilih dari daftar…" autocomplete="off">
-              <datalist id="staffList"></datalist>
+              <div class="combo" data-cat="STAFF">
+                <input id="nama" type="text" class="combo-input" placeholder="Ketik atau pilih dari daftar…" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list">
+                <button type="button" class="combo-arrow" tabindex="-1" aria-label="Buka daftar">▾</button>
+                <div class="combo-panel" role="listbox"></div>
+              </div>
             </div>
           </div>
           <p class="fsec-note" id="limitNote">Batas durasi per pengajuan — CS &amp; KAPTEN maks. 14 hari, KASIR maks. 12 hari.</p>
@@ -1025,7 +1070,13 @@
     <div class="modal-body">
       <div class="grid" style="margin-bottom:14px;">
         <div class="field"><label>Role</label><select id="e_role" data-cat="ROLE"></select></div>
-        <div class="field"><label>Nama Lengkap &amp; ID</label><input id="e_nama" type="text" list="staffList" autocomplete="off"></div>
+        <div class="field"><label>Nama Lengkap &amp; ID</label>
+          <div class="combo" data-cat="STAFF">
+            <input id="e_nama" type="text" class="combo-input" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list">
+            <button type="button" class="combo-arrow" tabindex="-1" aria-label="Buka daftar">▾</button>
+            <div class="combo-panel" role="listbox"></div>
+          </div>
+        </div>
       </div>
       <div id="e_leaves"></div>
       <button class="add-leave-btn" id="e_addLeave" type="button" style="margin-bottom:14px;">＋ Tambah cuti kedua</button>
@@ -1484,14 +1535,111 @@
   }
 
   // ── Dropdown helpers ──────────────────────────────────────────
-  // Isi daftar saran nama staff (dipakai oleh input <datalist>).
-  // Input tetap bisa diketik bebas; datalist hanya menyodorkan saran.
-  function fillStaffList() {
-    var dl = document.getElementById('staffList');
-    if (!dl) return;
-    var names = (CONFIG.STAFF || []).slice().sort(function(a, b) { return a.localeCompare(b); });
-    dl.innerHTML = names.map(function(v) { return '<option value="' + esc(v) + '"></option>'; }).join('');
+  // ── Combobox nama staff (dropdown custom, bisa ketik bebas) ───
+  // Dibuat sendiri (bukan <datalist>) agar tampilannya rapi & bisa di-CSS.
+  var _combos = [];   // daftar combobox aktif, agar bisa di-refresh saat CONFIG.STAFF berubah
+
+  // Pisahkan "NAMA - ID" jadi bagian nama & ID untuk tampilan dua kolom
+  function splitStaff(v) {
+    var i = String(v).lastIndexOf(' - ');
+    return i === -1 ? { nm: v, id: '' } : { nm: v.slice(0, i), id: v.slice(i + 3) };
   }
+
+  function initCombo(wrap) {
+    var input = wrap.querySelector('.combo-input');
+    var panel = wrap.querySelector('.combo-panel');
+    var arrow = wrap.querySelector('.combo-arrow');
+    var cat = wrap.dataset.cat || 'STAFF';
+    var activeIdx = -1;   // indeks item yang tersorot (untuk navigasi keyboard)
+
+    function options() { return Array.prototype.slice.call(panel.querySelectorAll('.combo-opt, .combo-add')); }
+
+    function open() { wrap.classList.add('open'); input.setAttribute('aria-expanded', 'true'); }
+    function close() { wrap.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); activeIdx = -1; }
+
+    function highlight(q, text) {
+      if (!q) return esc(text);
+      var i = text.toLowerCase().indexOf(q.toLowerCase());
+      if (i === -1) return esc(text);
+      return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+    }
+
+    function render() {
+      var q = input.value.trim();
+      var ql = q.toLowerCase();
+      var all = (CONFIG[cat] || []);
+      var list = ql ? all.filter(function(s) { return s.toLowerCase().indexOf(ql) !== -1; }) : all.slice();
+      list.sort(function(a, b) { return a.localeCompare(b); });
+
+      var html = list.map(function(v) {
+        var p = splitStaff(v);
+        return '<div class="combo-opt" data-val="' + esc(v) + '">' +
+          '<span class="co-nm">' + highlight(q, p.nm) + '</span>' +
+          (p.id ? '<span class="co-id">' + highlight(q, p.id) + '</span>' : '') +
+        '</div>';
+      }).join('');
+
+      if (!list.length) html = '<div class="combo-empty">Tidak ada yang cocok.</div>';
+
+      // Tawarkan "tambah baru" bila ketikan belum sama persis dengan opsi mana pun
+      var exact = q && all.some(function(s) { return s.toLowerCase() === ql; });
+      if (q && !exact) {
+        html += '<div class="combo-add" data-add="' + esc(q) + '">＋ Pakai &amp; simpan “' + esc(q) + '”</div>';
+      }
+      panel.innerHTML = html;
+      activeIdx = -1;
+    }
+
+    function choose(val) { input.value = val; close(); input.dispatchEvent(new Event('change', { bubbles: true })); }
+
+    function move(step) {
+      var opts = options();
+      if (!opts.length) return;
+      activeIdx = (activeIdx + step + opts.length) % opts.length;
+      opts.forEach(function(o, i) { o.classList.toggle('active', i === activeIdx); });
+      opts[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    input.addEventListener('focus', function() { render(); open(); });
+    input.addEventListener('input', function() { render(); open(); });
+    arrow.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      if (wrap.classList.contains('open')) { close(); }
+      else { input.focus(); render(); open(); }
+    });
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowDown') { if (!wrap.classList.contains('open')) { render(); open(); } else move(1); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { move(-1); e.preventDefault(); }
+      else if (e.key === 'Enter') {
+        var opts = options();
+        if (wrap.classList.contains('open') && activeIdx >= 0 && opts[activeIdx]) {
+          e.preventDefault();
+          var el = opts[activeIdx];
+          if (el.dataset.add !== undefined) choose(el.dataset.add); else choose(el.dataset.val);
+        } else { close(); }   // Enter tanpa memilih: pakai teks apa adanya
+      }
+      else if (e.key === 'Escape') { close(); }
+    });
+
+    // Klik opsi (mousedown agar tidak keburu blur duluan)
+    panel.addEventListener('mousedown', function(e) {
+      var opt = e.target.closest('.combo-opt'); var add = e.target.closest('.combo-add');
+      if (opt) { e.preventDefault(); choose(opt.dataset.val); }
+      else if (add) { e.preventDefault(); choose(add.dataset.add); }
+    });
+
+    input.addEventListener('blur', function() { setTimeout(close, 120); });   // beri jeda agar klik sempat terproses
+
+    _combos.push({ render: render });
+  }
+
+  // Bangun semua combobox & sediakan cara refresh saat daftar staff bertambah
+  function initCombos() {
+    _combos = [];
+    document.querySelectorAll('.combo').forEach(initCombo);
+  }
+  function fillStaffList() { /* nama dibaca langsung dari CONFIG saat panel dibuka; tak perlu pra-isi */ }
 
   function fillSelect(sel, cat, selected, withAdd) {
     var list = CONFIG[cat] || [];
@@ -2944,7 +3092,7 @@
     fillSelect(document.getElementById('tambahan'), 'TAMBAHAN', 'Tidak Ada', false);
     fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
     fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
-    fillStaffList();
+    initCombos();
     renderRekChips();
     addFormLeave(false);
     fillLdr();
