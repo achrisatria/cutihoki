@@ -1201,14 +1201,15 @@
                    'Juli','Agustus','September','Oktober','November','Desember'];
   var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-  // Status yang dianggap "masih aktif" → memblokir pengajuan baru dari staff yg sama
-  var ACTIVE_STATUSES = ['WAITING', 'SEDANG CUTI'];
   // Status yang otomatis pindah ke menu "Sedang Cuti"
   var ONGOING_STATUSES = ['SEDANG CUTI'];
   function isOngoing(task) { return ONGOING_STATUSES.indexOf(String(task || '').toUpperCase()) !== -1; }
   // Status yang otomatis pindah ke menu "Selesai Cuti"
   var ARCHIVED_STATUSES = ['SELESAI CUTI'];
   function isArchived(task) { return ARCHIVED_STATUSES.indexOf(String(task || '').toUpperCase()) !== -1; }
+
+  // Jeda wajib setelah cuti selesai sebelum staff boleh mengajukan lagi
+  var COOLDOWN_MONTHS = 6;
 
   // Satu sumber kebenaran: sebuah record milik menu (segmen) yang mana?
   // Dashboard = sisanya (WAITING, DONE CATAT, dll) — jadi tiap record hanya ada di SATU menu.
@@ -1293,6 +1294,24 @@
     var p = String(iso).slice(0,10).split('-');
     if (p.length !== 3) return 0;
     return Math.round(Date.UTC(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])) / 86400000);
+  }
+  // Tanggal hari ini sebagai 'YYYY-MM-DD' (waktu lokal pengguna)
+  function todayISO() {
+    var n = new Date();
+    function p(x) { return String(x).padStart(2, '0'); }
+    return n.getFullYear() + '-' + p(n.getMonth() + 1) + '-' + p(n.getDate());
+  }
+  // Tambah n bulan ke sebuah tanggal ISO, aman terhadap bulan pendek.
+  // Contoh: 31 Agu + 6 bln = 28/29 Feb (bukan meluber ke Maret).
+  function addMonthsISO(iso, n) {
+    var s = String(iso).slice(0, 10).split('-');
+    if (s.length !== 3) return '';
+    var y = parseInt(s[0]), m = parseInt(s[1]) - 1, d = parseInt(s[2]);
+    var total = m + n, ny = y + Math.floor(total / 12), nm = ((total % 12) + 12) % 12;
+    var lastDay = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();  // hari terakhir bulan target
+    var nd = Math.min(d, lastDay);
+    function p(x) { return String(x).padStart(2, '0'); }
+    return ny + '-' + p(nm + 1) + '-' + p(nd);
   }
   function genId() {
     var now = new Date();
@@ -1391,16 +1410,36 @@
   }
 
   // Cek apakah staff masih punya pengajuan aktif
-  function checkActiveLeave(nama) {
+  // Periksa apakah `nama` boleh mengajukan cuti baru.
+  // Mengembalikan null bila boleh, atau objek { kind, ... } bila diblokir:
+  //   kind 'active'   → masih ada cuti berjalan (WAITING/SEDANG CUTI)
+  //   kind 'cooldown' → cuti terakhir selesai, tapi belum lewat 6 bulan
+  function checkEligibility(nama) {
     var qs = 'select=id_pengajuan,nama,task1,start1,end1,start2,end2&nama=eq.' + encodeURIComponent(nama);
     return sbGet('cuti', qs).then(function(rows) {
-      var active = rows.filter(function(r) { return ACTIVE_STATUSES.indexOf((r.task1||'').toUpperCase()) !== -1; });
-      if (active.length === 0) return null;
-      var latest = '';
-      active.forEach(function(r) {
-        [r.end1, r.end2].forEach(function(d) { if (d && d > latest) latest = d; });
+      // 1) Masih ada pengajuan yang BELUM selesai? (WAITING, DONE CATAT, SEDANG CUTI, dll)
+      //    Selama ada, staff tak boleh mengajukan ulang — cukup edit yang sudah ada.
+      var active = rows.filter(function(r) { return !isArchived(r.task1); });
+      if (active.length) {
+        var latest = '';
+        active.forEach(function(r) { [r.end1, r.end2].forEach(function(d) { if (d && d > latest) latest = d; }); });
+        return { kind: 'active', status: active[0].task1, until: latest };
+      }
+
+      // 2) Jeda 6 bulan sejak cuti terakhir SELESAI
+      var lastEnd = '';   // tanggal selesai terakhir dari cuti yang sudah beres
+      rows.forEach(function(r) {
+        if (!isArchived(r.task1)) return;
+        [r.end1, r.end2].forEach(function(d) { if (d && d > lastEnd) lastEnd = d; });
       });
-      return { count: active.length, status: active[0].task1, until: latest };
+      if (lastEnd) {
+        var bolehLagi = addMonthsISO(lastEnd, COOLDOWN_MONTHS);   // tanggal saat sudah boleh mengajukan
+        var today = todayISO();
+        if (dayKey(today) < dayKey(bolehLagi)) {
+          return { kind: 'cooldown', lastEnd: lastEnd, eligibleOn: bolehLagi };
+        }
+      }
+      return null;   // boleh mengajukan
     });
   }
 
@@ -1989,12 +2028,17 @@
     var btn = this;
     btn.disabled = true; btn.textContent = 'Memeriksa…';
 
-    checkActiveLeave(nama).then(function(active) {
-      if (active) {
+    checkEligibility(nama).then(function(block) {
+      if (block) {
         btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
-        var sisa = active.until ? ' (cuti berakhir ' + formatDate(active.until) + ')' : '';
-        return showMsg('warn', '⛔ ' + nama + ' masih punya pengajuan berstatus ' + active.status + sisa +
-          '. Pengajuan baru bisa dibuat setelah cuti tersebut selesai.');
+        if (block.kind === 'active') {
+          return showMsg('warn', '⛔ ' + nama + ' masih punya pengajuan berstatus ' + block.status +
+            ' yang belum selesai. Tidak bisa mengajukan ulang — bila ingin mengubah cutinya, silakan gunakan tombol Edit (✎) pada baris cuti tersebut.');
+        }
+        // kind === 'cooldown'
+        return showMsg('warn', '⛔ ' + nama + ' baru selesai cuti ' + formatDate(block.lastEnd) +
+          '. Sesuai aturan jeda ' + COOLDOWN_MONTHS + ' bulan, pengajuan berikutnya bisa dibuat mulai ' +
+          formatDate(block.eligibleOn) + '.');
       }
       btn.textContent = 'Mengirim…';
       var id = genId();
