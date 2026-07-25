@@ -458,7 +458,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -1653,10 +1653,9 @@
     }
 
     // ── Edit inline: ubah satu baris opsi menjadi kolom ketik ──
-    function startEdit(val) {
-      editingVal = val;
-      var row = panel.querySelector('.combo-opt[data-val="' + cssEsc(val) + '"]');
+    function startEdit(row, val) {
       if (!row) return;
+      editingVal = val;
       row.classList.add('editing');
       row.innerHTML =
         '<input type="text" class="co-edit-input" value="' + esc(val) + '">' +
@@ -1665,7 +1664,8 @@
           '<button type="button" class="co-ic" data-cancel title="Batal">✕</button>' +
         '</span>';
       var ei = row.querySelector('.co-edit-input');
-      ei.focus(); ei.setSelectionRange(ei.value.length, ei.value.length);
+      // Fokus setelah frame ini agar tidak tertimpa pemrosesan mousedown
+      setTimeout(function() { ei.focus(); ei.setSelectionRange(ei.value.length, ei.value.length); }, 0);
       ei.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); commitEdit(row); }
         else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
@@ -1753,7 +1753,7 @@
       e.preventDefault();                          // pertahankan fokus / cegah blur
       if (save) { commitEdit(save.closest('.combo-opt')); return; }
       if (canc) { cancelEdit(); return; }
-      if (edit) { startEdit(edit.getAttribute('data-edit')); return; }
+      if (edit) { startEdit(edit.closest('.combo-opt'), edit.getAttribute('data-edit')); return; }
       if (del)  { askDelete(del.getAttribute('data-del')); return; }
       var opt = e.target.closest('.combo-opt'); var add = e.target.closest('.combo-add');
       if (opt) { choose(opt.dataset.val); }
@@ -1766,12 +1766,6 @@
     });
 
     _combos.push({ render: render });
-  }
-
-  // Escape karakter khusus untuk querySelector (nama bisa berisi tanda kutip dll.)
-  function cssEsc(s) {
-    if (window.CSS && CSS.escape) return CSS.escape(s);
-    return String(s).replace(/["\\\]]/g, '\\$&');
   }
 
   // Bangun semua combobox & sediakan cara refresh saat daftar staff bertambah
