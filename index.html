@@ -157,6 +157,54 @@
   .auth-logout { cursor: pointer; background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.28); border-radius: var(--radius-pill); padding: 4px 11px; font-size: 12px; font-weight: 700; font-family: inherit; margin-left: 2px; }
   .auth-logout:hover { background: rgba(255,255,255,.26); }
   body:not(.is-admin) .admin-only { display: none !important; }
+  .rek-warn {
+    margin: 10px 0 0; padding: 9px 12px; border-radius: 9px;
+    background: var(--amber-bg); border: 1px solid var(--amber-bd); color: var(--amber);
+    font-size: 12.5px; font-weight: 800; letter-spacing: .01em;
+  }
+
+  /* ── Modal Atur Aturan (premium) ─────────────────────────────── */
+  .rules-modal { max-width: 560px; }
+  .rules-modal .modal-head { align-items: flex-start; }
+  .rules-head-txt h3 { margin: 0; }
+  .rules-head-txt p { margin: 5px 0 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; max-width: 440px; font-weight: 500; }
+  .rules-modal .modal-body { padding: 20px 24px; background: var(--surface-2); }
+
+  .rules-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(13,27,46,.04);
+  }
+  .rules-card:last-of-type { margin-bottom: 0; }
+  .rules-card-head { display: flex; align-items: center; gap: 11px; margin-bottom: 15px; }
+  .rules-card-head .rules-ic {
+    flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    font-size: 18px; background: var(--brand-050); border: 1px solid var(--brand-100);
+  }
+  .rules-card-head h4 { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -.01em; color: var(--ink); }
+  .rules-card-head span { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; font-weight: 500; }
+
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rules-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .rule-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .rule-row label {
+    font-size: 12px; font-weight: 700; color: var(--text-secondary);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+  }
+  .rule-row label em {
+    font-style: normal; font-size: 10px; font-weight: 700; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: .04em; flex: none;
+  }
+  .rule-row input {
+    width: 100%; border: 1px solid var(--border-strong); border-radius: 9px;
+    padding: 9px 11px; font-size: 15px; font-weight: 700; font-family: inherit;
+    color: var(--ink); background: var(--surface); outline: none; text-align: center;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .rule-row input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(22,104,227,.13); }
+
+  @media (max-width: 520px) {
+    .rules-grid, .rules-grid-3 { grid-template-columns: 1fr 1fr; }
+  }
   .header-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--spark); box-shadow: 0 0 8px rgba(0,183,255,.9); animation: pulse-dot 2s ease infinite; }
   @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .6; transform: scale(.8); } }
 
@@ -811,27 +859,59 @@
 
 <!-- Modal editor aturan (admin) -->
 <div class="overlay" id="rulesOverlay">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-head"><h3>Atur Aturan Cuti</h3></div>
+  <div class="modal rules-modal">
+    <div class="modal-head">
+      <div class="rules-head-txt">
+        <h3>⚙️ Atur Aturan Cuti</h3>
+        <p>Ubah batasan yang dipakai sistem untuk memvalidasi pengajuan. Perubahan langsung berlaku.</p>
+      </div>
+    </div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Perubahan berlaku untuk validasi berikutnya. Semua nilai dalam satuan hari, bulan, atau jumlah orang.</p>
-      <p class="fsec-note" style="margin-top:2px;">Jeda &amp; batas durasi</p>
-      <div class="grid">
-        <div class="field"><label>Jeda setelah selesai (bulan)</label><input id="rule_cooldown_months" type="number" min="0" inputmode="numeric"></div>
-        <div class="field"><label>Maks. durasi bentrok (hari)</label><input id="rule_clash_max_overlap_days" type="number" min="1" inputmode="numeric"></div>
-      </div>
-      <p class="fsec-note" style="margin-top:2px;">Maks. orang cuti bersamaan / tanggal (per role)</p>
-      <div class="grid">
-        <div class="field"><label>CS</label><input id="rule_clash_max_people_cs" type="number" min="1" inputmode="numeric"></div>
-        <div class="field"><label>KASIR</label><input id="rule_clash_max_people_kasir" type="number" min="1" inputmode="numeric"></div>
-        <div class="field"><label>KAPTEN</label><input id="rule_clash_max_people_kapten" type="number" min="1" inputmode="numeric"></div>
-      </div>
-      <p class="fsec-note" style="margin-top:2px;">Maks. durasi cuti per pengajuan (hari, per role)</p>
-      <div class="grid">
-        <div class="field"><label>CS</label><input id="rule_max_durasi_cs" type="number" min="1" inputmode="numeric"></div>
-        <div class="field"><label>KASIR</label><input id="rule_max_durasi_kasir" type="number" min="1" inputmode="numeric"></div>
-        <div class="field"><label>KAPTEN</label><input id="rule_max_durasi_kapten" type="number" min="1" inputmode="numeric"></div>
-      </div>
+
+      <section class="rules-card">
+        <div class="rules-card-head">
+          <span class="rules-ic">🕒</span>
+          <div>
+            <h4>Jeda &amp; Durasi Bentrok</h4>
+            <span>Aturan waktu antar-cuti dan toleransi tumpang tindih.</span>
+          </div>
+        </div>
+        <div class="rules-grid">
+          <div class="rule-row"><label>Jeda setelah selesai cuti<em>bulan</em></label><input id="rule_cooldown_months" type="number" min="0" inputmode="numeric"></div>
+          <div class="rule-row"><label>Maks. durasi bentrok<em>hari</em></label><input id="rule_clash_max_overlap_days" type="number" min="1" inputmode="numeric"></div>
+        </div>
+      </section>
+
+      <section class="rules-card">
+        <div class="rules-card-head">
+          <span class="rules-ic">👥</span>
+          <div>
+            <h4>Maks. Orang Cuti Bersamaan</h4>
+            <span>Batas jumlah staff yang boleh cuti di tanggal sama, per role.</span>
+          </div>
+        </div>
+        <div class="rules-grid rules-grid-3">
+          <div class="rule-row"><label>CS<em>orang / tanggal</em></label><input id="rule_clash_max_people_cs" type="number" min="1" inputmode="numeric"></div>
+          <div class="rule-row"><label>KASIR<em>orang / tanggal</em></label><input id="rule_clash_max_people_kasir" type="number" min="1" inputmode="numeric"></div>
+          <div class="rule-row"><label>KAPTEN<em>orang / tanggal</em></label><input id="rule_clash_max_people_kapten" type="number" min="1" inputmode="numeric"></div>
+        </div>
+      </section>
+
+      <section class="rules-card">
+        <div class="rules-card-head">
+          <span class="rules-ic">📅</span>
+          <div>
+            <h4>Maks. Durasi Cuti per Pengajuan</h4>
+            <span>Total hari maksimal untuk satu pengajuan, per role.</span>
+          </div>
+        </div>
+        <div class="rules-grid rules-grid-3">
+          <div class="rule-row"><label>CS<em>hari</em></label><input id="rule_max_durasi_cs" type="number" min="1" inputmode="numeric"></div>
+          <div class="rule-row"><label>KASIR<em>hari</em></label><input id="rule_max_durasi_kasir" type="number" min="1" inputmode="numeric"></div>
+          <div class="rule-row"><label>KAPTEN<em>hari</em></label><input id="rule_max_durasi_kapten" type="number" min="1" inputmode="numeric"></div>
+        </div>
+      </section>
+
       <div class="msg" id="rulesMsg"></div>
     </div>
     <div class="modal-foot">
@@ -847,7 +927,7 @@
     <div class="modal-head"><h3>Login Admin</h3></div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Masuk untuk mengelola data, staff, dan aturan. Tanpa login, dashboard hanya bisa dilihat dan menerima pengajuan.</p>
-      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@gmail.com"></div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@hokijitu.local"></div>
       <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <div class="msg" id="loginMsg"></div>
     </div>
@@ -865,7 +945,7 @@
     <button class="tab" id="tabOngoing" onclick="switchTab('ongoing')">🏝️ Sedang Cuti <em class="tab-count" id="ongoingCount">0</em></button>
     <button class="tab" id="tabArchive" onclick="switchTab('archive')">✅ Selesai Cuti <em class="tab-count" id="archiveCount">0</em></button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
-    <button class="tab admin-only" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
+    <button class="tab" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
   </div>
 
   <!-- VIEW DASHBOARD -->
@@ -1077,6 +1157,17 @@
             </div>
           </div>
           <p class="fsec-note" id="r_note">Nomor rekening hanya boleh berisi angka.</p>
+        </section>
+
+        <section class="fsec">
+          <span class="fsec-label"><em>04</em>Alasan Ganti Rekening</span>
+          <div class="grid" style="max-width:720px;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>Alasan Mengganti</label>
+              <input id="r_alasan" type="text" placeholder="Contoh: REKENING TERBLOKIR" autocomplete="off">
+            </div>
+          </div>
+          <p class="rek-warn">⚠️ PASTIKAN REKENING YANG INGIN DIGANTI VALID.</p>
           <div class="msg" id="r_formMsg"></div>
         </section>
       </div>
@@ -1231,6 +1322,10 @@
         <div class="field"><label>Nomor Rekening</label><input id="re_rekBaru" type="text" inputmode="numeric"></div>
         <div class="field"><label>Bank</label><select id="re_bankBaru" data-cat="BANK"></select></div>
         <div class="field"><label>Nama Pemilik</label><input id="re_pemilikBaru" type="text"></div>
+      </div>
+      <p class="fsec-note" style="margin-top:2px;">Alasan</p>
+      <div class="grid">
+        <div class="field" style="grid-column:1/-1;"><label>Alasan Mengganti</label><input id="re_alasan" type="text"></div>
       </div>
       <div class="msg" id="re_msg"></div>
     </div>
@@ -3229,6 +3324,7 @@
           paspor: r.no_paspor || '', nama: r.nama || '',
           bankLama: r.bank_lama || '', rekLama: r.rek_lama || '', pemilikLama: r.pemilik_lama || '',
           bankBaru: r.bank_baru || '', rekBaru: r.rek_baru || '', pemilikBaru: r.pemilik_baru || '',
+          alasan: r.alasan || '',
           task: r.task || 'WAITING'
         };
       });
@@ -3252,7 +3348,8 @@
       paspor: val('paspor').toUpperCase(),
       nama: val('nama').toUpperCase(),
       rekLama: cleanRek(val('rekLama')), bankLama: val('bankLama'), pemilikLama: val('pemilikLama').toUpperCase(),
-      rekBaru: cleanRek(val('rekBaru')), bankBaru: val('bankBaru'), pemilikBaru: val('pemilikBaru').toUpperCase()
+      rekBaru: cleanRek(val('rekBaru')), bankBaru: val('bankBaru'), pemilikBaru: val('pemilikBaru').toUpperCase(),
+      alasan: val('alasan').toUpperCase()
     };
     if (!d.paspor) throw new Error('Isi nomor paspor.');
     if (!d.nama) throw new Error('Isi nama staff.');
@@ -3266,6 +3363,7 @@
     if (d.rekBaru.length < 6) throw new Error('Nomor rekening terbaru terlalu pendek (minimal 6 angka).');
     if (!d.bankBaru || d.bankBaru === ADD) throw new Error('Pilih bank rekening terbaru.');
     if (!d.pemilikBaru) throw new Error('Isi nama pemilik rekening terbaru.');
+    if (!d.alasan) throw new Error('Isi alasan mengganti rekening.');
     return d;
   }
 
@@ -3274,6 +3372,7 @@
       id: id, id_pengajuan: id, no_paspor: d.paspor, nama: d.nama,
       bank_lama: d.bankLama, rek_lama: d.rekLama, pemilik_lama: d.pemilikLama,
       bank_baru: d.bankBaru, rek_baru: d.rekBaru, pemilik_baru: d.pemilikBaru,
+      alasan: d.alasan,
       task: task || 'WAITING'
     };
   }
@@ -3296,7 +3395,7 @@
     if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
   function resetRekForm() {
-    ['r_paspor','r_nama','r_rekLama','r_pemilikLama','r_rekBaru','r_pemilikBaru'].forEach(function(id) {
+    ['r_paspor','r_nama','r_rekLama','r_pemilikLama','r_rekBaru','r_pemilikBaru','r_alasan'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
     fillSelect(document.getElementById('r_bankLama'), 'BANK', '');
@@ -3349,7 +3448,7 @@
     var loading = document.getElementById('rekLoading');
     var content = document.getElementById('rekContent');
     var refresh = document.getElementById('rekRefreshBtn');
-    if (!force && _rekLoaded && _rekCache) { renderRekAll(); content.style.display = 'block'; return; }
+    if (!force && _rekLoaded && _rekCache) { renderRekAll(); content.style.display = 'block'; loading.style.display = 'none'; return; }
 
     loading.style.display = 'block'; loading.textContent = 'Memuat data…';
     content.style.display = 'none';
@@ -3515,6 +3614,7 @@
     document.getElementById('re_pemilikLama').value = r.pemilikLama;
     document.getElementById('re_rekBaru').value = r.rekBaru;
     document.getElementById('re_pemilikBaru').value = r.pemilikBaru;
+    document.getElementById('re_alasan').value = r.alasan || '';
     fillSelect(document.getElementById('re_bankLama'), 'BANK', r.bankLama);
     fillSelect(document.getElementById('re_bankBaru'), 'BANK', r.bankBaru);
     var t = document.getElementById('re_task');
@@ -3579,7 +3679,8 @@
       'NAMA PEMILIK REKENING : ' + r.pemilikLama,
       '',
       'NOMOR REKENING TERBARU NYA : ' + r.rekBaru + ' (' + r.bankBaru + ')',
-      'NAMA PEMILIK REKENING : ' + r.pemilikBaru
+      'NAMA PEMILIK REKENING : ' + r.pemilikBaru,
+      'ALASAN MENGGANTI : ' + (r.alasan || '-')
     ].join('\n');
   }
 
