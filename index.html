@@ -547,10 +547,11 @@
     position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 5px);
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 11px; box-shadow: 0 12px 30px rgba(13,27,46,.14);
-    max-height: 264px; overflow-y: auto; padding: 5px;
-    display: none;
+    padding: 5px; display: none;
   }
   .combo.open .combo-panel { display: block; }
+  .combo-list { max-height: 232px; overflow-y: auto; }
+  .combo-foot { border-top: 1px solid var(--hairline); margin-top: 4px; padding-top: 4px; }
 
   .combo-opt {
     padding: 7px 9px 7px 11px; border-radius: 7px; cursor: pointer;
@@ -570,27 +571,32 @@
   .combo-opt:hover .co-tools, .combo-opt.active .co-tools, .combo-opt.editing .co-tools { opacity: 1; }
   .co-ic {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 24px; height: 24px; border: 0; border-radius: 6px; cursor: pointer;
-    background: transparent; color: var(--text-muted);
+    width: 26px; height: 26px; border: 0; border-radius: 6px; cursor: pointer;
+    background: transparent; color: var(--text-muted); flex: 0 0 auto;
   }
   .co-ic:hover { background: var(--brand-100); color: var(--brand-ink); }
   .co-ic.danger:hover { background: var(--red-bg); color: var(--red); }
   .co-ic.ok { color: var(--green); font-weight: 800; }
   .co-ic.ok:hover { background: var(--green-bg); }
-  .combo-opt.editing { background: var(--surface-2); }
-  .co-edit-input {
-    flex: 1; min-width: 0; border: 1px solid var(--brand); border-radius: 6px;
-    padding: 6px 8px; font-size: 13px; font-family: inherit; color: var(--text-primary);
+  .combo-opt.editing { background: var(--surface-2); cursor: default; }
+
+  /* Baris ketik (edit di daftar / tambah di footer) */
+  .combo-editrow { display: flex; align-items: center; gap: 4px; }
+  .co-edit-input, .co-add-input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid var(--brand); border-radius: 6px;
+    padding: 7px 9px; font-size: 13px; font-family: inherit; color: var(--text-primary);
     background: var(--surface); outline: none;
   }
 
-  .combo-empty { padding: 10px 11px; font-size: 12.5px; color: var(--text-muted); }
+  /* Tombol Tambah Staff (footer tetap) */
   .combo-add {
-    padding: 9px 11px; border-radius: 7px; cursor: pointer; font-size: 12.5px;
-    color: var(--brand-ink); font-weight: 700; border-top: 1px solid var(--hairline);
-    margin-top: 3px; display: flex; align-items: center; gap: 6px;
+    padding: 9px 11px; border-radius: 7px; cursor: pointer; font-size: 13px;
+    color: var(--brand-ink); font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
   }
   .combo-add:hover, .combo-add.active { background: var(--brand-050); }
+
+  .combo-empty { padding: 10px 11px; font-size: 12.5px; color: var(--text-muted); }
 
   /* ── Sel nomor rekening ─────────────────────────────────────── */
   .rek-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
@@ -1582,16 +1588,22 @@
     var panel = wrap.querySelector('.combo-panel');
     var arrow = wrap.querySelector('.combo-arrow');
     var cat = wrap.dataset.cat || 'STAFF';
-    var activeIdx = -1;   // indeks item yang tersorot (untuk navigasi keyboard)
-    var editingVal = null; // nama yang sedang diedit inline (null = tidak sedang mengedit)
+    var activeIdx = -1;     // indeks item tersorot (navigasi keyboard)
+    var mode = 'list';      // 'list' | 'edit' | 'add'  → saat edit/add, list tidak dirender ulang
+    var editingVal = null;  // nama yang sedang diedit
 
-    function options() { return Array.prototype.slice.call(panel.querySelectorAll('.combo-opt, .combo-add')); }
+    // Panel dibagi dua: daftar yang bisa di-scroll + footer tetap (tombol Tambah Staff)
+    panel.innerHTML = '<div class="combo-list"></div><div class="combo-foot"></div>';
+    var listEl = panel.querySelector('.combo-list');
+    var footEl = panel.querySelector('.combo-foot');
+
     function isOpen() { return wrap.classList.contains('open'); }
     function open() { wrap.classList.add('open'); input.setAttribute('aria-expanded', 'true'); }
     function close() {
-      if (editingVal !== null) return;   // jangan tutup saat sedang mengedit nama
+      if (mode !== 'list') return;   // jangan tutup saat sedang edit/tambah
       wrap.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); activeIdx = -1;
     }
+    function options() { return Array.prototype.slice.call(listEl.querySelectorAll('.combo-opt')); }
 
     function highlight(q, text) {
       if (!q) return esc(text);
@@ -1600,63 +1612,85 @@
       return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
     }
 
-    // Ikon pensil & tempat sampah (dipakai di tiap baris opsi)
     var EDIT_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     var DEL_SVG  = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
-    function render() {
-      // Bila sedang mengedit, biarkan panel apa adanya (jangan render ulang)
-      if (editingVal !== null) return;
-      var q = input.value.trim();
-      var ql = q.toLowerCase();
+    // Gambar daftar nama (bagian atas panel)
+    function renderList() {
+      var q = input.value.trim(), ql = q.toLowerCase();
       var all = (CONFIG[cat] || []);
       var list = ql ? all.filter(function(s) { return s.toLowerCase().indexOf(ql) !== -1; }) : all.slice();
       list.sort(function(a, b) { return a.localeCompare(b); });
 
-      var html = list.map(function(v) {
+      if (!list.length) {
+        listEl.innerHTML = '<div class="combo-empty">' + (q ? 'Tidak ada nama yang cocok.' : 'Daftar kosong.') + '</div>';
+        return;
+      }
+      listEl.innerHTML = list.map(function(v) {
         var p = splitStaff(v);
         return '<div class="combo-opt" data-val="' + esc(v) + '">' +
           '<span class="co-nm">' + highlight(q, p.nm) + '</span>' +
           (p.id ? '<span class="co-id">' + highlight(q, p.id) + '</span>' : '') +
           '<span class="co-tools">' +
-            '<button type="button" class="co-ic" data-edit="' + esc(v) + '" title="Ubah nama">' + EDIT_SVG + '</button>' +
-            '<button type="button" class="co-ic danger" data-del="' + esc(v) + '" title="Hapus dari daftar">' + DEL_SVG + '</button>' +
+            '<button type="button" class="co-ic" data-edit title="Ubah nama">' + EDIT_SVG + '</button>' +
+            '<button type="button" class="co-ic danger" data-del title="Hapus dari daftar">' + DEL_SVG + '</button>' +
           '</span>' +
         '</div>';
       }).join('');
-
-      if (!list.length) html = '<div class="combo-empty">Tidak ada nama yang cocok.</div>';
-
-      // Tawarkan "tambah baru" bila ketikan belum sama persis dengan opsi mana pun
-      var exact = q && all.some(function(s) { return s.toLowerCase() === ql; });
-      if (q && !exact) {
-        html += '<div class="combo-add" data-add="' + esc(q) + '">＋ Tambah &amp; simpan “' + esc(q) + '” ke daftar</div>';
-      }
-      panel.innerHTML = html;
       activeIdx = -1;
     }
 
-    function choose(val) { input.value = val; close(); input.dispatchEvent(new Event('change', { bubbles: true })); }
+    // Gambar footer sesuai mode (tombol Tambah Staff ATAU kolom ketik nama baru)
+    function renderFoot() {
+      if (mode === 'add') {
+        footEl.innerHTML =
+          '<div class="combo-editrow">' +
+            '<input type="text" class="co-add-input" placeholder="Ketik nama & ID staff baru…">' +
+            '<button type="button" class="co-ic ok" data-save title="Simpan">✓</button>' +
+            '<button type="button" class="co-ic" data-cancel title="Batal">✕</button>' +
+          '</div>';
+      } else {
+        footEl.innerHTML = '<div class="combo-add" data-addnew>＋ Tambah Staff</div>';
+      }
+    }
 
-    // Pilih nama BARU: pakai di field sekaligus simpan permanen ke daftar staff.
-    function chooseNew(val) {
-      var v = String(val || '').trim();
-      choose(v);
-      if (!v) return;
-      var ada = (CONFIG[cat] || []).some(function(s) { return s.toLowerCase() === v.toLowerCase(); });
-      if (ada) return;
+    function render() { if (mode === 'list') { renderList(); renderFoot(); } }
+
+    function choose(val) { input.value = val; setMode('list'); close(); input.dispatchEvent(new Event('change', { bubbles: true })); }
+
+    function setMode(m) { mode = m; wrap.classList.toggle('editing-mode', m !== 'list'); }
+
+    // ── Tambah staff baru (dari footer) ──
+    function startAdd() {
+      setMode('add'); renderFoot();
+      var ai = footEl.querySelector('.co-add-input');
+      focusSoon(ai);
+      ai.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); commitAdd(); }
+        else if (e.key === 'Escape') { e.preventDefault(); cancelFoot(); }
+      });
+    }
+    function cancelFoot() { setMode('list'); renderFoot(); input.focus(); }
+    function commitAdd() {
+      var ai = footEl.querySelector('.co-add-input');
+      var v = String(ai.value || '').trim();
+      if (!v) { toast('Nama tidak boleh kosong', 'err'); ai.focus(); return; }
+      if ((CONFIG[cat] || []).some(function(s) { return s.toLowerCase() === v.toLowerCase(); })) {
+        toast('Nama itu sudah ada di daftar', 'err'); ai.focus(); return;
+      }
+      ai.disabled = true;
       addOption(cat, v).then(function(cfg) {
-        CONFIG = cfg;
-        toast('Nama staff ditambahkan ke daftar', 'ok');
+        CONFIG = cfg; setMode('list'); render(); input.focus();
+        toast('Staff baru ditambahkan', 'ok');
       }).catch(function(err) {
-        toast('Nama dipakai, tapi gagal disimpan ke daftar: ' + err.message, 'err');
+        ai.disabled = false; toast('Gagal menambah: ' + err.message, 'err');
       });
     }
 
-    // ── Edit inline: ubah satu baris opsi menjadi kolom ketik ──
+    // ── Edit nama (dari baris) ──
     function startEdit(row, val) {
       if (!row) return;
-      editingVal = val;
+      setMode('edit'); editingVal = val;
       row.classList.add('editing');
       row.innerHTML =
         '<input type="text" class="co-edit-input" value="' + esc(val) + '">' +
@@ -1665,35 +1699,29 @@
           '<button type="button" class="co-ic" data-cancel title="Batal">✕</button>' +
         '</span>';
       var ei = row.querySelector('.co-edit-input');
-      // Fokus setelah frame ini agar tidak tertimpa pemrosesan mousedown
-      setTimeout(function() { ei.focus(); ei.setSelectionRange(ei.value.length, ei.value.length); }, 0);
+      focusSoon(ei, true);
       ei.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); commitEdit(row); }
         else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
       });
     }
-    function cancelEdit() { editingVal = null; render(); input.focus(); }
+    function cancelEdit() { editingVal = null; setMode('list'); renderList(); input.focus(); }
     function commitEdit(row) {
       var ei = row.querySelector('.co-edit-input');
       var oldVal = editingVal, newVal = String(ei.value || '').trim();
       if (!newVal) { toast('Nama tidak boleh kosong', 'err'); ei.focus(); return; }
-      if (newVal === oldVal) { cancelEdit(); return; }        // tidak ada perubahan
-      // Cegah bentrok dengan nama lain yang sudah ada
-      var bentrok = (CONFIG[cat] || []).some(function(s) {
-        return s.toLowerCase() === newVal.toLowerCase() && s.toLowerCase() !== oldVal.toLowerCase();
-      });
-      if (bentrok) { toast('Nama itu sudah ada di daftar', 'err'); ei.focus(); return; }
-
+      if (newVal === oldVal) { cancelEdit(); return; }
+      if ((CONFIG[cat] || []).some(function(s) { return s.toLowerCase() === newVal.toLowerCase() && s.toLowerCase() !== oldVal.toLowerCase(); })) {
+        toast('Nama itu sudah ada di daftar', 'err'); ei.focus(); return;
+      }
       ei.disabled = true;
       renameOption(cat, oldVal, newVal).then(function(cfg) {
-        CONFIG = cfg; editingVal = null;
-        // Bila field sedang berisi nama lama, ikutkan perubahannya
+        CONFIG = cfg; editingVal = null; setMode('list');
         if (input.value.trim() === oldVal) input.value = newVal;
         render(); input.focus();
         toast('Nama diperbarui', 'ok');
       }).catch(function(err) {
-        ei.disabled = false;
-        toast('Gagal mengubah nama: ' + err.message, 'err');
+        ei.disabled = false; toast('Gagal mengubah nama: ' + err.message, 'err');
       });
     }
 
@@ -1712,6 +1740,15 @@
       });
     }
 
+    // Fokus elemen setelah pemrosesan mousedown selesai (hindari fokus balik ke input utama)
+    function focusSoon(el, toEnd) {
+      setTimeout(function() {
+        if (!el) return;
+        el.focus();
+        if (toEnd && el.setSelectionRange) el.setSelectionRange(el.value.length, el.value.length);
+      }, 0);
+    }
+
     function move(step) {
       var opts = options();
       if (!opts.length) return;
@@ -1720,12 +1757,12 @@
       opts[activeIdx].scrollIntoView({ block: 'nearest' });
     }
 
-    input.addEventListener('focus', function() { render(); open(); });
-    input.addEventListener('input', function() { render(); open(); });
+    input.addEventListener('focus', function() { if (mode === 'list') { render(); open(); } });
+    input.addEventListener('input', function() { if (mode === 'list') { render(); open(); } });
     arrow.addEventListener('mousedown', function(e) {
       e.preventDefault();
-      if (isOpen()) { editingVal = null; close(); }
-      else { input.focus(); render(); open(); }
+      if (isOpen()) { setMode('list'); close(); }
+      else { render(); open(); input.focus(); }
     });
 
     input.addEventListener('keydown', function(e) {
@@ -1733,37 +1770,42 @@
       else if (e.key === 'ArrowUp') { move(-1); e.preventDefault(); }
       else if (e.key === 'Enter') {
         var opts = options();
-        if (isOpen() && activeIdx >= 0 && opts[activeIdx]) {
-          e.preventDefault();
-          var el = opts[activeIdx];
-          if (el.dataset.add !== undefined) chooseNew(el.dataset.add); else choose(el.dataset.val);
-        } else { close(); }
+        if (isOpen() && activeIdx >= 0 && opts[activeIdx]) { e.preventDefault(); choose(opts[activeIdx].dataset.val); }
+        else { close(); }   // pakai teks apa adanya
       }
-      else if (e.key === 'Escape') { editingVal = null; close(); }
+      else if (e.key === 'Escape') { setMode('list'); close(); }
     });
 
-    // Semua interaksi di dalam panel
+    // Delegasi klik untuk SELURUH panel (daftar + footer)
+    var _fromPanel = false;   // ditandai saat mousedown berasal dari dalam panel
     panel.addEventListener('mousedown', function(e) {
-      // Tombol edit/hapus/simpan/batal — jangan sampai memicu pilih baris
-      var edit = e.target.closest('[data-edit]');
-      var del  = e.target.closest('[data-del]');
-      var save = e.target.closest('[data-save]');
-      var canc = e.target.closest('[data-cancel]');
-      var editing = e.target.closest('.co-edit-input');
-      if (editing) { return; }                     // biarkan klik di dalam input edit
-      e.preventDefault();                          // pertahankan fokus / cegah blur
-      if (save) { commitEdit(save.closest('.combo-opt')); return; }
-      if (canc) { cancelEdit(); return; }
-      if (edit) { startEdit(edit.closest('.combo-opt'), edit.getAttribute('data-edit')); return; }
-      if (del)  { askDelete(del.getAttribute('data-del')); return; }
-      var opt = e.target.closest('.combo-opt'); var add = e.target.closest('.combo-add');
-      if (opt) { choose(opt.dataset.val); }
-      else if (add) { chooseNew(add.dataset.add); }
+      _fromPanel = true;   // WAJIB paling atas: sebelum innerHTML diubah (target bisa terlepas dari DOM)
+      // Klik di dalam kolom ketik (edit/add): biarkan fokus normal, jangan diproses
+      if (e.target.closest('.co-edit-input, .co-add-input')) return;
+      e.preventDefault();   // cegah input utama kehilangan fokus sebelum kita atur sendiri
+
+      if (e.target.closest('[data-save]')) {
+        if (mode === 'add') commitAdd();
+        else { var r = e.target.closest('.combo-opt'); if (r) commitEdit(r); }
+        return;
+      }
+      if (e.target.closest('[data-cancel]')) { (mode === 'add') ? cancelFoot() : cancelEdit(); return; }
+      if (e.target.closest('[data-addnew]')) { startAdd(); return; }
+
+      var editBtn = e.target.closest('[data-edit]');
+      var delBtn  = e.target.closest('[data-del]');
+      var row = e.target.closest('.combo-opt');
+      if (editBtn && row) { startEdit(row, row.dataset.val); return; }
+      if (delBtn && row) { askDelete(row.dataset.val); return; }
+      if (row) { choose(row.dataset.val); return; }
     });
 
-    // Tutup saat klik DI LUAR combobox (menggantikan blur, agar edit inline tak terganggu)
+    // Tutup saat klik DI LUAR combobox.
+    // Melewati klik yang berasal dari panel (target-nya bisa sudah terlepas dari DOM
+    // setelah innerHTML diubah, sehingga wrap.contains keliru menganggapnya "di luar").
     document.addEventListener('mousedown', function(e) {
-      if (!wrap.contains(e.target) && isOpen()) { editingVal = null; close(); }
+      if (_fromPanel) { _fromPanel = false; return; }
+      if (!wrap.contains(e.target) && isOpen()) { setMode('list'); close(); renderFoot(); }
     });
 
     _combos.push({ render: render });
