@@ -898,6 +898,10 @@
         <span class="filter-label">Bulan</span>
         <select id="monthFilter" class="month-select" title="Dikelompokkan berdasarkan bulan tanggal MULAI cuti"></select>
       </div>
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <select id="statusFilter" class="month-select" title="Saring berdasarkan status pengajuan"></select>
+      </div>
       <div class="search-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input id="searchInput" type="text" placeholder="Cari nama atau ID…" autocomplete="off">
@@ -1525,7 +1529,7 @@
   var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
   var ADD = '__ADD__';
   var _cache = null, _loaded = false, _prefetch = null;
-  var filterState = { role: 'ALL', search: '', month: 'ALL', segment: 'AKTIF' };
+  var filterState = { role: 'ALL', search: '', month: 'ALL', status: 'ALL', segment: 'AKTIF' };
   var ROW_LIMIT = 120, _showAllRows = false;   // batasi baris agar tabel tetap ringan
 
   // ── Toast & Confirm ───────────────────────────────────────────
@@ -2294,7 +2298,38 @@
     }
     sel.innerHTML = opts.join('');
   }
-  function renderFilters() { renderRoleChips(); buildMonthOptions(); }
+  // Bangun opsi dropdown Status dari status yang benar-benar ada di menu ini
+  function buildStatusOptions() {
+    var data = (_cache || []).filter(function(r) { return inSegment(r, filterState.segment); });
+    var count = {};
+    data.forEach(function(r) {
+      var s = String(r.task1 || '').toUpperCase() || '(kosong)';
+      count[s] = (count[s] || 0) + 1;
+    });
+    // Urutkan mengikuti urutan pada CONFIG.TASK bila ada, sisanya menyusul alfabetis
+    var order = (CONFIG.TASK || []).map(function(s) { return s.toUpperCase(); });
+    var keys = Object.keys(count).sort(function(a, b) {
+      var ia = order.indexOf(a), ib = order.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+
+    var sel = document.getElementById('statusFilter');
+    var opts = ['<option value="ALL">Semua Status</option>'];
+    keys.forEach(function(s) {
+      opts.push('<option value="' + esc(s) + '"' + (s === filterState.status ? ' selected' : '') + '>' +
+        esc(s) + ' · ' + count[s] + '</option>');
+    });
+    // Pilihan lama yang tak ada lagi di menu ini → kembalikan ke "Semua Status"
+    if (filterState.status !== 'ALL' && !count[filterState.status]) {
+      filterState.status = 'ALL';
+      opts[0] = '<option value="ALL" selected>Semua Status</option>';
+    }
+    sel.innerHTML = opts.join('');
+  }
+  function renderFilters() { renderRoleChips(); buildMonthOptions(); buildStatusOptions(); }
 
   // Cocokkan record dengan bulan terpilih — satu record hanya milik satu bulan.
   function recordInMonth(r, ym) {
@@ -2310,6 +2345,7 @@
       if (hay.indexOf(filterState.search) === -1) return false;
     }
     if (!recordInMonth(r, filterState.month)) return false;
+    if (filterState.status !== 'ALL' && String(r.task1 || '').toUpperCase() !== filterState.status) return false;
     return true;
   }
 
@@ -2323,6 +2359,9 @@
   });
   document.getElementById('monthFilter').addEventListener('change', function() {
     filterState.month = this.value; applyFilters();
+  });
+  document.getElementById('statusFilter').addEventListener('change', function() {
+    filterState.status = this.value; applyFilters();
   });
 
   function applyFilters() {
@@ -2695,6 +2734,7 @@
       sel.classList.remove('task-saving');
       sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
       if (_cache) for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; }
+      buildMonthOptions(); buildStatusOptions();   // hitungan filter ikut menyesuaikan
       applyFilters();          // baris otomatis berpindah ke menu yang sesuai
       updateTabCounts();
       // Beri tahu ke mana baris ini berpindah (bila memang keluar dari menu saat ini)
