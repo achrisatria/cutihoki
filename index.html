@@ -580,13 +580,18 @@
   .co-ic.ok:hover { background: var(--green-bg); }
   .combo-opt.editing { background: var(--surface-2); cursor: default; }
 
-  /* Baris ketik (edit di daftar / tambah di footer) */
+  /* Baris ketik (edit di daftar) */
   .combo-editrow { display: flex; align-items: center; gap: 4px; }
-  .co-edit-input, .co-add-input {
+  .co-edit-input, .co-add-nama, .co-add-id {
     flex: 1 1 auto; min-width: 0; border: 1px solid var(--brand); border-radius: 6px;
     padding: 7px 9px; font-size: 13px; font-family: inherit; color: var(--text-primary);
     background: var(--surface); outline: none;
   }
+
+  /* Form tambah staff (2 kolom: nama + ID) */
+  .combo-addform { display: flex; align-items: center; gap: 6px; padding: 3px 1px; }
+  .combo-addform .caf-fields { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .combo-addform .caf-actions { display: flex; gap: 2px; flex: 0 0 auto; }
 
   /* Tombol Tambah Staff (footer tetap) */
   .combo-add {
@@ -1835,14 +1840,19 @@
       activeIdx = -1;
     }
 
-    // Gambar footer sesuai mode (tombol Tambah Staff ATAU kolom ketik nama baru)
+    // Gambar footer sesuai mode (tombol Tambah Staff ATAU form 2 kolom nama+ID)
     function renderFoot() {
       if (mode === 'add') {
         footEl.innerHTML =
-          '<div class="combo-editrow">' +
-            '<input type="text" class="co-add-input" placeholder="Ketik nama & ID staff baru…">' +
-            '<button type="button" class="co-ic ok" data-save title="Simpan">✓</button>' +
-            '<button type="button" class="co-ic" data-cancel title="Batal">✕</button>' +
+          '<div class="combo-addform">' +
+            '<div class="caf-fields">' +
+              '<input type="text" class="co-add-nama" placeholder="Nama Lengkap (mis. HOKIJITU)" autocomplete="off">' +
+              '<input type="text" class="co-add-id" placeholder="No. Passport / ID (mis. X123456)" autocomplete="off">' +
+            '</div>' +
+            '<div class="caf-actions">' +
+              '<button type="button" class="co-ic ok" data-save title="Simpan">✓</button>' +
+              '<button type="button" class="co-ic" data-cancel title="Batal">✕</button>' +
+            '</div>' +
           '</div>';
       } else {
         footEl.innerHTML = '<div class="combo-add" data-addnew>＋ Tambah Staff</div>';
@@ -1855,30 +1865,36 @@
 
     function setMode(m) { mode = m; wrap.classList.toggle('editing-mode', m !== 'list'); }
 
-    // ── Tambah staff baru (dari footer) ──
+    // ── Tambah staff baru (2 kolom → digabung jadi satu string "NAMA - ID") ──
     function startAdd() {
       setMode('add'); renderFoot();
-      var ai = footEl.querySelector('.co-add-input');
-      focusSoon(ai);
-      ai.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); commitAdd(); }
-        else if (e.key === 'Escape') { e.preventDefault(); cancelFoot(); }
+      var fNama = footEl.querySelector('.co-add-nama'), fId = footEl.querySelector('.co-add-id');
+      focusSoon(fNama);
+      [fNama, fId].forEach(function(el) {
+        el.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); commitAdd(); }
+          else if (e.key === 'Escape') { e.preventDefault(); cancelFoot(); }
+        });
       });
     }
     function cancelFoot() { setMode('list'); renderFoot(); input.focus(); }
     function commitAdd() {
-      var ai = footEl.querySelector('.co-add-input');
-      var v = String(ai.value || '').trim();
-      if (!v) { toast('Nama tidak boleh kosong', 'err'); ai.focus(); return; }
+      var fNama = footEl.querySelector('.co-add-nama'), fId = footEl.querySelector('.co-add-id');
+      var nm = String(fNama.value || '').trim().toUpperCase();
+      var id = String(fId.value || '').trim().toUpperCase();
+      if (!nm) { toast('Nama lengkap wajib diisi', 'err'); fNama.focus(); return; }
+      if (!id) { toast('Nomor passport / ID wajib diisi', 'err'); fId.focus(); return; }
+      // Gabung jadi SATU string utuh — inilah nilai tunggal yang disimpan
+      var v = nm + ' - ' + id;
       if ((CONFIG[cat] || []).some(function(s) { return s.toLowerCase() === v.toLowerCase(); })) {
-        toast('Nama itu sudah ada di daftar', 'err'); ai.focus(); return;
+        toast('Staff itu sudah ada di daftar', 'err'); fNama.focus(); return;
       }
-      ai.disabled = true;
+      fNama.disabled = fId.disabled = true;
       addOption(cat, v).then(function(cfg) {
         CONFIG = cfg; setMode('list'); render(); input.focus();
-        toast('Staff baru ditambahkan', 'ok');
+        toast('Staff baru ditambahkan: ' + v, 'ok');
       }).catch(function(err) {
-        ai.disabled = false; toast('Gagal menambah: ' + err.message, 'err');
+        fNama.disabled = fId.disabled = false; toast('Gagal menambah: ' + err.message, 'err');
       });
     }
 
@@ -1976,7 +1992,7 @@
     panel.addEventListener('mousedown', function(e) {
       _fromPanel = true;   // WAJIB paling atas: sebelum innerHTML diubah (target bisa terlepas dari DOM)
       // Klik di dalam kolom ketik (edit/add): biarkan fokus normal, jangan diproses
-      if (e.target.closest('.co-edit-input, .co-add-input')) return;
+      if (e.target.closest('.co-edit-input, .co-add-nama, .co-add-id')) return;
       e.preventDefault();   // cegah input utama kehilangan fokus sebelum kita atur sendiri
 
       if (e.target.closest('[data-save]')) {
@@ -2173,6 +2189,10 @@
 
     if (!role || role === ADD) return showMsg('error', 'Pilih role terlebih dahulu.');
     if (!nama) return showMsg('error', 'Isi nama lengkap beserta ID.');
+    // Aturan: nama HARUS berasal dari daftar staff terdaftar (bukan teks bebas)
+    var staffResmi = resolveStaff(nama);
+    if (!staffResmi) return showMsg('error', STAFF_NOT_FOUND_MSG);
+    nama = staffResmi;   // pakai string resmi dari daftar (samakan kapitalisasi)
     if (!keterangan || keterangan === ADD) return showMsg('error', 'Pilih keterangan passport.');
 
     var leaves = gatherLeaves(formC);
@@ -2208,7 +2228,6 @@
         var payload = buildRowPayload(id, role, nama, keterangan, tambahan, leaves, durasi, 'WAITING');
         return sbPost('cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
           btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
-          rememberStaff(nama);
           showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
           toast('Pengajuan tersimpan', 'ok');
           resetForm(); invalidate(); toggleForm(false); loadDashboard(true);
@@ -2223,18 +2242,17 @@
     });
   });
 
-  // Simpan nama baru ke daftar staff bila belum ada — supaya muncul di dropdown berikutnya.
-  // Dijalankan diam-diam: kegagalan di sini tidak boleh membatalkan pengajuan yang sudah tersimpan.
-  function rememberStaff(nama) {
-    var v = String(nama || '').trim();
-    if (!v) return;
-    // Cocokkan tanpa peduli huruf besar/kecil agar tidak menyimpan duplikat
-    var ada = (CONFIG.STAFF || []).some(function(s) { return s.toLowerCase() === v.toLowerCase(); });
-    if (ada) return;
-    addOption('STAFF', v).then(function(cfg) {
-      CONFIG = cfg; fillStaffList();
-    }).catch(function() { /* diamkan: bukan kesalahan fatal */ });
+  // Cari staff terdaftar yang cocok PERSIS (abaikan besar/kecil huruf).
+  // Kembalikan string resmi dari daftar, atau null bila tidak terdaftar.
+  // Dipakai untuk aturan: nilai nama HARUS berasal dari daftar dropdown.
+  function resolveStaff(nama) {
+    var v = String(nama || '').trim().toLowerCase();
+    if (!v) return null;
+    var list = CONFIG.STAFF || [];
+    for (var i = 0; i < list.length; i++) if (String(list[i]).toLowerCase() === v) return list[i];
+    return null;
   }
+  var STAFF_NOT_FOUND_MSG = 'Staff tidak ditemukan dalam daftar. Silakan pilih staff yang tersedia.';
 
   function showMsg(type, text) {
     var el = document.getElementById('formMsg');
@@ -2295,6 +2313,9 @@
 
     if (!role || role === ADD) return eShow('error', 'Pilih role.');
     if (!nama) return eShow('error', 'Isi nama beserta ID.');
+    var staffResmi = resolveStaff(nama);
+    if (!staffResmi) return eShow('error', STAFF_NOT_FOUND_MSG);
+    nama = staffResmi;
     if (!keterangan || keterangan === ADD) return eShow('error', 'Pilih keterangan passport.');
     var leaves = gatherLeaves(eC);
     if (leaves.length === 0) return eShow('error', 'Minimal 1 cuti.');
@@ -2306,7 +2327,6 @@
     var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
     sbPatch('cuti', 'id=eq.' + encodeURIComponent(editingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
-      rememberStaff(nama);
       closeEdit(); toast('Perubahan tersimpan', 'ok'); invalidate(); loadDashboard(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
