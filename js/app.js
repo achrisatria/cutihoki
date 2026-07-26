@@ -636,12 +636,16 @@
         for (var i = 0; i < others.length; i++) if (others[i].s <= d && d <= others[i].e) names[others[i].nama] = 1;
         var jumlah = Object.keys(names).length;
         if (jumlah > maxPeople) {
+          var conflictNames = Object.keys(names).filter(function(n) { return n !== nama; });
+          var conflictDate = formatDate(isoFromKey(d));
           if (roleU === 'KAPTEN') {
-            return 'Pengajuan cuti ditolak. Terdapat bentrok jadwal cuti dengan ROLE KAPTEN lain pada tanggal ' +
-              formatDate(isoFromKey(d)) + '. ROLE KAPTEN hanya mengizinkan 1 orang cuti pada periode yang sama.';
+            return 'Pengajuan cuti untuk ' + nama + ' ditolak. Tanggal ' + conflictDate +
+              ' bertabrakan dengan jadwal cuti staff: ' + conflictNames.join(', ') +
+              '. ROLE KAPTEN hanya mengizinkan 1 orang cuti pada periode yang sama.';
           }
-          return 'Pengajuan cuti ditolak. Pada tanggal ' + formatDate(isoFromKey(d)) + ', terdapat ' + jumlah +
-            ' orang ROLE ' + roleU + ' yang cuti bersamaan. Batas maksimal adalah ' + maxPeople + ' orang.';
+          return 'Pengajuan cuti untuk ' + nama + ' ditolak. Pada tanggal ' + conflictDate +
+            ', jadwal bertabrakan dengan staff: ' + conflictNames.join(', ') + '. Total ' + jumlah +
+            ' orang ROLE ' + roleU + ' cuti bersamaan; batas maksimal adalah ' + maxPeople + ' orang.';
         }
       }
 
@@ -652,8 +656,9 @@
           if (os <= oe) {
             var durasi = oe - os + 1;
             if (durasi > CLASH_MAX_OVERLAP_DAYS) {
-              return 'Pengajuan cuti ditolak. Durasi bentrok cuti ROLE ' + roleU + ' adalah ' + durasi +
-                ' hari. Batas maksimal durasi bentrok adalah ' + CLASH_MAX_OVERLAP_DAYS + ' hari.';
+              return 'Pengajuan cuti untuk ' + nama + ' ditolak. Tanggal ' + formatDateRangeByKey(os, oe) +
+                ' bertabrakan dengan jadwal cuti ' + others[j].nama + ' (' + durasi + ' hari). ' +
+                'Batas maksimal durasi bentrok adalah ' + CLASH_MAX_OVERLAP_DAYS + ' hari.';
             }
           }
         }
@@ -667,6 +672,11 @@
     var d = new Date(k * 86400000);
     function p(x) { return String(x).padStart(2, '0'); }
     return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate());
+  }
+  function formatDateRangeByKey(startKey, endKey) {
+    var start = formatDate(isoFromKey(startKey));
+    var end = formatDate(isoFromKey(endKey));
+    return startKey === endKey ? start : start + ' sampai ' + end;
   }
 
   // Pemeriksa lengkap dipakai di alur submit: ambil pool terkini lalu validasi.
