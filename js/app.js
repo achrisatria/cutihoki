@@ -321,7 +321,8 @@
     });
   }
   function getCuti() {
-    return sbGet('cuti', 'select=*&order=created_at.desc').then(function(rows) {
+    var cols = 'id,id_pengajuan,created_at,role,nama,start1,end1,start2,end2,durasi1,durasi2,perihal1,perihal2,keterangan,tambahan,task1';
+    return sbGet('cuti', 'select=' + cols + '&order=created_at.desc').then(function(rows) {
       return rows.map(function(r) {
         return {
           rowId: r.id, id: r.id_pengajuan || r.id, timestamp: r.created_at || '',
@@ -449,18 +450,28 @@
 
   function addOption(category, value) {
     return sbPost('dropdown_options', { category: category, value: value },
-      { 'Prefer': 'resolution=ignore-duplicates,return=minimal' }).then(function() { return getConfig(); });
+      { 'Prefer': 'resolution=ignore-duplicates,return=minimal' }).then(function() {
+      if (CONFIG[category] && CONFIG[category].indexOf(value) === -1) CONFIG[category].push(value);
+      return CONFIG;
+    });
   }
   // Ubah teks sebuah opsi dropdown (mis. perbaiki typo nama staff)
   function renameOption(category, oldVal, newVal) {
     var f = 'category=eq.' + encodeURIComponent(category) + '&value=eq.' + encodeURIComponent(oldVal);
-    return sbPatch('dropdown_options', f, { value: newVal }).then(function() { return getConfig(); });
+    return sbPatch('dropdown_options', f, { value: newVal }).then(function() {
+      if (CONFIG[category]) {
+        var i = CONFIG[category].indexOf(oldVal);
+        if (i !== -1) CONFIG[category][i] = newVal;
+      }
+      return CONFIG;
+    });
   }
   // Hapus sebuah opsi dropdown
   function removeOption(category, value) {
     var f = 'category=eq.' + encodeURIComponent(category) + '&value=eq.' + encodeURIComponent(value);
     return sbDelete('dropdown_options', f).then(function(rows) {
-      return getConfig().then(function(cfg) { return { cfg: cfg, deleted: (rows || []).length }; });
+      if (CONFIG[category]) CONFIG[category] = CONFIG[category].filter(function(v) { return v !== value; });
+      return { cfg: CONFIG, deleted: (rows || []).length };
     });
   }
 
