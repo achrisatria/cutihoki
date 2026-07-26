@@ -631,22 +631,44 @@
       var slot = newSlots[k];
 
       // ATURAN 1 — jumlah orang per tanggal (inklusif). Pemohon dihitung 1 orang.
+      var staffOverlapDays = {};
+      var hasViolation = false;
       for (var d = slot.s; d <= slot.e; d++) {
-        var names = {}; names[nama] = 1;
-        for (var i = 0; i < others.length; i++) if (others[i].s <= d && d <= others[i].e) names[others[i].nama] = 1;
-        var jumlah = Object.keys(names).length;
-        if (jumlah > maxPeople) {
-          var conflictNames = Object.keys(names).filter(function(n) { return n !== nama; });
-          var conflictDate = formatDate(isoFromKey(d));
-          if (roleU === 'KAPTEN') {
-            return 'Pengajuan cuti untuk ' + nama + ' ditolak. Tanggal ' + conflictDate +
-              ' bertabrakan dengan jadwal cuti staff: ' + conflictNames.join(', ') +
-              '. ROLE KAPTEN hanya mengizinkan 1 orang cuti pada periode yang sama.';
-          }
-          return 'Pengajuan cuti untuk ' + nama + ' ditolak. Pada tanggal ' + conflictDate +
-            ', jadwal bertabrakan dengan staff: ' + conflictNames.join(', ') + '. Total ' + jumlah +
-            ' orang ROLE ' + roleU + ' cuti bersamaan; batas maksimal adalah ' + maxPeople + ' orang.';
+        var dayPeople = [nama];
+        for (var i = 0; i < others.length; i++) {
+          if (others[i].s <= d && d <= others[i].e) dayPeople.push(others[i].nama);
         }
+        if (dayPeople.length > maxPeople) {
+          hasViolation = true;
+          if (roleU === 'KAPTEN') { break; }
+          var othersOnDay = dayPeople.filter(function(n) { return n !== nama; });
+          for (var oi = 0; oi < othersOnDay.length; oi++) {
+            var on = othersOnDay[oi];
+            if (!staffOverlapDays[on]) staffOverlapDays[on] = { min: d, max: d };
+            else { if (d < staffOverlapDays[on].min) staffOverlapDays[on].min = d; if (d > staffOverlapDays[on].max) staffOverlapDays[on].max = d; }
+          }
+        }
+      }
+
+      if (hasViolation) {
+        if (roleU === 'KAPTEN') {
+          var firstDay = null;
+          for (var d2 = slot.s; d2 <= slot.e; d2++) {
+            var cnt = 1;
+            for (var i2 = 0; i2 < others.length; i2++) { if (others[i2].s <= d2 && d2 <= others[i2].e) cnt++; }
+            if (cnt > maxPeople) { firstDay = d2; break; }
+          }
+          return '⛔ Pengajuan cuti ditolak.\nPada tanggal ' + formatDate(isoFromKey(firstDay)) + ' cuti bentrok dengan KAPTEN lainnya.\nROLE KAPTEN hanya mengizinkan 1 orang cuti pada periode yang sama ⛔';
+        }
+        var lines = ['⛔ Pengajuan cuti ditolak.'];
+        var staffNames = Object.keys(staffOverlapDays);
+        for (var si = 0; si < staffNames.length; si++) {
+          var sn = staffNames[si];
+          var rng = staffOverlapDays[sn];
+          lines.push('Pada tanggal ' + formatDateRangeByKey(rng.min, rng.max) + ' cuti bentrok dengan staff ' + sn + '.');
+        }
+        lines.push('Batas maksimal adalah ' + maxPeople + ' orang ⛔');
+        return lines.join('\n');
       }
 
       // ATURAN 2 — durasi bentrok berpasangan maks 3 hari (hanya CS & KASIR).
@@ -656,9 +678,7 @@
           if (os <= oe) {
             var durasi = oe - os + 1;
             if (durasi > CLASH_MAX_OVERLAP_DAYS) {
-              return 'Pengajuan cuti untuk ' + nama + ' ditolak. Tanggal ' + formatDateRangeByKey(os, oe) +
-                ' bertabrakan dengan jadwal cuti ' + others[j].nama + ' (' + durasi + ' hari). ' +
-                'Batas maksimal durasi bentrok adalah ' + CLASH_MAX_OVERLAP_DAYS + ' hari.';
+              return '⛔ Pengajuan cuti ditolak.\nBentrok dengan staff ' + others[j].nama + ' ' + durasi + ' hari.\nBatas maksimal durasi bentrok sesama ROLE adalah ' + CLASH_MAX_OVERLAP_DAYS + ' hari ⛔';
             }
           }
         }
@@ -1250,7 +1270,7 @@
       return checkClashOnSubmit(nama, role, leaves).then(function(clashReason) {
         if (clashReason) {
           btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
-          return showMsg('error', '⛔ ' + clashReason);
+          return showMsg('error', clashReason);
         }
         btn.textContent = 'Mengirim…';
         var id = genId();
