@@ -2,18 +2,7 @@
   // KONFIGURASI SUPABASE  — ganti dengan milik project kamu
   // ═══════════════════════════════════════════════════════════════
   var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
-  var SUPABASE_KE{
-      "name": "@workspace/api-zod",
-      "version": "0.0.0",
-      "private": true,
-      "type": "module",
-      "exports": {
-        ".": "./src/index.ts"
-      },
-      "dependencies": {
-        "zod": "catalog:"
-      }
-    }Y = 'sb_publishable_3mByHkVTPwtukH40bOHvow_sB1WW6og';
+  var SUPABASE_KEY = 'sb_publishable_3mByHkVTPwtukH40bOHvow_sB1WW6og';
 
   // Aturan (rules) — nilai default; ditimpa oleh tabel settings saat load bila ada.
   var MAX_DURASI = { 'CS': 14, 'KAPTEN': 14, 'KASIR': 12 };
@@ -740,9 +729,6 @@
   var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
   var ADD = '__ADD__';
   var _cache = null, _loaded = false, _prefetch = null;
-  var _filterVer = 0;                                    // naik setiap cache berubah → memo filter
-  var _memoMonth = null, _memoMonthKey = null;           // memo buildMonthOptions
-  var _memoStatus = null, _memoStatusKey = null;         // memo buildStatusOptions
   var filterState = { role: 'ALL', search: '', month: 'ALL', status: 'ALL', segment: 'AKTIF' };
   var ROW_LIMIT = 120, _showAllRows = false;   // batasi baris agar tabel tetap ringan
 
@@ -1316,7 +1302,7 @@
             keterangan: payload.keterangan, tambahan: payload.tambahan,
             task1: payload.task1
           };
-          if (_cache) { _cache.unshift(newRow); _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null; renderFilters(); applyFilters(); updateTabCounts(); }
+          if (_cache) { _cache.unshift(newRow); _clashIdx = null; renderFilters(); applyFilters(); updateTabCounts(); }
           else { invalidate(); loadDashboard(true); }
           resetForm(); toggleForm(false);
         }).catch(function(err) {
@@ -1430,7 +1416,7 @@
             c.task1 = patch.task1; break;
           }
         }
-        _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null;
+        _clashIdx = null;
         renderFilters(); applyFilters(); updateTabCounts();
       }
       closeEdit(); toast('Perubahan tersimpan', 'ok');
@@ -1460,7 +1446,7 @@
           for (var i = 0; i < _cache.length; i++) {
             if (_cache[i].rowId === rowId) { _cache.splice(i, 1); break; }
           }
-          _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null;
+          _clashIdx = null;      // bentrok dihitung ulang tanpa data itu
           renderFilters(); applyFilters(); updateTabCounts();
         }
         toast('Pengajuan dihapus permanen', 'ok');     // sinkronkan lagi dengan server
@@ -1469,7 +1455,7 @@
   }
 
   // ── DASHBOARD ─────────────────────────────────────────────────
-  function invalidate() { _loaded = false; _cache = null; _prefetch = null; _clashIdx = null; _filterVer++; _memoMonth = null; _memoMonthKey = null; _memoStatus = null; _memoStatusKey = null; }
+  function invalidate() { _loaded = false; _cache = null; _prefetch = null; _clashIdx = null; }
 
   function loadDashboard(force) {
     var loading = document.getElementById('dashboardLoading');
@@ -1494,7 +1480,7 @@
 
     function fetchFresh() {
       var p = getCuti();
-      _prefetch = p.then(function(rows) { _cache = rows; _loaded = true; _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null; return rows; })
+      _prefetch = p.then(function(rows) { _cache = rows; _loaded = true; _clashIdx = null; return rows; })
                    .catch(function(err) { _prefetch = null; throw err; });
       p.then(done).catch(function(err) { loading.textContent = '❌ Gagal memuat data: ' + err.message; })
        .finally(function() { if (refreshBtn) refreshBtn.disabled = false; });
@@ -1536,11 +1522,6 @@
 
   // Bangun opsi dropdown Bulan dari rentang tanggal semua cuti
   function buildMonthOptions() {
-    var memoKey = filterState.segment + '|' + _filterVer + '|' + filterState.month;
-    if (_memoMonthKey === memoKey && _memoMonth !== null) {
-      document.getElementById('monthFilter').innerHTML = _memoMonth;
-      return;
-    }
     // Hanya hitung data pada menu yang sedang dibuka
     var data = (_cache || []).filter(function(r) { return inSegment(r, filterState.segment); });
 
@@ -1586,17 +1567,10 @@
       filterState.month = 'ALL';
       opts[0] = '<option value="ALL" selected>Semua Bulan</option>';
     }
-    var html = opts.join('');
-    sel.innerHTML = html;
-    _memoMonth = html; _memoMonthKey = filterState.segment + '|' + _filterVer + '|' + filterState.month;
+    sel.innerHTML = opts.join('');
   }
   // Bangun opsi dropdown Status dari status yang benar-benar ada di menu ini
   function buildStatusOptions() {
-    var memoKey = filterState.segment + '|' + _filterVer + '|' + filterState.status;
-    if (_memoStatusKey === memoKey && _memoStatus !== null) {
-      document.getElementById('statusFilter').innerHTML = _memoStatus;
-      return;
-    }
     var data = (_cache || []).filter(function(r) { return inSegment(r, filterState.segment); });
     var count = {};
     data.forEach(function(r) {
@@ -1624,9 +1598,7 @@
       filterState.status = 'ALL';
       opts[0] = '<option value="ALL" selected>Semua Status</option>';
     }
-    var html = opts.join('');
-    sel.innerHTML = html;
-    _memoStatus = html; _memoStatusKey = filterState.segment + '|' + _filterVer + '|' + filterState.status;
+    sel.innerHTML = opts.join('');
   }
   function renderFilters() { renderRoleChips(); buildMonthOptions(); buildStatusOptions(); }
 
@@ -2484,7 +2456,7 @@
 
   function ensureData(cb) {
     if (_cache) { cb(); return; }
-    var p = _prefetch || getCuti().then(function(r) { _cache = r; _loaded = true; _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null; return r; });
+    var p = _prefetch || getCuti().then(function(r) { _cache = r; _loaded = true; _clashIdx = null; return r; });
     p.then(function() { cb(); }).catch(function() { _cache = _cache || []; cb(); });
   }
 
@@ -2665,7 +2637,7 @@
   applyAuthUI();
   if (AUTH && AUTH.refresh_token) startRefreshTimer();
     _prefetch = getCuti().then(function(rows) {
-      _cache = rows; _loaded = true; _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null;
+      _cache = rows; _loaded = true; _clashIdx = null;
       if (document.getElementById('view-dashboard').classList.contains('active')) {
         document.getElementById('dashboardLoading').style.display = 'none';
         renderFilters(); applyFilters(); updateTabCounts();
