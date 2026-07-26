@@ -515,7 +515,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -1428,7 +1428,8 @@
   // ── AUTH ADMIN (Supabase Auth) ────────────────────────────────
   // Sesi disimpan di localStorage agar admin tetap login setelah refresh.
   var AUTH_KEY = 'hokijitu_admin_session';
-  var AUTH = null;   // { access_token, refresh_token, expires_at, email }
+  var AUTH = null;
+  var _refreshTimer = null;
 
   function loadSession() {
     try { var s = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); if (s && s.access_token) AUTH = s; }
@@ -1436,6 +1437,13 @@
   }
   function saveSession(s) { AUTH = s; try { localStorage.setItem(AUTH_KEY, JSON.stringify(s)); } catch (e) {} }
   function clearSession() { AUTH = null; try { localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+  function startRefreshTimer() {
+  if (_refreshTimer) clearInterval(_refreshTimer);   // matikan timer lama dulu
+  _refreshTimer = setInterval(function() {
+    if (AUTH && AUTH.refresh_token) authRefresh().catch(clearSession);
+    else { clearInterval(_refreshTimer); _refreshTimer = null; }
+  }, 50 * 60 * 1000);
+}
   function isAdmin() { return !!(AUTH && AUTH.access_token); }
 
   // Login dgn email+password → simpan sesi. Kembalikan Promise.
@@ -1475,6 +1483,19 @@
       });
     });
   }
+    function ensureToken() {
+    if (!AUTH || !AUTH.access_token) return Promise.resolve();
+    if (AUTH.expires_at && AUTH.expires_at < Date.now() + 300000) {
+      return authRefresh().catch(function() { clearSession(); });
+    }
+    return Promise.resolve();
+  }
+  function sbFetchRetry(fn) {
+    return ensureToken().then(fn).then(function(res) {
+      if (res.status !== 401) return res;
+      return authRefresh().then(fn).catch(function() { return res; });
+    });
+  }
   function authLogout() {
     if (AUTH && AUTH.access_token) {
       fetch(SUPABASE_URL + '/auth/v1/logout', {
@@ -1502,6 +1523,7 @@
   }
   function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
   function doLogout() {
+    if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
     authLogout(); applyAuthUI();
     toast('Anda keluar dari mode admin', 'ok');
     // Muat ulang tampilan agar kontrol admin & tab rekening tersembunyi kembali
@@ -1519,6 +1541,7 @@
       document.getElementById('loginPass').value = '';
       closeLogin(); applyAuthUI();
       toast('Berhasil masuk sebagai admin', 'ok');
+      if (AUTH && AUTH.refresh_token) startRefreshTimer();
       invalidate(); loadDashboard(true);   // muat ulang agar kontrol admin muncul
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = 'Masuk';
@@ -1537,22 +1560,28 @@
   }
   function sbGet(table, qs) {
     var url = SUPABASE_URL + '/rest/v1/' + table + (qs ? '?' + qs : '');
-    return fetch(url, { headers: sbHeaders() }).then(function(res) {
+    return sbFetchRetry(function() {
+      return fetch(url, { headers: sbHeaders() });
+    }).then(function(res) {
       if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
       return res.json();
     });
   }
   function sbPost(table, data, extra) {
-    return fetch(SUPABASE_URL + '/rest/v1/' + table, {
-      method: 'POST', headers: sbHeaders(extra), body: JSON.stringify(data)
+    return sbFetchRetry(function() {
+      return fetch(SUPABASE_URL + '/rest/v1/' + table, {
+        method: 'POST', headers: sbHeaders(extra), body: JSON.stringify(data)
+      });
     }).then(function(res) {
       if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
       return res.text().then(function(t) { return t ? JSON.parse(t) : null; });
     });
   }
   function sbPatch(table, filter, data) {
-    return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
-      method: 'PATCH', headers: sbHeaders({ 'Prefer': 'return=minimal' }), body: JSON.stringify(data)
+    return sbFetchRetry(function() {
+      return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+        method: 'PATCH', headers: sbHeaders({ 'Prefer': 'return=minimal' }), body: JSON.stringify(data)
+      });
     }).then(function(res) {
       if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
       return null;
@@ -1562,8 +1591,10 @@
   // terhapus. Dengan return=minimal, Supabase tetap membalas sukses walau 0 baris
   // terhapus (mis. diblokir izin/RLS) — itu menyesatkan.
   function sbDelete(table, filter) {
-    return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
-      method: 'DELETE', headers: sbHeaders({ 'Prefer': 'return=representation' })
+    return sbFetchRetry(function() {
+      return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+        method: 'DELETE', headers: sbHeaders({ 'Prefer': 'return=representation' })
+      });
     }).then(function(res) {
       if (!res.ok) return res.text().then(function(t) { throw new Error(t || 'HTTP ' + res.status); });
       return res.text().then(function(t) { return t ? JSON.parse(t) : []; });
@@ -2119,7 +2150,8 @@
   // ── Dropdown helpers ──────────────────────────────────────────
   // ── Combobox nama staff (dropdown custom, bisa ketik bebas) ───
   // Dibuat sendiri (bukan <datalist>) agar tampilannya rapi & bisa di-CSS.
-  var _combos = [];   // daftar combobox aktif, agar bisa di-refresh saat CONFIG.STAFF berubah
+  var _combos = [];
+  var _docComboHandler = null;   // daftar combobox aktif, agar bisa di-refresh saat CONFIG.STAFF berubah
 
   // Pisahkan "NAMA - ID" jadi bagian nama & ID untuk tampilan dua kolom
   function splitStaff(v) {
@@ -2358,18 +2390,19 @@
     // Tutup saat klik DI LUAR combobox.
     // Melewati klik yang berasal dari panel (target-nya bisa sudah terlepas dari DOM
     // setelah innerHTML diubah, sehingga wrap.contains keliru menganggapnya "di luar").
-    document.addEventListener('mousedown', function(e) {
+    _combos.push({ render: render, docClick: function(e) {
       if (_fromPanel) { _fromPanel = false; return; }
       if (!wrap.contains(e.target) && isOpen()) { setMode('list'); close(); renderFoot(); }
-    });
-
-    _combos.push({ render: render });
+    }});
   }
 
   // Bangun semua combobox & sediakan cara refresh saat daftar staff bertambah
   function initCombos() {
     _combos = [];
+    if (_docComboHandler) { document.removeEventListener('mousedown', _docComboHandler); }
     document.querySelectorAll('.combo').forEach(initCombo);
+    _docComboHandler = function(e) { _combos.forEach(function(c) { c.docClick(e); }); };
+    document.addEventListener('mousedown', _docComboHandler);
   }
   function fillStaffList() { /* nama dibaca langsung dari CONFIG saat panel dibuka; tak perlu pra-isi */ }
 
@@ -2574,7 +2607,21 @@
           btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
           showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
           toast('Pengajuan tersimpan', 'ok');
-          resetForm(); invalidate(); toggleForm(false); loadDashboard(true);
+          var newRow = {
+            rowId: id, id: id, timestamp: new Date().toISOString(),
+            role: payload.role, nama: payload.nama,
+            start1Raw: payload.start1, end1Raw: payload.end1,
+            start2Raw: payload.start2, end2Raw: payload.end2,
+            start1: formatDate(payload.start1), end1: formatDate(payload.end1),
+            start2: formatDate(payload.start2), end2: formatDate(payload.end2),
+            durasi1: payload.durasi1, perihal1: payload.perihal1,
+            durasi2: payload.durasi2, perihal2: payload.perihal2,
+            keterangan: payload.keterangan, tambahan: payload.tambahan,
+            task1: payload.task1
+          };
+          if (_cache) { _cache.unshift(newRow); _clashIdx = null; renderFilters(); applyFilters(); updateTabCounts(); }
+          else { invalidate(); loadDashboard(true); }
+          resetForm(); toggleForm(false);
         }).catch(function(err) {
           btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
           showMsg('error', 'Gagal menyimpan: ' + err.message);
@@ -2671,7 +2718,25 @@
     var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
     sbPatch('cuti', 'id=eq.' + encodeURIComponent(editingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
-      closeEdit(); toast('Perubahan tersimpan', 'ok'); invalidate(); loadDashboard(true);
+      if (_cache) {
+        for (var i = 0; i < _cache.length; i++) {
+          if (_cache[i].rowId === editingId) {
+            var c = _cache[i];
+            c.role = patch.role; c.nama = patch.nama;
+            c.start1Raw = patch.start1; c.end1Raw = patch.end1;
+            c.start2Raw = patch.start2; c.end2Raw = patch.end2;
+            c.start1 = formatDate(patch.start1); c.end1 = formatDate(patch.end1);
+            c.start2 = formatDate(patch.start2); c.end2 = formatDate(patch.end2);
+            c.durasi1 = patch.durasi1; c.perihal1 = patch.perihal1;
+            c.durasi2 = patch.durasi2; c.perihal2 = patch.perihal2;
+            c.keterangan = patch.keterangan; c.tambahan = patch.tambahan;
+            c.task1 = patch.task1; break;
+          }
+        }
+        _clashIdx = null;
+        renderFilters(); applyFilters(); updateTabCounts();
+      }
+      closeEdit(); toast('Perubahan tersimpan', 'ok');
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       eShow('error', 'Gagal menyimpan: ' + err.message);
@@ -2701,8 +2766,7 @@
           _clashIdx = null;      // bentrok dihitung ulang tanpa data itu
           renderFilters(); applyFilters(); updateTabCounts();
         }
-        toast('Pengajuan dihapus permanen', 'ok');
-        loadDashboard(true);     // sinkronkan lagi dengan server
+        toast('Pengajuan dihapus permanen', 'ok');     // sinkronkan lagi dengan server
       }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
     });
   }
@@ -3887,8 +3951,8 @@
   document.getElementById('rulesOverlay').addEventListener('click', function(e){ if(e.target===this) closeRules(); });
 
   bootAuth().then(function() {
-    applyAuthUI();
-
+  applyAuthUI();
+  if (AUTH && AUTH.refresh_token) startRefreshTimer();
     _prefetch = getCuti().then(function(rows) {
       _cache = rows; _loaded = true; _clashIdx = null;
       if (document.getElementById('view-dashboard').classList.contains('active')) {
