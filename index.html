@@ -122,6 +122,7 @@
     <button class="tab" id="tabArchive" onclick="switchTab('archive')">✅ Selesai Cuti <em class="tab-count" id="archiveCount">0</em></button>
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
     <button class="tab" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
+    <button class="tab" id="tabResign" onclick="switchTab('resign')">📝 Resign <em class="tab-count" id="resignCount">0</em></button>
   </div>
 
   <!-- VIEW DASHBOARD -->
@@ -424,6 +425,117 @@
     </div>
   </div>
 
+  <!-- VIEW PENGAJUAN RESIGN -->
+  <div class="view" id="view-resign">
+    <div class="dash-head">
+      <div>
+        <h2>Pengajuan Resign Staff</h2>
+        <p>Kelola pengajuan resign staff — pastikan data <strong>paspor</strong> dan <strong>tanggal</strong> sudah benar sebelum dikirim.</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-primary btn-sm" id="resignToggleBtn" type="button" onclick="toggleResignForm()">＋ Ajukan Resign</button>
+        <button class="btn btn-secondary btn-sm" id="resignRefreshBtn" onclick="loadResign(true)">🔄 Muat ulang</button>
+      </div>
+    </div>
+
+    <!-- Panel form resign (toggle) -->
+    <div class="form-panel" id="resignFormPanel">
+      <div class="fp-head">
+        <div class="fp-mark">✦</div>
+        <div class="fp-title">
+          <h3>Pengajuan Resign Baru</h3>
+          <p>Isi data resign selengkapnya agar format siap disalin.</p>
+        </div>
+        <button class="fp-close" type="button" onclick="toggleResignForm(false)" aria-label="Tutup form">✕</button>
+      </div>
+
+      <div class="fp-body">
+        <section class="fsec">
+          <span class="fsec-label"><em>01</em>Data Staff</span>
+          <div class="grid" style="max-width: 720px;">
+            <div class="field">
+              <label>No. Paspor</label>
+              <input id="rs_paspor" type="text" placeholder="Contoh: E2620780" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>Nama Staff</label>
+              <div class="combo" data-cat="STAFF">
+                <input id="rs_nama" type="text" class="combo-input" placeholder="Ketik atau pilih dari daftar…" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list">
+                <button type="button" class="combo-arrow" tabindex="-1" aria-label="Buka daftar">▾</button>
+                <div class="combo-panel" role="listbox"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="fsec">
+          <span class="fsec-label"><em>02</em>Detail Resign</span>
+          <div class="grid" style="max-width: 720px;">
+            <div class="field">
+              <label>Tanggal Pengajuan Resign</label>
+              <input id="rs_tglResign" type="date">
+            </div>
+            <div class="field">
+              <label>Tanggal Last Kerja</label>
+              <input id="rs_tglLast" type="date">
+            </div>
+          </div>
+        </section>
+
+        <section class="fsec">
+          <span class="fsec-label"><em>03</em>Keterangan</span>
+          <div class="grid" style="max-width: 720px;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>Keterangan</label>
+              <textarea id="rs_keterangan" rows="3" placeholder="Contoh: Tidak melanjutkan kontrak" style="width:100%;resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div class="msg" id="rs_formMsg"></div>
+        </section>
+      </div>
+
+      <div class="fp-foot">
+        <button class="btn btn-secondary" type="button" onclick="toggleResignForm(false)">Batal</button>
+        <button class="btn btn-primary" id="rs_submitBtn" type="button">📤 Kirim pengajuan</button>
+      </div>
+    </div>
+
+    <div class="stat-box" id="resignStatBox"></div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <span id="resignChips"></span>
+      </div>
+      <div class="search-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="resignSearch" type="text" placeholder="Cari nama, paspor…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="result-count" id="resignResultCount"></div>
+
+    <div id="resignLoading" style="display:none; color:var(--muted); padding:20px 0;">Memuat data…</div>
+
+    <div class="table-wrap" id="resignContent" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th class="c-nama">Nama Staff</th>
+            <th>No. Paspor</th>
+            <th>Tgl Pengajuan</th>
+            <th>Tgl Last Kerja</th>
+            <th>Keterangan</th>
+            <th class="c-status">Status</th>
+            <th class="c-copy">Copy</th>
+            <th class="c-aksi">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="resignTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <!-- Modal Edit -->
@@ -508,6 +620,36 @@
     <div class="modal-foot">
       <button class="btn btn-secondary" type="button" onclick="closeRekEdit()">Batal</button>
       <button class="btn btn-primary" id="re_save" type="button">💾 Simpan perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit Resign -->
+<div class="overlay" id="resignEditOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Ubah pengajuan resign</h3>
+    </div>
+    <div class="modal-body">
+      <div class="grid">
+        <div class="field"><label>No. Paspor</label><input id="rse_paspor" type="text"></div>
+        <div class="field"><label>Nama Staff</label><input id="rse_nama" type="text"></div>
+      </div>
+      <div class="grid" style="margin-top:10px;">
+        <div class="field"><label>Tanggal Pengajuan Resign</label><input id="rse_tglResign" type="date"></div>
+        <div class="field"><label>Tanggal Last Kerja</label><input id="rse_tglLast" type="date"></div>
+      </div>
+      <div class="grid" style="margin-top:10px;">
+        <div class="field" style="grid-column:1/-1;"><label>Keterangan</label><textarea id="rse_keterangan" rows="3" style="width:100%;resize:vertical;"></textarea></div>
+      </div>
+      <div class="grid" style="margin-top:10px;">
+        <div class="field"><label>Status</label><select id="rse_task"></select></div>
+      </div>
+      <div class="msg" id="rse_msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeResignEdit()">Batal</button>
+      <button class="btn btn-primary" id="rse_save" type="button">💾 Simpan perubahan</button>
     </div>
   </div>
 </div>
