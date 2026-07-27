@@ -2326,7 +2326,7 @@
   function renderRekTable(rows) {
     var tbody = document.getElementById('rekTableBody');
     if (!rows || rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">Belum ada pengajuan ganti rekening.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">Belum ada pengajuan ganti rekening.</td></tr>';
       return;
     }
     var list = rekTaskList();
@@ -2334,11 +2334,13 @@
       var opts = list.map(function(t) {
         return '<option' + (t === r.task ? ' selected' : '') + '>' + esc(t) + '</option>';
       }).join('');
+      var alasanShort = r.alasan.length > 35 ? r.alasan.slice(0, 35) + '…' : r.alasan;
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
         '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
         '<td><span class="pill pill-perihal">' + esc(r.paspor) + '</span></td>' +
         '<td>' + rekCell(r.rekLama, r.bankLama, r.pemilikLama) + '</td>' +
         '<td>' + rekCell(r.rekBaru, r.bankBaru, r.pemilikBaru) + '</td>' +
+        '<td title="' + esc(r.alasan) + '">' + esc(alasanShort || '-') + '</td>' +
         '<td>' + (isAdmin()
           ? '<select class="task-select ' + rekTaskCls(r.task) + '" data-rekrow="' + esc(r.rowId) +
             '" data-status="' + esc(r.task) + '">' + opts + '</select>'
@@ -2467,6 +2469,7 @@
       '',
       'NOMOR REKENING TERBARU NYA : ' + r.rekBaru + ' (' + r.bankBaru + ')',
       'NAMA PEMILIK REKENING : ' + r.pemilikBaru,
+      '',
       'ALASAN MENGGANTI : ' + (r.alasan || '-')
     ].join('\n');
   }
