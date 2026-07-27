@@ -2339,8 +2339,10 @@
         '<td><span class="pill pill-perihal">' + esc(r.paspor) + '</span></td>' +
         '<td>' + rekCell(r.rekLama, r.bankLama, r.pemilikLama) + '</td>' +
         '<td>' + rekCell(r.rekBaru, r.bankBaru, r.pemilikBaru) + '</td>' +
-        '<td><select class="task-select ' + rekTaskCls(r.task) + '" data-rekrow="' + esc(r.rowId) +
-          '" data-status="' + esc(r.task) + '">' + opts + '</select></td>' +
+        '<td>' + (isAdmin()
+          ? '<select class="task-select ' + rekTaskCls(r.task) + '" data-rekrow="' + esc(r.rowId) +
+            '" data-status="' + esc(r.task) + '">' + opts + '</select>'
+          : '<span class="pill ' + rekTaskCls(r.task) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(r.task) + '</span>') + '</td>' +
         '<td><button class="copy-btn" type="button" title="Salin format pengajuan" onclick="copyRek(\'' + esc(r.rowId) + '\', this)">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
           '<span>Salin</span></button></td>' +
@@ -2722,8 +2724,10 @@
         '<td>' + esc(formatDate(r.tglResign)) + '</td>' +
         '<td>' + esc(formatDate(r.tglLast)) + '</td>' +
         '<td title="' + esc(r.keterangan) + '">' + esc(ketShort) + '</td>' +
-        '<td><select class="task-select ' + resignTaskCls(r.task) + '" data-resignrow="' + esc(r.rowId) +
-          '" data-status="' + esc(r.task) + '">' + opts + '</select></td>' +
+        '<td>' + (isAdmin()
+          ? '<select class="task-select ' + resignTaskCls(r.task) + '" data-resignrow="' + esc(r.rowId) +
+            '" data-status="' + esc(r.task) + '">' + opts + '</select>'
+          : '<span class="pill ' + resignTaskCls(r.task) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(r.task) + '</span>') + '</td>' +
         '<td><button class="copy-btn" type="button" title="Salin format pengajuan" onclick="copyResign(\'' + esc(r.rowId) + '\', this)">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
           '<span>Salin</span></button></td>' +
