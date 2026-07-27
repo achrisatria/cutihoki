@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════════════
+  /* ════════════════════════════════════════════════════════════════
      DESIGN TOKENS — Premium Soft Enterprise
      ════════════════════════════════════════════════════════════════ */
   :root {
@@ -373,15 +373,15 @@
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   /* ── Lebar kolom ─────────────────────────────────────────────── */
-  .c-role    { width: 6%;  }
-  .c-nama    { width: 22%; }
+  .c-role    { width: 5%;  }
+  .c-nama    { width: 18%; }
   .c-periode { width: 18%; }
-  .c-durasi  { width: 6%;  }
-  .c-perihal { width: 9%;  }
+  .c-durasi  { width: 5%;  }
+  .c-perihal { width: 8%;  }
   .c-bentrok { width: 7%;  }
-  .c-total   { width: 8%;  }
+  .c-total   { width: 7%;  }
   .c-pass    { width: 6%;  }
-  .c-status  { width: 12%; }
+  .c-status  { width: 10%; }
   .c-copy    { width: 6%;  }
   .c-aksi    { width: 6%;  }
 
@@ -408,7 +408,7 @@
     white-space: nowrap;
     position: sticky; top: 0; z-index: 10;
   }
-  thead th.c-nama, thead th.c-periode { text-align: center; }
+  thead th.c-nama, thead th.c-periode { text-align: left; }
 
   /* ── Body cells ──────────────────────────────────────────────── */
   tbody td {
@@ -433,8 +433,8 @@
 
   /* ── Alignment ───────────────────────────────────────────────── */
   tbody tr.rec td:nth-child(2),
-  tbody tr.rec td:nth-child(3) { text-align: center; }
-  tbody tr.row-cuti2 td:nth-child(1) { text-align: center; }
+  tbody tr.rec td:nth-child(3) { text-align: left; }
+  tbody tr.row-cuti2 td:nth-child(1) { text-align: left; }
 
   /* ── Rapatkan tanggal cuti 1 & cuti 2 ────────────────────────── */
   tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(3),
@@ -471,8 +471,8 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────── */
-  .cell-name { text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
-  tr.row-cuti2 .periode::before { text-align: left; content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
   tr.row-cuti2 .periode { color: var(--text-muted); }
