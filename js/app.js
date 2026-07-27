@@ -315,7 +315,7 @@
   // ── Data logic ────────────────────────────────────────────────
   function getConfig() {
     return sbGet('dropdown_options', 'select=category,value&order=id.asc').then(function(rows) {
-      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
+      var cfg = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], TASK_RESIGN: [], STAFF: [] };
       rows.forEach(function(r) { if (cfg[r.category]) cfg[r.category].push(r.value); });
       return cfg;
     });
@@ -726,7 +726,7 @@
   }
 
   // ── State ─────────────────────────────────────────────────────
-  var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], STAFF: [] };
+  var CONFIG = { ROLE: [], PERIHAL: [], KETERANGAN: [], TAMBAHAN: [], TASK: [], LDR: [], BANK: [], TASK_REK: [], TASK_RESIGN: [], STAFF: [] };
   var ADD = '__ADD__';
   var _cache = null, _loaded = false, _prefetch = null;
   var _filterVer = 0;                                    // naik setiap cache berubah
@@ -792,6 +792,7 @@
     }
     if (view === 'calendar') renderCalendar();
     if (view === 'rekening') loadRekening(false);
+    if (view === 'resign') loadResign(false);
   }
 
   // Kembalikan semua filter dashboard ke kondisi awal (dipakai saat pindah menu)
@@ -2080,7 +2081,7 @@
   document.getElementById('copyOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopy(); });
   document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); }
+    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); }
   });
 
   // ══════════════════════════════════════════════════════════════
@@ -2478,6 +2479,362 @@
 
   document.getElementById('rekEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeRekEdit(); });
 
+  // ══════════════════════════════════════════════════════════════
+  // MODUL PENGAJUAN RESIGN
+  // ══════════════════════════════════════════════════════════════
+  var RESIGN_STATUSES = ['PENDING', 'ACC', 'DITOLAK'];
+  var _resignCache = null, _resignLoaded = false;
+  var resignFilter = { status: 'ALL', search: '' };
+  var resignEditingId = null;
+
+  function resignTaskList() { return CONFIG.TASK_RESIGN.length ? CONFIG.TASK_RESIGN : RESIGN_STATUSES; }
+
+  function getResign() {
+    return sbGet('resign', 'select=*&order=created_at.desc').then(function(rows) {
+      return rows.map(function(r) {
+        return {
+          rowId: r.id, id: r.id_pengajuan || r.id, timestamp: r.created_at || '',
+          paspor: r.no_paspor || '', nama: r.nama || '',
+          tglResign: r.tanggal_resign || '', tglLast: r.tanggal_last || '',
+          keterangan: r.keterangan || '',
+          task: r.task || 'PENDING'
+        };
+      });
+    });
+  }
+
+  function genResignId() {
+    var now = new Date();
+    function pad(n) { return String(n).padStart(2, '0'); }
+    return 'RSG-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '-' +
+      pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) + '-' + randSuffix(12);
+  }
+
+  function gatherResign(prefix) {
+    function val(id) { var el = document.getElementById(prefix + id); return el ? String(el.tagName === 'TEXTAREA' ? el.value : el.value || '').trim() : ''; }
+    var d = {
+      paspor: val('paspor').toUpperCase(),
+      nama: val('nama').toUpperCase(),
+      tglResign: val('tglResign'),
+      tglLast: val('tglLast'),
+      keterangan: val('keterangan')
+    };
+    if (!d.paspor) throw new Error('Isi nomor paspor.');
+    if (!d.nama) throw new Error('Isi nama staff.');
+    if (!d.tglResign) throw new Error('Isi tanggal pengajuan resign.');
+    if (!d.tglLast) throw new Error('Isi tanggal last kerja.');
+    if (d.tglLast < d.tglResign) throw new Error('Tanggal last kerja tidak boleh sebelum tanggal pengajuan.');
+    if (!d.keterangan) throw new Error('Isi keterangan resign.');
+    return d;
+  }
+
+  function resignPayload(id, d, task) {
+    return {
+      id: id, id_pengajuan: id, no_paspor: d.paspor, nama: d.nama,
+      tanggal_resign: d.tglResign, tanggal_last: d.tglLast,
+      keterangan: d.keterangan,
+      task: task || 'PENDING'
+    };
+  }
+
+  // ── Form ──────────────────────────────────────────────────────
+  function toggleResignForm(force) {
+    var panel = document.getElementById('resignFormPanel');
+    var btn = document.getElementById('resignToggleBtn');
+    var open = (force === undefined) ? !panel.classList.contains('open') : !!force;
+    panel.classList.toggle('open', open);
+    btn.innerHTML = open ? '✕ Tutup form' : '＋ Ajukan Resign';
+    btn.classList.toggle('btn-primary', !open);
+    btn.classList.toggle('btn-secondary', open);
+    if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else resignMsg('', '');
+  }
+  function resignMsg(type, text) {
+    var el = document.getElementById('rs_formMsg');
+    el.className = 'msg ' + (type || ''); el.textContent = text || '';
+    if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function resetResignForm() {
+    ['rs_paspor','rs_tglResign','rs_tglLast'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('rs_nama').value = '';
+    document.getElementById('rs_keterangan').value = '';
+    resignMsg('', '');
+  }
+
+  document.getElementById('rs_submitBtn').addEventListener('click', function() {
+    var d;
+    try { d = gatherResign('rs_'); } catch (err) { return resignMsg('error', err.message); }
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+    var id = genResignId();
+    sbPost('resign', resignPayload(id, d, 'PENDING'), { 'Prefer': 'return=minimal' }).then(function() {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      resignMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
+      toast('Pengajuan resign tersimpan', 'ok');
+      resetResignForm(); toggleResignForm(false);
+      _resignLoaded = false; loadResign(true);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
+      resignMsg('error', 'Gagal menyimpan: ' + err.message);
+    });
+  });
+
+  // ── Muat & render ─────────────────────────────────────────────
+  function loadResign(force) {
+    var loading = document.getElementById('resignLoading');
+    var content = document.getElementById('resignContent');
+    var refresh = document.getElementById('resignRefreshBtn');
+    if (!force && _resignLoaded && _resignCache) { renderResignAll(); content.style.display = 'block'; loading.style.display = 'none'; return; }
+
+    loading.style.display = 'block'; loading.textContent = 'Memuat data…';
+    content.style.display = 'none';
+    document.getElementById('resignStatBox').innerHTML = renderSkeletonStats();
+    if (refresh) refresh.disabled = true;
+
+    getResign().then(function(rows) {
+      _resignCache = rows; _resignLoaded = true;
+      loading.style.display = 'none';
+      document.getElementById('resignStatBox').innerHTML = '';
+      renderResignAll(); content.style.display = 'block';
+    }).catch(function(err) {
+      loading.textContent = '❌ Gagal memuat data: ' + err.message;
+      document.getElementById('resignStatBox').innerHTML = '';
+    }).finally(function() { if (refresh) refresh.disabled = false; });
+  }
+
+  function renderResignAll() { renderResignChips(); applyResignFilters(); updateResignCount(); }
+
+  function updateResignCount() {
+    var el = document.getElementById('resignCount');
+    if (!el) return;
+    var n = (_resignCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'PENDING'; }).length;
+    el.textContent = n;
+    el.style.display = n ? '' : 'none';
+  }
+
+  function renderResignChips() {
+    var wrap = document.getElementById('resignChips');
+    var list = ['ALL'].concat(resignTaskList());
+    wrap.innerHTML = list.map(function(s) {
+      var active = resignFilter.status === s ? ' active' : '';
+      return '<button class="chip' + active + '" data-resignstatus="' + esc(s) + '">' + esc(s === 'ALL' ? 'Semua' : s) + '</button>';
+    }).join('');
+    wrap.querySelectorAll('.chip').forEach(function(c) {
+      c.addEventListener('click', function() {
+        resignFilter.status = c.dataset.resignstatus; renderResignChips(); applyResignFilters();
+      });
+    });
+  }
+
+  var _resignSearchTimer = null;
+  document.getElementById('resignSearch').addEventListener('input', function() {
+    var v = this.value.trim().toLowerCase();
+    clearTimeout(_resignSearchTimer);
+    _resignSearchTimer = setTimeout(function() { resignFilter.search = v; applyResignFilters(); }, 140);
+  });
+
+  function matchResign(r) {
+    if (resignFilter.status !== 'ALL' && String(r.task).toUpperCase() !== resignFilter.status.toUpperCase()) return false;
+    if (resignFilter.search) {
+      var hay = (r.nama + ' ' + r.paspor + ' ' + r.id).toLowerCase();
+      if (hay.indexOf(resignFilter.search) === -1) return false;
+    }
+    return true;
+  }
+
+  function applyResignFilters() {
+    if (!_resignCache) return;
+    var rows = _resignCache.filter(matchResign);
+    var filtered = (resignFilter.status !== 'ALL' || resignFilter.search);
+    document.getElementById('resignResultCount').innerHTML =
+      'Menampilkan <strong>' + rows.length + '</strong> dari ' + _resignCache.length + ' pengajuan' + (filtered ? ' · terfilter' : '');
+    renderResignStats(rows);
+    renderResignTable(rows);
+  }
+
+  function renderResignStats(rows) {
+    var pending = 0, acc = 0, ditolak = 0;
+    rows.forEach(function(r) {
+      var t = String(r.task).toUpperCase();
+      if (t === 'PENDING') pending++;
+      else if (t === 'ACC') acc++;
+      else if (t === 'DITOLAK') ditolak++;
+    });
+    document.getElementById('resignStatBox').innerHTML =
+      statCard('Total Pengajuan', rows.length, 'var(--brand-ink)', 'var(--brand-050)', '📝') +
+      statCard('Pending', pending, 'var(--amber)', 'var(--amber-bg)', '⏳') +
+      statCard('ACC', acc, 'var(--green)', 'var(--green-bg)', '✅') +
+      statCard('Ditolak', ditolak, 'var(--red, #e74c3c)', 'var(--red-bg, #fde8e8)', '❌');
+  }
+
+  function resignTaskCls(v) {
+    var u = String(v || '').toUpperCase();
+    if (u === 'PENDING') return 'task-WAITING';
+    if (u === 'ACC') return 'task-SELESAI';
+    if (u === 'DITOLAK') return 'task-DONE';
+    return 'task-DONE';
+  }
+
+  function renderResignTable(rows) {
+    var tbody = document.getElementById('resignTableBody');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">Belum ada pengajuan resign.</td></tr>';
+      return;
+    }
+    var list = resignTaskList();
+    tbody.innerHTML = rows.map(function(r, i) {
+      var opts = list.map(function(t) {
+        return '<option' + (t === r.task ? ' selected' : '') + '>' + esc(t) + '</option>';
+      }).join('');
+      var ketShort = r.keterangan.length > 40 ? r.keterangan.slice(0, 40) + '…' : r.keterangan;
+      return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
+        '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
+        '<td><span class="pill pill-perihal">' + esc(r.paspor) + '</span></td>' +
+        '<td>' + esc(formatDate(r.tglResign)) + '</td>' +
+        '<td>' + esc(formatDate(r.tglLast)) + '</td>' +
+        '<td title="' + esc(r.keterangan) + '">' + esc(ketShort) + '</td>' +
+        '<td><select class="task-select ' + resignTaskCls(r.task) + '" data-resignrow="' + esc(r.rowId) +
+          '" data-status="' + esc(r.task) + '">' + opts + '</select></td>' +
+        '<td><button class="copy-btn" type="button" title="Salin format pengajuan" onclick="copyResign(\'' + esc(r.rowId) + '\', this)">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+          '<span>Salin</span></button></td>' +
+        '<td><span class="row-actions">' +
+          '<button class="icon-btn" title="Ubah" onclick="openResignEdit(\'' + esc(r.rowId) + '\')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          '</button>' +
+          '<button class="icon-btn danger" title="Hapus" onclick="deleteResign(\'' + esc(r.rowId) + '\',\'' + esc(r.nama) + '\')">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</span></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Ubah status ───────────────────────────────────────────────
+  document.getElementById('resignTableBody').addEventListener('change', function(e) {
+    var sel = e.target;
+    if (!sel.classList.contains('task-select')) return;
+    var rowId = sel.dataset.resignrow, value = sel.value, oldVal = sel.getAttribute('data-status');
+    if (value === oldVal) return;
+    var nama = '';
+    (_resignCache || []).forEach(function(r) { if (r.rowId === rowId) nama = r.nama; });
+
+    confirmDialog({
+      title: 'Ubah Status Resign',
+      warn: 'HANYA LEADER DAN CS LINE YANG MENGUBAH STATUS',
+      text: 'Ubah status ' + (nama ? nama + ' ' : '') + 'dari "' + oldVal + '" menjadi "' + value + '"?',
+      okLabel: 'Ya, ubah status', okClass: 'btn-primary', cancelLabel: 'Batal'
+    }, function() {
+      sel.classList.add('task-saving');
+      sbPatch('resign', 'id=eq.' + encodeURIComponent(rowId), { task: value }).then(function() {
+        sel.classList.remove('task-saving');
+        sel.className = 'task-select ' + resignTaskCls(value);
+        sel.setAttribute('data-status', value);
+        (_resignCache || []).forEach(function(r) { if (r.rowId === rowId) r.task = value; });
+        applyResignFilters(); updateResignCount();
+        toast('Status diperbarui', 'ok');
+      }).catch(function(err) {
+        sel.classList.remove('task-saving'); sel.value = oldVal;
+        toast('Gagal update status: ' + err.message, 'err');
+      });
+    }, function() { sel.value = oldVal; });
+  });
+
+  // ── Edit ──────────────────────────────────────────────────────
+  function openResignEdit(rowId) {
+    var r = null;
+    (_resignCache || []).forEach(function(x) { if (x.rowId === rowId) r = x; });
+    if (!r) return;
+    resignEditingId = rowId;
+    document.getElementById('rse_paspor').value = r.paspor;
+    document.getElementById('rse_nama').value = r.nama;
+    document.getElementById('rse_tglResign').value = r.tglResign;
+    document.getElementById('rse_tglLast').value = r.tglLast;
+    document.getElementById('rse_keterangan').value = r.keterangan;
+    var t = document.getElementById('rse_task');
+    t.innerHTML = resignTaskList().map(function(v) {
+      return '<option' + (v === r.task ? ' selected' : '') + '>' + esc(v) + '</option>';
+    }).join('');
+    var m = document.getElementById('rse_msg'); m.className = 'msg'; m.textContent = '';
+    document.getElementById('resignEditOverlay').classList.add('open');
+  }
+  function closeResignEdit() { document.getElementById('resignEditOverlay').classList.remove('open'); resignEditingId = null; }
+
+  document.getElementById('rse_save').addEventListener('click', function() {
+    if (!resignEditingId) return;
+    var el = document.getElementById('rse_msg');
+    var d;
+    try { d = gatherResign('rse_'); }
+    catch (err) { el.className = 'msg error'; el.textContent = err.message; return; }
+    var patch = resignPayload(resignEditingId, d, document.getElementById('rse_task').value);
+    delete patch.id; delete patch.id_pengajuan;
+    var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
+    sbPatch('resign', 'id=eq.' + encodeURIComponent(resignEditingId), patch).then(function() {
+      btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+      closeResignEdit(); toast('Perubahan tersimpan', 'ok');
+      _resignLoaded = false; loadResign(true);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
+      el.className = 'msg error'; el.textContent = 'Gagal menyimpan: ' + err.message;
+    });
+  });
+
+  // ── Hapus ─────────────────────────────────────────────────────
+  function deleteResign(rowId, label) {
+    confirmDialog({
+      title: 'Hapus Pengajuan',
+      warn: 'DATA AKAN DIHAPUS PERMANEN DARI DATABASE DAN TIDAK BISA DIKEMBALIKAN',
+      text: 'Hapus pengajuan resign milik "' + label + '"?',
+      okLabel: 'Ya, hapus permanen', okClass: 'btn-danger'
+    }, function() {
+      sbDelete('resign', 'id=eq.' + encodeURIComponent(rowId)).then(function(hapus) {
+        if (!hapus || hapus.length === 0) {
+          toast('Data tidak terhapus — periksa izin akses (RLS) di Supabase', 'err');
+          return;
+        }
+        if (_resignCache) {
+          for (var i = 0; i < _resignCache.length; i++) {
+            if (_resignCache[i].rowId === rowId) { _resignCache.splice(i, 1); break; }
+          }
+          applyResignFilters(); updateResignCount();
+        }
+        toast('Pengajuan dihapus permanen', 'ok');
+      }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
+    });
+  }
+
+  // ── Format Copy ───────────────────────────────────────────────
+  function buildResignFormat(r) {
+    return [
+      'No Paspor : ' + r.paspor,
+      'Nama Staff : ' + r.nama,
+      'Tanggal Pengajuan Resign : ' + formatDate(r.tglResign),
+      'Tanggal Last Kerja : ' + formatDate(r.tglLast),
+      'Keterangan : ' + (r.keterangan || '-'),
+      '',
+      'ACC : ' + currentLeader()
+    ].join('\n');
+  }
+
+  function copyResign(rowId, btn) {
+    var r = null;
+    (_resignCache || []).forEach(function(x) { if (x.rowId === rowId) r = x; });
+    if (!r) return;
+    var text = buildResignFormat(r);
+    copyText(text).then(function() {
+      toast('Format pengajuan disalin', 'ok');
+      if (btn) {
+        var label = btn.querySelector('span'), asli = label ? label.textContent : '';
+        btn.classList.add('done'); if (label) label.textContent = 'Tersalin';
+        setTimeout(function() { btn.classList.remove('done'); if (label) label.textContent = asli; }, 1600);
+      }
+    }).catch(function() { showCopyFallback(text); });
+  }
+
+  document.getElementById('resignEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeResignEdit(); });
+
   // ── KALENDER ──────────────────────────────────────────────────
   var calRef = new Date(); calRef.setDate(1);
 
@@ -2691,6 +3048,7 @@
       fillSelect(document.getElementById('r_bankBaru'), 'BANK', '');
       initCombos();
       renderRekChips();
+      renderResignChips();
       addFormLeave(false);
       fillLdr();
       renderFilters();
