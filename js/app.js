@@ -2569,8 +2569,7 @@
     var p = splitStaff(v);
     if (p.id) {
       this.value = p.nm;
-      var pasporEl = document.getElementById('rs_paspor');
-      if (pasporEl && !pasporEl.value.trim()) pasporEl.value = p.id;
+      document.getElementById('rs_paspor').value = p.id;
     }
   });
 
