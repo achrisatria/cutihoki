@@ -772,6 +772,11 @@
 
   // ── Tab ───────────────────────────────────────────────────────
   function switchTab(view) {
+    // Accent theme per module
+    document.body.classList.remove('theme-resign', 'theme-rekening');
+    if (view === 'resign') document.body.classList.add('theme-resign');
+    else if (view === 'rekening') document.body.classList.add('theme-rekening');
+
     document.querySelectorAll('.tab').forEach(function(t) {
       t.classList.toggle('active', t.id === 'tab' + view.charAt(0).toUpperCase() + view.slice(1));
     });
