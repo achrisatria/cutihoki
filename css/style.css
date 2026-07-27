@@ -1,4 +1,4 @@
-  /* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════
      DESIGN TOKENS
      ════════════════════════════════════════════════════════════════ */
   :root {
@@ -253,7 +253,7 @@
   .add-leave-btn:hover { border-color: var(--brand); background: var(--brand-050); }
 
   /* ── Form messages ─────────────────────────────────────────────── */
-  .msg { margin-top: 14px; padding: 0; font-size: 13.5px; font-weight: 500; border-radius: var(--radius-sm); white-space: pre-wrap; }
+  .msg { margin-top: 14px; padding: 0; font-size: 13.5px; font-weight: 500; border-radius: var(--radius-sm); }
   .msg.error, .msg.success, .msg.warn { padding: 12px 16px; }
   .msg.error   { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-bd); }
   .msg.success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
@@ -504,7 +504,7 @@
   }
 
   /* ── Cell text styles ────────────────────────────────────────────── */
-  .cell-name { text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; font-weight: 400; }
@@ -703,7 +703,8 @@
     cursor: pointer; width: min(100%, 116px); margin-inline: auto;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 9px center;
-    transition: box-shadow .15s; line-height: 1.2;
+    transition: background-color .4s ease, color .4s ease, border-color .4s ease, box-shadow .15s;
+    line-height: 1.2;
   }
   .task-select:focus { box-shadow: 0 0 0 3px rgba(22,104,227,.15); outline: none; }
   .task-WAITING { background-color: var(--amber-bg); color: var(--amber);  border-color: var(--amber-bd); }
@@ -711,6 +712,12 @@
   .task-SELESAI { background-color: var(--green-bg); color: var(--green);  border-color: var(--green-bd); }
   .task-DONE    { background-color: transparent;     color: var(--text-muted); border-color: var(--border-strong); }
   .task-saving  { opacity: .5; pointer-events: none; }
+  .task-flash   { animation: statusFlash .6s ease; }
+  @keyframes statusFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(22,104,227,.25); }
+    40%  { box-shadow: 0 0 0 5px rgba(22,104,227,.10); }
+    100% { box-shadow: 0 0 0 0 rgba(22,104,227,0); }
+  }
 
   /* Row actions */
   .row-actions { display: inline-flex; gap: 4px; justify-content: center; white-space: nowrap; flex-wrap: nowrap; }
