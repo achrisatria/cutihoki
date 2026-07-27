@@ -1,4 +1,4 @@
-  // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
   // KONFIGURASI SUPABASE  — ganti dengan milik project kamu
   // ═══════════════════════════════════════════════════════════════
   var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
@@ -2039,6 +2039,7 @@
     sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: value }).then(function() {
       sel.classList.remove('task-saving');
       sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
+      sel.classList.add('task-flash'); setTimeout(function() { sel.classList.remove('task-flash'); }, 700);
       if (_cache) { for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; } _filterVer++; _memoStatus = null; }
       buildMonthOptions(); buildStatusOptions();   // hitungan filter ikut menyesuaikan
       applyFilters();          // baris otomatis berpindah ke menu yang sesuai
@@ -2370,6 +2371,7 @@
         sel.classList.remove('task-saving');
         sel.className = 'task-select ' + rekTaskCls(value);
         sel.setAttribute('data-status', value);
+        sel.classList.add('task-flash'); setTimeout(function() { sel.classList.remove('task-flash'); }, 700);
         (_rekCache || []).forEach(function(r) { if (r.rowId === rowId) r.task = value; });
         applyRekFilters(); updateRekCount();
         toast('Status diperbarui', 'ok');
@@ -2742,6 +2744,7 @@
         sel.classList.remove('task-saving');
         sel.className = 'task-select ' + resignTaskCls(value);
         sel.setAttribute('data-status', value);
+        sel.classList.add('task-flash'); setTimeout(function() { sel.classList.remove('task-flash'); }, 700);
         (_resignCache || []).forEach(function(r) { if (r.rowId === rowId) r.task = value; });
         applyResignFilters(); updateResignCount();
         toast('Status diperbarui', 'ok');
