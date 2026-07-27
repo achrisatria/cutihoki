@@ -374,8 +374,8 @@
 
   /* ── Lebar kolom ─────────────────────────────────────────────── */
   .c-role    { width: 4%;  }
-  .c-nama    { width: 22%; }
-  .c-periode { width: 22%; }
+  .c-nama    { width: 30%; }
+  .c-periode { width: 30%; }
   .c-durasi  { width: 5%;  }
   .c-perihal { width: 8%;  }
   .c-bentrok { width: 7%;  }
