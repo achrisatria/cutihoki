@@ -2563,6 +2563,17 @@
     resignMsg('', '');
   }
 
+  // Saat staff dipilih dari combo: ambil nama saja, isi paspor otomatis
+  document.getElementById('rs_nama').addEventListener('change', function() {
+    var v = this.value.trim();
+    var p = splitStaff(v);
+    if (p.id) {
+      this.value = p.nm;
+      var pasporEl = document.getElementById('rs_paspor');
+      if (pasporEl && !pasporEl.value.trim()) pasporEl.value = p.id;
+    }
+  });
+
   document.getElementById('rs_submitBtn').addEventListener('click', function() {
     var d;
     try { d = gatherResign('rs_'); } catch (err) { return resignMsg('error', err.message); }
