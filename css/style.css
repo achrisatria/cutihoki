@@ -361,7 +361,7 @@
     max-width: 100%;
     margin-inline: auto;
     box-sizing: border-box;
-    overflow-x: auto;
+    overflow-x: visible;
     overflow-y: visible;
     position: relative;
     isolation: isolate;
@@ -373,27 +373,27 @@
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   /* ── Lebar kolom ─────────────────────────────────────────────── */
-  .c-role    { width: 58px;  }
-  .c-nama    { min-width: 210px; }
-  .c-periode { min-width: 210px; }
-  .c-durasi  { width: 65px;  }
-  .c-perihal { width: 100px; }
-  .c-bentrok { width: 80px;  }
-  .c-total   { width: 75px;  }
-  .c-pass    { width: 68px;  }
-  .c-status  { width: 110px; }
-  .c-copy    { width: 68px;  }
-  .c-aksi    { width: 60px;  }
+  .c-role    { width: 4.5%;  }
+  .c-nama    { width: 17%; }
+  .c-periode { width: 17%; }
+  .c-durasi  { width: 5.5%;  }
+  .c-perihal { width: 9%; }
+  .c-bentrok { width: 7%;  }
+  .c-total   { width: 6.5%;  }
+  .c-pass    { width: 6%;  }
+  .c-status  { width: 10%; }
+  .c-copy    { width: 5.5%;  }
+  .c-aksi    { width: 5%;  }
 
   table {
     display: table;
     width: 100%;
     max-width: none;
-    min-width: 1100px;
+    min-width: 0;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 12.5px;
-    table-layout: auto;
+    table-layout: fixed;
   }
 
   /* ── Header ──────────────────────────────────────────────────── */
@@ -834,9 +834,9 @@
     .total-box { padding: 12px 14px; gap: 12px; flex-direction: column; align-items: flex-start; }
     .total-value { font-size: 22px; }
 
-    /* Table — horizontal scroll, full bleed on mobile */
-    .table-wrap { border-radius: 0; margin: 0 calc(-1 * var(--page-gutter)); width: calc(100% + 2 * var(--page-gutter)); border-left: none; border-right: none; }
-    table { min-width: 1100px; font-size: 12px; }
+    /* Table — horizontal scroll on mobile only */
+    .table-wrap { border-radius: 0; margin: 0 calc(-1 * var(--page-gutter)); width: calc(100% + 2 * var(--page-gutter)); border-left: none; border-right: none; overflow-x: auto; }
+    table { min-width: 900px; font-size: 12px; }
     thead th { font-size: 9px; letter-spacing: .08em; height: 38px; }
     .cell-name { font-size: 12px; }
     .pill { font-size: 10px; padding: 2px 6px; min-height: 20px; }
@@ -928,7 +928,7 @@
     .filter-bar { padding: 8px 12px; }
     .chip { padding: 4px 9px; font-size: 11px; }
 
-    table { min-width: 1000px; }
+    table { min-width: 900px; }
 
     .cal-dow span { font-size: 8.5px; letter-spacing: .02em; }
     .cal-day { min-height: 40px; padding: 3px; }
