@@ -373,17 +373,17 @@
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   /* ── Lebar kolom ─────────────────────────────────────────────── */
-  .c-role    { width: 7%;  }
-  .c-nama    { width: 15%; }
-  .c-periode { width: 15%; }
-  .c-durasi  { width: 6%;  }
-  .c-perihal { width: 9%;  }
+  .c-role    { width: 5%;  }
+  .c-nama    { width: 18%; }
+  .c-periode { width: 18%; }
+  .c-durasi  { width: 5%;  }
+  .c-perihal { width: 8%;  }
   .c-bentrok { width: 7%;  }
-  .c-total   { width: 9%;  }
-  .c-pass    { width: 7%;  }
-  .c-status  { width: 11%; }
-  .c-copy    { width: 7%;  }
-  .c-aksi    { width: 7%;  }
+  .c-total   { width: 7%;  }
+  .c-pass    { width: 6%;  }
+  .c-status  { width: 10%; }
+  .c-copy    { width: 6%;  }
+  .c-aksi    { width: 6%;  }
 
   table {
     display: table;
