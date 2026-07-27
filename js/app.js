@@ -2570,15 +2570,25 @@
     resignMsg('', '');
   }
 
-  // Saat staff dipilih dari combo: ambil nama saja, isi paspor otomatis
-  document.getElementById('rs_nama').addEventListener('change', function() {
-    var v = this.value.trim();
-    var p = splitStaff(v);
-    if (p.id) {
-      this.value = p.nm;
-      document.getElementById('rs_paspor').value = p.id;
-    }
-  });
+  // Saat staff dipilih dari combo: ambil nama saja, isi paspor otomatis.
+  // Intercept setter 'value' agar SETIAP kali combo menulis nilai (choose),
+  // ID langsung distrip dan paspor langsung terisi — tanpa bergantung event.
+  (function() {
+    var el = document.getElementById('rs_nama');
+    var proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    Object.defineProperty(el, 'value', {
+      get: function() { return proto.get.call(this); },
+      set: function(v) {
+        var p = splitStaff(String(v || ''));
+        if (p.id) {
+          proto.set.call(this, p.nm);
+          document.getElementById('rs_paspor').value = p.id;
+        } else {
+          proto.set.call(this, v);
+        }
+      }
+    });
+  })();
 
   document.getElementById('rs_submitBtn').addEventListener('click', function() {
     var d;
