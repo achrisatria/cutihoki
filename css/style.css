@@ -373,9 +373,9 @@
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   /* ── Lebar kolom ─────────────────────────────────────────────── */
-  .c-role    { width: 5%;  }
-  .c-nama    { width: 18%; }
-  .c-periode { width: 18%; }
+  .c-role    { width: 4%;  }
+  .c-nama    { width: 22%; }
+  .c-periode { width: 22%; }
   .c-durasi  { width: 5%;  }
   .c-perihal { width: 8%;  }
   .c-bentrok { width: 7%;  }
