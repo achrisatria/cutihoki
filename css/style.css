@@ -430,7 +430,7 @@
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  .c-role    { width: 5%;  }
+  .c-role    { width: 5.5%;  }
   .c-nama    { width: 17%; }
   .c-periode { width: 17%; }
   .c-durasi  { width: 5.5%;  }
