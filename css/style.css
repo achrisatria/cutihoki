@@ -430,7 +430,7 @@
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  .c-role    { width: 5%;  }
+  .c-role    { width: 5.5%;  }
   .c-nama    { width: 16%; }
   .c-periode { width: 16%; }
   .c-durasi  { width: 5.5%;  }
@@ -438,7 +438,7 @@
   .c-bentrok { width: 6.5%;  }
   .c-total   { width: 7%;  }
   .c-pass    { width: 6%;  }
-  .c-status  { width: 10.5%; }
+  .c-status  { width: 10%; }
   .c-copy    { width: 5%;  }
   .c-aksi    { width: 6%;  }
 
