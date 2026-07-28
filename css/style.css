@@ -1,4 +1,4 @@
-  /* ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════
      DESIGN SYSTEM — Ultra Premium Enterprise
      Linear · Vercel · Stripe tier visual language
      ════════════════════════════════════════════════════════════════ */
@@ -430,16 +430,16 @@
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  .c-role    { width: 5.5%;  }
+  .c-role    { width: 4%;  }
   .c-nama    { width: 16%; }
   .c-periode { width: 16%; }
-  .c-durasi  { width: 5.5%;  }
-  .c-perihal { width: 8.5%; }
+  .c-durasi  { width: 5%;  }
+  .c-perihal { width: 8%; }
   .c-bentrok { width: 6.5%;  }
-  .c-total   { width: 7%;  }
+  .c-total   { width: 6%;  }
   .c-pass    { width: 6%;  }
-  .c-status  { width: 10%; }
-  .c-copy    { width: 5%;  }
+  .c-status  { width: 11%; }
+  .c-copy    { width: 5.5%;  }
   .c-aksi    { width: 6%;  }
 
   table { display: table; width: 100%; max-width: none; min-width: 0; border-collapse: separate; border-spacing: 0; font-size: 12.5px; table-layout: fixed; }
