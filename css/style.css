@@ -430,13 +430,13 @@
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  .c-role    { width: 4%;  }
+  .c-role    { width: 5%;  }
   .c-nama    { width: 16%; }
   .c-periode { width: 16%; }
   .c-durasi  { width: 5%;  }
   .c-perihal { width: 8%; }
   .c-bentrok { width: 6.5%;  }
-  .c-total   { width: 6%;  }
+  .c-total   { width: 7%;  }
   .c-pass    { width: 6%;  }
   .c-status  { width: 11%; }
   .c-copy    { width: 5.5%;  }
