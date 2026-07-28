@@ -527,7 +527,7 @@
   .pill-total { background: linear-gradient(180deg, #222E44 0%, #161D30 100%); color: #fff; font-weight: 700; letter-spacing: .01em; box-shadow: 0 1px 3px rgba(10,20,40,.20); border-color: transparent; }
   .pill-total.plus { background: linear-gradient(180deg, #9A6A14 0%, #7C5408 100%); box-shadow: 0 1px 3px rgba(120,72,8,.24); }
 
-  .pill-role { background: var(--slate-bg); color: var(--slate); font-weight: 800; font-size: 9px; letter-spacing: .06em; padding: 3px 8px; text-transform: uppercase; }
+  .pill-role { background: var(--slate-bg); color: var(--slate); font-weight: 800; font-size: 8px; letter-spacing: .06em; padding: 3px 8px; text-transform: uppercase; }
   .role-CS     { background: var(--role-cs-bg);  color: var(--role-cs);  border-color: var(--role-cs-bd); }
   .role-KAPTEN { background: var(--role-kap-bg); color: var(--role-kap); border-color: var(--role-kap-bd); }
   .role-KASIR  { background: var(--role-kas-bg); color: var(--role-kas); border-color: var(--role-kas-bd); }
@@ -537,7 +537,7 @@
   .role-dot.role-KASIR  { background: var(--role-kas); }
   .chip.active .role-dot { background: #fff !important; }
 
-  .pill-durasi { background: transparent; color: var(--text-secondary); border-color: var(--border); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pill-durasi { background: transparent; color: var(--text-secondary); border-color: var(--border); font-weight: 550; font-variant-numeric: tabular-nums; }
   .pill-perihal { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-bd); max-width: 100%; }
   .pill-perihal::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .5; flex: none; }
   .pill-clash-ok    { background: transparent;    color: var(--green); border-color: var(--green-bd); }
