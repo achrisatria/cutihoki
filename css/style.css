@@ -442,7 +442,7 @@
   .c-copy    { width: 5.5%;  }
   .c-aksi    { width: 6%;  }
 
-  table { display: table; width: 100%; max-width: none; min-width: 0; border-collapse: separate; border-spacing: 0; font-size: 12.5px; table-layout: fixed; }
+  table { display: table; width: 100%; max-width: none; min-width: 0; border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; }
 
   thead th {
     background: var(--surface-2);
