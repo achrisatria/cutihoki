@@ -432,12 +432,12 @@
 
   .c-role    { width: 5%;  }
   .c-nama    { width: 18%; }
-  .c-periode { width: 15%; }
+  .c-periode { width: 16%; }
   .c-durasi  { width: 5%;  }
   .c-perihal { width: 8%; }
-  .c-bentrok { width: 6%;  }
+  .c-bentrok { width: 6.5%;  }
   .c-total   { width: 7%;  }
-  .c-pass    { width: 5.5%;  }
+  .c-pass    { width: 6%;  }
   .c-status  { width: 11%; }
   .c-copy    { width: 5.5%;  }
   .c-aksi    { width: 6%;  }
