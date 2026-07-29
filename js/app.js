@@ -2533,8 +2533,8 @@
     };
     if (!d.paspor) throw new Error('Isi nomor paspor.');
     if (!d.nama) throw new Error('Isi nama staff.');
-    if (!d.tglResign) throw new Error('Isi tanggal pengajuan resign.');
-    if (!d.tglLast) throw new Error('Isi tanggal last kerja.');
+    if (!d.tglResign) throw new Error('Isi Tanggal Last Kerja.');
+    if (!d.tglLast) throw new Error('Tanggal Pengajuan Resign.');
     if (d.tglLast < d.tglResign) throw new Error('Tanggal last kerja tidak boleh sebelum tanggal pengajuan.');
     if (!d.keterangan) throw new Error('Isi keterangan resign.');
     return d;
@@ -2845,8 +2845,8 @@
     return [
       'No Paspor : ' + r.paspor,
       'Nama Staff : ' + r.nama,
-      'Tanggal Pengajuan Resign : ' + formatDate(r.tglResign),
-      'Tanggal Last Kerja : ' + formatDate(r.tglLast),
+      'Tanggal Last Kerja : ' + formatDate(r.tglResign),
+      'Tanggal Pengajuan Resign : ' + formatDate(r.tglLast),
       'Keterangan : ' + (r.keterangan || '-'),
       '',
       'ACC : ' + currentLeader()
