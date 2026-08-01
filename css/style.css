@@ -438,8 +438,8 @@
   .c-bentrok { width: 72px; white-space: nowrap; }
   .c-total   { width: 82px; white-space: nowrap; }
   .c-pass    { width: 57px; white-space: nowrap; }
-  .c-status  { width: 125px; white-space: nowrap; }
-  .c-copy    { width: 58px; white-space: nowrap; }
+  .c-status  { width: 130px; white-space: nowrap; }
+  .c-copy    { width: 53px; white-space: nowrap; }
   .c-aksi    { width: 56px; white-space: nowrap; }
 
   table { display: table; width: 100%; max-width: none; min-width: 1080px; border-collapse: separate; border-spacing: 0; font-size: 12.5px; table-layout: auto; }
