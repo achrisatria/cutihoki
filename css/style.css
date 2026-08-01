@@ -421,7 +421,7 @@
     background: var(--bg-table); border: 1px solid var(--border);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
     display: block; width: 100%; max-width: 100%; margin-inline: auto;
-    overflow-x: auto; overflow-y: visible;
+    overflow-x: hidden; overflow-y: visible;
     position: relative; isolation: isolate;
     -webkit-overflow-scrolling: touch;
   }
@@ -430,19 +430,19 @@
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  .c-role    { width: 4.5%;  }
-  .c-nama    { width: 16%; }
-  .c-periode { width: 15%; }
-  .c-durasi  { width: 5.5%;  }
-  .c-perihal { width: 8.5%; }
-  .c-bentrok { width: 6%;  }
-  .c-total   { width: 7.5%;  }
-  .c-pass    { width: 6%;  }
-  .c-status  { width: 10%; }
-  .c-copy    { width: 5%;  }
-  .c-aksi    { width: 5%;  }
+  .c-role    { width: 52px; white-space: nowrap; }
+  .c-nama    { }
+  .c-periode { white-space: nowrap; }
+  .c-durasi  { width: 62px; white-space: nowrap; }
+  .c-perihal { width: 95px; white-space: nowrap; }
+  .c-bentrok { width: 72px; white-space: nowrap; }
+  .c-total   { width: 82px; white-space: nowrap; }
+  .c-pass    { width: 62px; white-space: nowrap; }
+  .c-status  { width: 120px; white-space: nowrap; }
+  .c-copy    { width: 58px; white-space: nowrap; }
+  .c-aksi    { width: 56px; white-space: nowrap; }
 
-  table { display: table; width: 100%; max-width: none; min-width: 1240px; border-collapse: separate; border-spacing: 0; font-size: 12.5px; table-layout: fixed; }
+  table { display: table; width: 100%; max-width: none; border-collapse: separate; border-spacing: 0; font-size: 12.5px; table-layout: auto; }
 
   thead th {
     background: var(--surface-2);
@@ -803,7 +803,7 @@
 
     /* Table — horizontal scroll on mobile only */
     .table-wrap { border-radius: 0; margin: 0 calc(-1 * var(--page-gutter)); width: calc(100% + 2 * var(--page-gutter)); border-left: none; border-right: none; overflow-x: auto; }
-    table { min-width: 1240px; font-size: 12px; }
+    table { min-width: 960px; font-size: 12px; }
     thead th { font-size: 9px; letter-spacing: .08em; height: 38px; }
     .cell-name { font-size: 12px; }
     .pill { font-size: 10px; padding: 2px 6px; min-height: 20px; }
@@ -895,7 +895,7 @@
     .filter-bar { padding: 8px 12px; }
     .chip { padding: 4px 9px; font-size: 11px; }
 
-    table { min-width: 1240px; }
+    table { min-width: 960px; }
 
     .cal-dow span { font-size: 8.5px; letter-spacing: .02em; }
     .cal-day { min-height: 40px; padding: 3px; }
