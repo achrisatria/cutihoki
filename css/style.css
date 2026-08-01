@@ -322,7 +322,9 @@
   .search-wrap input { padding-left: 38px; min-width: min(240px, 100%); border-radius: var(--radius-pill); }
 
   /* ═══════════════════════════════════════════════════════════════
-     TABLE — Zero-clip design
+     TABLE — Zoom-stable, auto-sizing, zero-clip
+     Prinsip: table-layout auto + min-width per kolom.
+     Browser menghitung lebar optimal. Scroll hanya jika perlu.
      ═══════════════════════════════════════════════════════════════ */
   .table-wrap {
     background: var(--bg-table); border: 1px solid var(--border);
@@ -337,35 +339,46 @@
   .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 2px solid var(--bg-table); }
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-  table { display: table; width: 100%; min-width: 1100px; border-collapse: separate; border-spacing: 0; font-size: 12.5px; table-layout: fixed; }
+  table {
+    display: table; width: 100%;
+    border-collapse: separate; border-spacing: 0;
+    font-size: 12.5px;
+    table-layout: auto;
+  }
 
-  /* ── Column widths — pixel-perfect ─────────────────────────── */
-  .c-role    { width: 56px;  }
-  .c-nama    { width: 190px; }
-  .c-periode { width: 200px; }
-  .c-durasi  { width: 62px;  }
-  .c-perihal { width: 100px; }
-  .c-bentrok { width: 72px;  }
-  .c-total   { width: 90px;  }
-  .c-pass    { width: 58px;  }
-  .c-status  { width: 135px; }
-  .c-copy    { width: 60px;  }
-  .c-aksi    { width: 58px;  }
+  /* ── Column min-widths — flexible, never too tight ──────────── */
+  .c-role    { min-width: 54px;  }
+  .c-nama    { min-width: 185px; }
+  .c-periode { min-width: 195px; }
+  .c-durasi  { min-width: 60px;  }
+  .c-perihal { min-width: 98px;  }
+  .c-bentrok { min-width: 70px;  }
+  .c-total   { min-width: 86px;  }
+  .c-pass    { min-width: 56px;  }
+  .c-status  { min-width: 130px; }
+  .c-copy    { min-width: 58px;  }
+  .c-aksi    { min-width: 56px;  }
 
   thead th {
     background: var(--surface-2); text-align: center;
     font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--text-muted); height: 44px; padding: var(--cell-py) var(--cell-px);
-    box-shadow: 0 1px 0 var(--border); white-space: nowrap;
+    color: var(--text-muted); height: 44px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 0 var(--border);
+    white-space: nowrap;
     position: sticky; top: 0; z-index: 10;
   }
-  thead th.c-nama, thead th.c-periode { text-align: center; }
 
   tbody td {
-    padding: var(--cell-py) var(--cell-px); height: auto; text-align: center;
+    padding: 10px 12px; height: auto; text-align: center;
     border-bottom: none; vertical-align: middle;
     background: var(--bg-table); transition: background .14s ease;
+    white-space: nowrap;
   }
+
+  /* Kolom yang boleh wrap */
+  tbody td:nth-child(2) { white-space: normal; } /* Nama */
+  tbody td:nth-child(5) { white-space: normal; } /* Perihal - pill tetap nowrap via .pill */
 
   /* Alignment: col 1-3 left, rest center */
   tbody tr.rec td:nth-child(1),
@@ -400,7 +413,7 @@
   tbody tr.rec:has(.pill-clash-alert) td:first-child,
   tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child { box-shadow: inset 4px 0 0 var(--red); }
 
-  /* ── Cell text — NO truncation ever ─────────────────────────── */
+  /* ── Cell text — never clipped ──────────────────────────────── */
   .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; letter-spacing: -.006em; display: block; width: 100%; word-break: break-word; }
   tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; letter-spacing: -.01em; }
