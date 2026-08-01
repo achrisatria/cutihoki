@@ -89,7 +89,7 @@
     --radius-pill: 999px;
 
     --header-h: 68px;
-    --page-gutter: clamp(24px, 4vw, 56px);
+    --page-gutter: clamp(20px, 2.5vw, 36px);
 
     /* ── Table spacing ─────────────────────────────────────────── */
     --cell-px: 12px;
@@ -431,7 +431,7 @@
   .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   .c-role    { width: 52px; white-space: nowrap; }
-  .c-nama    { }
+  .c-nama    { min-width: 180px; }
   .c-periode { white-space: nowrap; }
   .c-durasi  { width: 62px; white-space: nowrap; }
   .c-perihal { width: 95px; white-space: nowrap; }
