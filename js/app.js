@@ -3011,10 +3011,10 @@
     }
     tbody.innerHTML = rows.map(function(r, i) {
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
-        '<td style="white-space:nowrap;font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;">' + esc(formatLogTime(r.timestamp)) + '</td>' +
-        '<td><span class="pill" style="' + logModuleCls(r.module) + '">' + esc(r.module) + '</span></td>' +
-        '<td><span class="pill" style="' + logActionCls(r.action) + '">' + esc(r.action) + '</span></td>' +
-        '<td style="font-size:12.5px;color:var(--text-secondary);line-height:1.45;">' + esc(r.detail) + '</td>' +
+        '<td style="text-align:center;white-space:nowrap;font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;">' + esc(formatLogTime(r.timestamp)) + '</td>' +
+        '<td style="text-align:center;"><span class="pill" style="' + logModuleCls(r.module) + '">' + esc(r.module) + '</span></td>' +
+        '<td style="text-align:center;"><span class="pill" style="' + logActionCls(r.action) + '">' + esc(r.action) + '</span></td>' +
+        '<td style="text-align:center;font-size:12.5px;color:var(--text-secondary);line-height:1.45;">' + esc(r.detail) + '</td>' +
       '</tr>';
     }).join('');
   }
