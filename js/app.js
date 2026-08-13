@@ -1,4 +1,4 @@
-  // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
   // KONFIGURASI SUPABASE  — ganti dengan milik project kamu
   // ═══════════════════════════════════════════════════════════════
   var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
@@ -3006,16 +3006,15 @@
   function renderLogTable(rows) {
     var tbody = document.getElementById('logTableBody');
     if (!rows || rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">Belum ada log aktivitas.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">Belum ada log aktivitas.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function(r, i) {
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
-        '<td style="text-align:left;white-space:nowrap;font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;">' + esc(formatLogTime(r.timestamp)) + '</td>' +
+        '<td style="white-space:nowrap;font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;">' + esc(formatLogTime(r.timestamp)) + '</td>' +
         '<td><span class="pill" style="' + logModuleCls(r.module) + '">' + esc(r.module) + '</span></td>' +
         '<td><span class="pill" style="' + logActionCls(r.action) + '">' + esc(r.action) + '</span></td>' +
-        '<td style="text-align:left;white-space:normal;font-size:12.5px;color:var(--text-secondary);line-height:1.45;">' + esc(r.detail) + '</td>' +
-        '<td style="font-size:12px;font-weight:600;color:var(--text-primary);">' + esc(r.userName) + '</td>' +
+        '<td style="font-size:12.5px;color:var(--text-secondary);line-height:1.45;">' + esc(r.detail) + '</td>' +
       '</tr>';
     }).join('');
   }
