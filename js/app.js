@@ -2012,29 +2012,25 @@
     var shown = (_showAllRows || total <= ROW_LIMIT) ? rows : rows.slice(0, ROW_LIMIT);
     shown.forEach(function(r, ri) {
       var has2 = !!(r.start2Raw || r.perihal2);
-      var sp = has2 ? ' rowspan="2"' : '';
-      var alt = (ri % 2 === 1) ? ' rec-alt' : '';   // selang-seling per record
+      var alt = (ri % 2 === 1) ? ' rec-alt' : '';
+      var line2 = function(html) { return has2 ? '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,.1);">' + html + '</div>' : ''; };
       parts.push('<tr class="rec' + alt + '">' +
-        '<td' + sp + '><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
-        '<td' + sp + '><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
-        '<td>' + periodeCell(r.start1Raw, r.end1Raw) + '</td>' +
-        '<td><span class="pill pill-durasi">' + esc(r.durasi1) + '</span></td>' +
-        '<td><span class="pill pill-perihal">' + esc(r.perihal1) + '</span></td>' +
-        '<td>' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals, r.role, r.rowId, 1) + '</td>' +
-        '<td' + sp + '>' + totalCell(r) + '</td>' +
-        '<td' + sp + '>' + passportCell(r.keterangan) + '</td>' +
-        '<td' + sp + '>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
-        '<td' + sp + '>' + copyCell(r.rowId) + '</td>' +
-        '<td' + sp + '>' + actionCell(r.rowId, r.nama) + '</td>' +
+        '<td><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
+        '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
+        '<td style="white-space:normal;">' + periodeCell(r.start1Raw, r.end1Raw) +
+          (has2 ? '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,.1);"><span style="color:var(--faint);margin-right:3px;font-size:11px;">↳</span>' + periodeCell(r.start2Raw, r.end2Raw) + '</div>' : '') + '</td>' +
+        '<td style="white-space:normal;"><span class="pill pill-durasi">' + esc(r.durasi1) + '</span>' +
+          (has2 ? line2('<span class="pill pill-durasi">' + esc(r.durasi2) + '</span>') : '') + '</td>' +
+        '<td style="white-space:normal;"><span class="pill pill-perihal">' + esc(r.perihal1) + '</span>' +
+          (has2 ? line2('<span class="pill pill-perihal">' + esc(r.perihal2) + '</span>') : '') + '</td>' +
+        '<td style="white-space:normal;">' + clashCell(r.perihal1, r.start1Raw, r.end1Raw, r.nama, intervals, r.role, r.rowId, 1) +
+          (has2 ? line2(clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals, r.role, r.rowId, 2)) : '') + '</td>' +
+        '<td>' + totalCell(r) + '</td>' +
+        '<td>' + passportCell(r.keterangan) + '</td>' +
+        '<td>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
+        '<td>' + copyCell(r.rowId) + '</td>' +
+        '<td>' + actionCell(r.rowId, r.nama) + '</td>' +
       '</tr>');
-      if (has2) {
-        parts.push('<tr class="row-cuti2' + alt + '">' +
-          '<td>' + periodeCell(r.start2Raw, r.end2Raw) + '</td>' +
-          '<td><span class="pill pill-durasi">' + esc(r.durasi2) + '</span></td>' +
-          '<td><span class="pill pill-perihal">' + esc(r.perihal2) + '</span></td>' +
-          '<td>' + clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals, r.role, r.rowId, 2) + '</td>' +
-        '</tr>');
-      }
     });
     if (shown.length < total) {
       parts.push('<tr class="more-row"><td colspan="11">' +
