@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // KONFIGURASI SUPABASE  — ganti dengan milik project kamu
   // ═══════════════════════════════════════════════════════════════
   var SUPABASE_URL = 'https://ohpocbtxbdptvuanxnze.supabase.co';
@@ -168,6 +168,7 @@
     if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
     authLogout(); applyAuthUI();
     toast('Anda keluar dari mode admin', 'ok');
+    logActivity('AUTH', 'LOGOUT', 'Admin logout');
     // Muat ulang tampilan agar kontrol admin & tab rekening tersembunyi kembali
     invalidate(); switchTab('dashboard');
   }
@@ -183,6 +184,7 @@
       document.getElementById('loginPass').value = '';
       closeLogin(); applyAuthUI();
       toast('Berhasil masuk sebagai admin', 'ok');
+      logActivity('AUTH', 'LOGIN', 'Admin login: ' + email);
       if (AUTH && AUTH.refresh_token) startRefreshTimer();
       invalidate(); loadDashboard(true);   // muat ulang agar kontrol admin muncul
     }).catch(function(err) {
@@ -798,6 +800,7 @@
     if (view === 'calendar') renderCalendar();
     if (view === 'rekening') loadRekening(false);
     if (view === 'resign') loadResign(false);
+    if (view === 'log') loadLog(false);
   }
 
   // Kembalikan semua filter dashboard ke kondisi awal (dipakai saat pindah menu)
@@ -963,6 +966,7 @@
       addOption(cat, v).then(function(cfg) {
         CONFIG = cfg; setMode('list'); render(); input.focus();
         toast('Staff baru ditambahkan: ' + v, 'ok');
+        logActivity('STAFF', 'CREATE', 'Tambah staff: ' + v);
       }).catch(function(err) {
         fNama.disabled = fId.disabled = false; toast('Gagal menambah: ' + err.message, 'err');
       });
@@ -1001,6 +1005,7 @@
         if (input.value.trim() === oldVal) input.value = newVal;
         render(); input.focus();
         toast('Nama diperbarui', 'ok');
+        logActivity('STAFF', 'UPDATE', 'Rename: ' + oldVal + ' → ' + newVal);
       }).catch(function(err) {
         ei.disabled = false; toast('Gagal mengubah nama: ' + err.message, 'err');
       });
@@ -1017,6 +1022,7 @@
           if (!res.deleted) { toast('Tidak terhapus — periksa izin akses (RLS)', 'err'); return; }
           CONFIG = res.cfg; render(); input.focus();
           toast('Nama dihapus dari daftar', 'ok');
+          logActivity('STAFF', 'DELETE', 'Hapus staff: ' + val);
         }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
       });
     }
@@ -1301,6 +1307,7 @@
           btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
           showMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
           toast('Pengajuan tersimpan', 'ok');
+          logActivity('CUTI', 'CREATE', 'Pengajuan cuti ' + nama + ' (' + durasi + ' hari)');
           var newRow = {
             rowId: id, id: id, timestamp: new Date().toISOString(),
             role: payload.role, nama: payload.nama,
@@ -1431,6 +1438,7 @@
         renderFilters(); applyFilters(); updateTabCounts();
       }
       closeEdit(); toast('Perubahan tersimpan', 'ok');
+      logActivity('CUTI', 'UPDATE', 'Edit cuti ID: ' + editingId);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       eShow('error', 'Gagal menyimpan: ' + err.message);
@@ -1460,7 +1468,8 @@
           _clashIdx = null; _filterVer++; _memoMonth = null; _memoStatus = null;
           renderFilters(); applyFilters(); updateTabCounts();
         }
-        toast('Pengajuan dihapus permanen', 'ok');     // sinkronkan lagi dengan server
+        toast('Pengajuan dihapus permanen', 'ok');
+        logActivity('CUTI', 'DELETE', 'Hapus cuti ' + label);
       }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
     });
   }
@@ -2045,6 +2054,7 @@
       sel.classList.remove('task-saving');
       sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
       sel.classList.add('task-flash'); setTimeout(function() { sel.classList.remove('task-flash'); }, 700);
+      logActivity('CUTI', 'STATUS', 'Status cuti ' + rowId + ' → ' + value);
       if (_cache) { for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; } _filterVer++; _memoStatus = null; }
       buildMonthOptions(); buildStatusOptions();   // hitungan filter ikut menyesuaikan
       applyFilters();          // baris otomatis berpindah ke menu yang sesuai
@@ -2219,6 +2229,7 @@
       btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
       rekMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
       toast('Pengajuan ganti rekening tersimpan', 'ok');
+      logActivity('REKENING', 'CREATE', 'Ganti rekening ' + d.nama);
       resetRekForm(); toggleRekForm(false);
       _rekLoaded = false; loadRekening(true);
     }).catch(function(err) {
@@ -2384,6 +2395,7 @@
         (_rekCache || []).forEach(function(r) { if (r.rowId === rowId) r.task = value; });
         applyRekFilters(); updateRekCount();
         toast('Status diperbarui', 'ok');
+        logActivity('REKENING', 'STATUS', 'Status rekening ' + (nama||rowId) + ' → ' + value);
       }).catch(function(err) {
         sel.classList.remove('task-saving'); sel.value = oldVal;
         toast('Gagal update status: ' + err.message, 'err');
@@ -2427,6 +2439,7 @@
     sbPatch('rekening', 'id=eq.' + encodeURIComponent(rekEditingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       closeRekEdit(); toast('Perubahan tersimpan', 'ok');
+      logActivity('REKENING', 'UPDATE', 'Edit rekening ID: ' + rekEditingId);
       _rekLoaded = false; loadRekening(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
@@ -2454,6 +2467,7 @@
           applyRekFilters(); updateRekCount();
         }
         toast('Pengajuan dihapus permanen', 'ok');
+        logActivity('REKENING', 'DELETE', 'Hapus rekening ' + label);
       }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
     });
   }
@@ -2533,8 +2547,8 @@
     };
     if (!d.paspor) throw new Error('Isi nomor paspor.');
     if (!d.nama) throw new Error('Isi nama staff.');
-    if (!d.tglResign) throw new Error('Isi Tanggal Last Kerja.');
-    if (!d.tglLast) throw new Error('Tanggal Pengajuan Resign.');
+    if (!d.tglResign) throw new Error('Isi tanggal pengajuan resign.');
+    if (!d.tglLast) throw new Error('Isi tanggal last kerja.');
     if (d.tglLast < d.tglResign) throw new Error('Tanggal last kerja tidak boleh sebelum tanggal pengajuan.');
     if (!d.keterangan) throw new Error('Isi keterangan resign.');
     return d;
@@ -2605,6 +2619,7 @@
       btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
       resignMsg('success', 'Pengajuan berhasil dibuat — ID: ' + id);
       toast('Pengajuan resign tersimpan', 'ok');
+      logActivity('RESIGN', 'CREATE', 'Pengajuan resign ' + d.nama);
       resetResignForm(); toggleResignForm(false);
       _resignLoaded = false; loadResign(true);
     }).catch(function(err) {
@@ -2770,6 +2785,7 @@
         (_resignCache || []).forEach(function(r) { if (r.rowId === rowId) r.task = value; });
         applyResignFilters(); updateResignCount();
         toast('Status diperbarui', 'ok');
+        logActivity('RESIGN', 'STATUS', 'Status resign ' + (nama||rowId) + ' → ' + value);
       }).catch(function(err) {
         sel.classList.remove('task-saving'); sel.value = oldVal;
         toast('Gagal update status: ' + err.message, 'err');
@@ -2809,6 +2825,7 @@
     sbPatch('resign', 'id=eq.' + encodeURIComponent(resignEditingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       closeResignEdit(); toast('Perubahan tersimpan', 'ok');
+      logActivity('RESIGN', 'UPDATE', 'Edit resign ID: ' + resignEditingId);
       _resignLoaded = false; loadResign(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
@@ -2836,6 +2853,7 @@
           applyResignFilters(); updateResignCount();
         }
         toast('Pengajuan dihapus permanen', 'ok');
+        logActivity('RESIGN', 'DELETE', 'Hapus resign ' + label);
       }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
     });
   }
@@ -2845,8 +2863,8 @@
     return [
       'No Paspor : ' + r.paspor,
       'Nama Staff : ' + r.nama,
-      'Tanggal Last Kerja : ' + formatDate(r.tglResign),
-      'Tanggal Pengajuan Resign : ' + formatDate(r.tglLast),
+      'Tanggal Pengajuan Resign : ' + formatDate(r.tglResign),
+      'Tanggal Last Kerja : ' + formatDate(r.tglLast),
       'Keterangan : ' + (r.keterangan || '-'),
       '',
       'ACC : ' + currentLeader()
@@ -2869,6 +2887,153 @@
   }
 
   document.getElementById('resignEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeResignEdit(); });
+
+  // ══════════════════════════════════════════════════════════════
+  // MODUL RIWAYAT LOG
+  // ══════════════════════════════════════════════════════════════
+  var _logCache = null, _logLoaded = false;
+  var logFilter = { module: 'ALL', search: '' };
+  var LOG_MODULES = ['CUTI', 'RESIGN', 'REKENING', 'STAFF', 'AUTH'];
+
+  function logActivity(module, action, detail) {
+    var id = 'LOG-' + Date.now() + '-' + randSuffix(8);
+    var userName = currentLeader() || 'System';
+    sbPost('activity_log', {
+      id: id, module: module, action: action,
+      detail: detail, user_name: userName
+    }, { 'Prefer': 'return=minimal' }).catch(function(err) {
+      console.warn('Log gagal:', err.message);
+    });
+  }
+
+  function getLog() {
+    return sbGet('activity_log', 'select=*&order=created_at.desc&limit=500').then(function(rows) {
+      return rows.map(function(r) {
+        return {
+          id: r.id, timestamp: r.created_at || '',
+          module: r.module || '', action: r.action || '',
+          detail: r.detail || '', userName: r.user_name || ''
+        };
+      });
+    });
+  }
+
+  function loadLog(force) {
+    var loading = document.getElementById('logLoading');
+    var content = document.getElementById('logContent');
+    var refresh = document.getElementById('logRefreshBtn');
+    if (!force && _logLoaded && _logCache) { renderLogAll(); content.style.display = 'block'; loading.style.display = 'none'; return; }
+    loading.style.display = 'block'; loading.textContent = 'Memuat log…';
+    content.style.display = 'none';
+    if (refresh) refresh.disabled = true;
+    getLog().then(function(rows) {
+      _logCache = rows; _logLoaded = true;
+      loading.style.display = 'none';
+      renderLogAll(); content.style.display = 'block';
+    }).catch(function(err) {
+      loading.textContent = '❌ Gagal memuat log: ' + err.message;
+    }).finally(function() { if (refresh) refresh.disabled = false; });
+  }
+
+  function renderLogAll() { renderLogChips(); applyLogFilters(); }
+
+  function renderLogChips() {
+    var wrap = document.getElementById('logChips');
+    var list = ['ALL'].concat(LOG_MODULES);
+    wrap.innerHTML = list.map(function(s) {
+      var active = logFilter.module === s ? ' active' : '';
+      return '<button class="chip' + active + '" data-logmod="' + esc(s) + '">' + esc(s === 'ALL' ? 'Semua' : s) + '</button>';
+    }).join('');
+    wrap.querySelectorAll('.chip').forEach(function(c) {
+      c.addEventListener('click', function() {
+        logFilter.module = c.dataset.logmod; renderLogChips(); applyLogFilters();
+      });
+    });
+  }
+
+  var _logSearchTimer = null;
+  document.getElementById('logSearch').addEventListener('input', function() {
+    var v = this.value.trim().toLowerCase();
+    clearTimeout(_logSearchTimer);
+    _logSearchTimer = setTimeout(function() { logFilter.search = v; applyLogFilters(); }, 140);
+  });
+
+  function matchLog(r) {
+    if (logFilter.module !== 'ALL' && r.module !== logFilter.module) return false;
+    if (logFilter.search) {
+      var hay = (r.detail + ' ' + r.action + ' ' + r.userName + ' ' + r.module).toLowerCase();
+      if (hay.indexOf(logFilter.search) === -1) return false;
+    }
+    return true;
+  }
+
+  function applyLogFilters() {
+    if (!_logCache) return;
+    var rows = _logCache.filter(matchLog);
+    var filtered = (logFilter.module !== 'ALL' || logFilter.search);
+    document.getElementById('logResultCount').innerHTML =
+      'Menampilkan <strong>' + rows.length + '</strong> dari ' + _logCache.length + ' log' + (filtered ? ' · terfilter' : '');
+    renderLogTable(rows);
+  }
+
+  function logModuleCls(mod) {
+    var m = String(mod).toUpperCase();
+    if (m === 'CUTI') return 'background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd);';
+    if (m === 'RESIGN') return 'background:#FDF1F4;color:#D4587A;border-color:#F4BDC9;';
+    if (m === 'REKENING') return 'background:#EEFBF7;color:#2DAE8A;border-color:#A8E2D2;';
+    if (m === 'STAFF') return 'background:var(--role-kap-bg);color:var(--role-kap);border-color:var(--role-kap-bd);';
+    if (m === 'AUTH') return 'background:var(--role-cs-bg);color:var(--role-cs);border-color:var(--role-cs-bd);';
+    return 'background:var(--slate-bg);color:var(--slate);';
+  }
+
+  function logActionCls(act) {
+    var a = String(act).toUpperCase();
+    if (a === 'CREATE') return 'background:var(--green-bg);color:var(--green);border-color:var(--green-bd);';
+    if (a === 'UPDATE' || a === 'STATUS') return 'background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd);';
+    if (a === 'DELETE') return 'background:var(--red-bg);color:var(--red);border-color:var(--red-bd);';
+    if (a === 'LOGIN' || a === 'LOGOUT') return 'background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd);';
+    return '';
+  }
+
+  function formatLogTime(ts) {
+    if (!ts) return '-';
+    var d = new Date(ts);
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    return pad(d.getDate()) + '/' + pad(d.getMonth()+1) + '/' + d.getFullYear() + ' ' +
+           pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
+  function renderLogTable(rows) {
+    var tbody = document.getElementById('logTableBody');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Belum ada log aktivitas.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r, i) {
+      return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
+        '<td style="text-align:left;white-space:nowrap;font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;">' + esc(formatLogTime(r.timestamp)) + '</td>' +
+        '<td><span class="pill" style="' + logModuleCls(r.module) + '">' + esc(r.module) + '</span></td>' +
+        '<td><span class="pill" style="' + logActionCls(r.action) + '">' + esc(r.action) + '</span></td>' +
+        '<td style="text-align:left;white-space:normal;font-size:12.5px;color:var(--text-secondary);line-height:1.45;">' + esc(r.detail) + '</td>' +
+        '<td style="font-size:12px;font-weight:600;color:var(--text-primary);">' + esc(r.userName) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function clearLog() {
+    confirmDialog({
+      title: 'Bersihkan Log',
+      warn: 'SEMUA RIWAYAT LOG AKAN DIHAPUS PERMANEN',
+      text: 'Yakin ingin menghapus seluruh riwayat log aktivitas?',
+      okLabel: 'Ya, hapus semua', okClass: 'btn-danger'
+    }, function() {
+      sbDelete('activity_log', 'id=neq.___').then(function() {
+        _logCache = []; _logLoaded = false;
+        loadLog(true);
+        toast('Log berhasil dihapus', 'ok');
+      }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
+    });
+  }
 
   // ── KALENDER ──────────────────────────────────────────────────
   var calRef = new Date(); calRef.setDate(1);
@@ -3084,6 +3249,7 @@
       initCombos();
       renderRekChips();
       renderResignChips();
+      renderLogChips();
       addFormLeave(false);
       fillLdr();
       renderFilters();
