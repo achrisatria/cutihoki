@@ -123,6 +123,7 @@
     <button class="tab" id="tabCalendar" onclick="switchTab('calendar')">🗓️ Kalender</button>
     <button class="tab" id="tabResign" onclick="switchTab('resign')">📝 Resign <em class="tab-count" id="resignCount">0</em></button>
     <button class="tab" id="tabRekening" onclick="switchTab('rekening')">🏦 Ganti Rekening <em class="tab-count" id="rekCount">0</em></button>
+    <button class="tab" id="tabLog" onclick="switchTab('log')">📋 Riwayat Log</button>
   </div>
 
   <!-- VIEW DASHBOARD -->
@@ -473,11 +474,11 @@
           <span class="fsec-label"><em>02</em>Detail Resign</span>
           <div class="grid" style="max-width: 720px;">
             <div class="field">
-              <label>Tanggal Last Kerja</label>
+              <label>Tanggal Pengajuan Resign</label>
               <input id="rs_tglResign" type="date">
             </div>
             <div class="field">
-              <label>Tanggal Pengajuan Resign</label>
+              <label>Tanggal Last Kerja</label>
               <input id="rs_tglLast" type="date">
             </div>
           </div>
@@ -533,6 +534,50 @@
           </tr>
         </thead>
         <tbody id="resignTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VIEW RIWAYAT LOG -->
+  <div class="view" id="view-log">
+    <div class="dash-head">
+      <div>
+        <h2>Riwayat Log Aktivitas</h2>
+        <p>Catatan seluruh aktivitas yang terjadi pada dashboard.</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-secondary btn-sm" id="logRefreshBtn" onclick="loadLog(true)">🔄 Muat ulang</button>
+        <button class="btn btn-danger btn-sm admin-only" onclick="clearLog()">🗑️ Bersihkan log</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Modul</span>
+        <span id="logChips"></span>
+      </div>
+      <div class="search-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="logSearch" type="text" placeholder="Cari aktivitas…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="result-count" id="logResultCount"></div>
+
+    <div id="logLoading" style="display:none; color:var(--muted); padding:20px 0;">Memuat log…</div>
+
+    <div class="table-wrap" id="logContent" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:150px;">Waktu</th>
+            <th style="min-width:80px;">Modul</th>
+            <th style="min-width:90px;">Aksi</th>
+            <th style="min-width:300px;">Detail</th>
+            <th style="min-width:120px;">User</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody"></tbody>
       </table>
     </div>
   </div>
@@ -637,8 +682,8 @@
         <div class="field"><label>Nama Staff</label><input id="rse_nama" type="text"></div>
       </div>
       <div class="grid" style="margin-top:10px;">
-        <div class="field"><label>Tanggal Last Kerja</label><input id="rse_tglResign" type="date"></div>
-        <div class="field"><label>Tanggal Pengajuan Resign</label><input id="rse_tglLast" type="date"></div>
+        <div class="field"><label>Tanggal Pengajuan Resign</label><input id="rse_tglResign" type="date"></div>
+        <div class="field"><label>Tanggal Last Kerja</label><input id="rse_tglLast" type="date"></div>
       </div>
       <div class="grid" style="margin-top:10px;">
         <div class="field" style="grid-column:1/-1;"><label>Keterangan</label><textarea id="rse_keterangan" rows="3" style="width:100%;resize:vertical;"></textarea></div>
