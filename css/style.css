@@ -22,7 +22,7 @@
     --border-strong: #334155;
     --hairline:      rgba(148,163,184,.06);
     --line: var(--border); --line-strong: var(--border-strong);
-    --table-divider: 1px solid rgba(148,163,184,.08);
+    --table-divider: 1px solid rgba(148,163,184,.18);
 
     --accent:       #6366F1;
     --accent-dark:  #4F46E5;
@@ -245,21 +245,14 @@
   tbody td:nth-child(2) { white-space: normal; }
   tbody tr.rec td:nth-child(1), tbody tr.rec td:nth-child(2), tbody tr.rec td:nth-child(3) { text-align: left; }
   tbody tr.rec td:nth-child(n+4) { text-align: center; }
-  tbody tr.row-cuti2 td:nth-child(1) { text-align: left; }
-  tbody tr.row-cuti2 td:nth-child(n+2) { text-align: center; }
-  tbody tr.rec:not(:has(+ tr.row-cuti2)) td, tbody tr.row-cuti2 td { border-bottom: var(--table-divider); }
-  tbody tr.rec:has(+ tr.row-cuti2) td[rowspan] { border-bottom: var(--table-divider); }
+  tbody tr.rec td { border-bottom: var(--table-divider); }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(3), tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(4), tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(5), tbody tr.rec:has(+ tr.row-cuti2) td:nth-child(6) { vertical-align: bottom; padding-top: var(--cell-py); padding-bottom: var(--cuti-gap); border-bottom: var(--cuti-line); }
-  tbody tr.row-cuti2 td { vertical-align: top; padding-top: var(--cuti-gap); padding-bottom: var(--cell-py); }
-  tbody tr.rec-alt td, tbody tr.rec-alt + tr.row-cuti2 td { background: var(--bg-row-alt); }
-  tbody tr.rec:hover td, tbody tr.rec:hover + tr.row-cuti2 td, tbody tr.rec:has(+ tr.row-cuti2:hover) td, tbody tr.row-cuti2:hover td { background: var(--bg-row-hover) !important; }
-  tbody tr.rec:has(.pill-clash-alert) td:first-child, tbody tr.rec:has(+ tr.row-cuti2 .pill-clash-alert) td:first-child { box-shadow: inset 4px 0 0 var(--red); }
+  tbody tr.rec-alt td { background: var(--bg-row-alt); }
+  tbody tr.rec:hover td { background: var(--bg-row-hover) !important; }
+  tbody tr.rec:has(.pill-clash-alert) td:first-child { box-shadow: inset 4px 0 0 var(--red); }
   .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; display: block; width: 100%; word-break: break-word; }
-  tr.row-cuti2 .periode::before { content: "↳"; color: var(--faint); margin-right: 4px; font-size: 11px; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; }
-  tr.row-cuti2 .periode { color: var(--text-muted); }
   .empty { text-align: center; color: var(--text-muted); padding: 56px 0 !important; font-size: 14px; }
   .more-row td { height: auto !important; padding: 18px 14px !important; text-align: center; background: var(--surface-2) !important; border-bottom: none; }
   .more-note { display: block; margin-top: 7px; font-size: 12px; color: var(--text-muted); }
