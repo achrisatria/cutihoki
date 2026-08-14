@@ -63,7 +63,7 @@
 
     --radius: 14px; --radius-sm: 10px; --radius-lg: 18px; --radius-pill: 999px;
     --header-h: 64px;
-    --page-gutter: clamp(8px, 1vw, 14px);
+    --page-gutter: 6px;
     --cell-px: 8px; --cell-py: 8px;
     --cuti-gap: 4px; --cuti-line: 1px solid rgba(148,163,184,.06);
     --table-cell-x: var(--cell-px); --table-content-gap: 6px; --table-control-gap: 6px;
@@ -1062,7 +1062,7 @@
 }
 
 @media (min-width: 1400px) {
-.container { max-width: 1440px; margin-inline: auto; }
+.container { max-width: none; }
 }
 
 @media (min-resolution: 1.25dppx) {
