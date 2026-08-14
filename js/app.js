@@ -779,9 +779,16 @@
     if (view === 'resign') document.body.classList.add('theme-resign');
     else if (view === 'rekening') document.body.classList.add('theme-rekening');
 
+    // Tab active (legacy, hidden)
     document.querySelectorAll('.tab').forEach(function(t) {
       t.classList.toggle('active', t.id === 'tab' + view.charAt(0).toUpperCase() + view.slice(1));
     });
+    // Sidebar active
+    var sbMap = { dashboard:'sbDashboard', ongoing:'sbOngoing', archive:'sbArchive',
+      calendar:'sbCalendar', resign:'sbResign', rekening:'sbRekening', log:'sbLog' };
+    document.querySelectorAll('.sb-item').forEach(function(s) { s.classList.remove('active'); });
+    var sbEl = document.getElementById(sbMap[view]);
+    if (sbEl) sbEl.classList.add('active');
     // Sedang Cuti & Selesai Cuti memakai tampilan dashboard yang sama, hanya isinya yang berbeda
     var target = (view === 'archive' || view === 'ongoing') ? 'dashboard' : view;
     document.querySelectorAll('.view').forEach(function(v) {
@@ -842,6 +849,11 @@
     var aEl = _domArchiveCount || document.getElementById('archiveCount');
     if (oEl) { oEl.textContent = nOngoing; oEl.style.display = nOngoing ? '' : 'none'; }
     if (aEl) { aEl.textContent = nArchive; aEl.style.display = nArchive ? '' : 'none'; }
+    // Sync sidebar badges
+    var sbO = document.getElementById('sbOngoingCount');
+    var sbA = document.getElementById('sbArchiveCount');
+    if (sbO) { sbO.textContent = nOngoing; sbO.style.display = nOngoing ? '' : 'none'; }
+    if (sbA) { sbA.textContent = nArchive; sbA.style.display = nArchive ? '' : 'none'; }
   }
 
   // ── Dropdown helpers ──────────────────────────────────────────
@@ -2261,11 +2273,10 @@
 
   function updateRekCount() {
     var el = document.getElementById('rekCount');
-    if (!el) return;
-    // Badge tab = jumlah yang masih WAITING (yang perlu ditindaklanjuti)
     var n = (_rekCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'WAITING'; }).length;
-    el.textContent = n;
-    el.style.display = n ? '' : 'none';
+    if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+    var sb = document.getElementById('sbRekCount');
+    if (sb) { sb.textContent = n; sb.style.display = n ? '' : 'none'; }
   }
 
   function renderRekChips() {
@@ -2651,10 +2662,10 @@
 
   function updateResignCount() {
     var el = document.getElementById('resignCount');
-    if (!el) return;
     var n = (_resignCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'PENDING'; }).length;
-    el.textContent = n;
-    el.style.display = n ? '' : 'none';
+    if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+    var sb = document.getElementById('sbResignCount');
+    if (sb) { sb.textContent = n; sb.style.display = n ? '' : 'none'; }
   }
 
   function renderResignChips() {
