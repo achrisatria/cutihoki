@@ -63,7 +63,7 @@
 
     --radius: 14px; --radius-sm: 10px; --radius-lg: 18px; --radius-pill: 999px;
     --header-h: 64px;
-    --page-gutter: clamp(12px, 1.5vw, 20px);
+    --page-gutter: clamp(8px, 1vw, 14px);
     --cell-px: 8px; --cell-py: 8px;
     --cuti-gap: 4px; --cuti-line: 1px solid rgba(148,163,184,.06);
     --table-cell-x: var(--cell-px); --table-content-gap: 6px; --table-control-gap: 6px;
@@ -129,7 +129,7 @@
   @media (max-width: 520px) { .rules-grid, .rules-grid-3 { grid-template-columns: 1fr 1fr; } }
 
   /* ═══ PAGE & TABS ═══════════════════════════════════════════ */
-  .container { width: 100%; max-width: none; margin-inline: auto; padding: clamp(12px, 1.5vw, 18px) var(--page-gutter) 40px; }
+  .container { width: 100%; max-width: none; padding: 10px var(--page-gutter) 32px; }
 
   /* ═══ SIDEBAR LAYOUT ═══════════════════════════════════════ */
   .app-layout { display: flex; min-height: calc(100vh - var(--header-h)); }
