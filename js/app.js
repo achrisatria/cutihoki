@@ -2272,11 +2272,12 @@
   function renderRekAll() { renderRekChips(); applyRekFilters(); updateRekCount(); }
 
   function updateRekCount() {
+    var waiting = (_rekCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'WAITING'; }).length;
+    var total = (_rekCache || []).length;
     var el = document.getElementById('rekCount');
-    var n = (_rekCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'WAITING'; }).length;
-    if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+    if (el) { el.textContent = waiting; el.style.display = waiting ? '' : 'none'; }
     var sb = document.getElementById('sbRekCount');
-    if (sb) { sb.textContent = n; sb.style.display = n ? '' : 'none'; }
+    if (sb) { sb.textContent = total; sb.style.display = total ? '' : 'none'; }
   }
 
   function renderRekChips() {
@@ -2661,11 +2662,12 @@
   function renderResignAll() { renderResignChips(); applyResignFilters(); updateResignCount(); }
 
   function updateResignCount() {
+    var pending = (_resignCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'PENDING'; }).length;
+    var total = (_resignCache || []).length;
     var el = document.getElementById('resignCount');
-    var n = (_resignCache || []).filter(function(r) { return String(r.task).toUpperCase() === 'PENDING'; }).length;
-    if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+    if (el) { el.textContent = pending; el.style.display = pending ? '' : 'none'; }
     var sb = document.getElementById('sbResignCount');
-    if (sb) { sb.textContent = n; sb.style.display = n ? '' : 'none'; }
+    if (sb) { sb.textContent = total; sb.style.display = total ? '' : 'none'; }
   }
 
   function renderResignChips() {
@@ -3260,6 +3262,10 @@
       fillLdr();
       renderFilters();
       if (_cache && document.getElementById('view-dashboard').classList.contains('active')) applyFilters();
+
+      // Pre-fetch resign & rekening counts untuk sidebar badges
+      getResign().then(function(rows) { _resignCache = rows; _resignLoaded = true; updateResignCount(); }).catch(function() {});
+      getRekening().then(function(rows) { _rekCache = rows; _rekLoaded = true; updateRekCount(); }).catch(function() {});
     }).catch(function(err) {
       toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
       alert('Gagal memuat konfigurasi: ' + err.message + '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
