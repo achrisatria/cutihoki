@@ -70,14 +70,15 @@
   }
 
   .theme-resign {
-    --accent: #56B8FF; --accent-dark: #167AC2; --accent-ink: #D8F1FF;
-    --accent-050: rgba(86,184,255,.12); --accent-100: rgba(86,184,255,.22);
-    --accent-bd: rgba(86,184,255,.38); --accent-glow: rgba(86,184,255,.28);
+    --accent: #F43F5E; --accent-dark: #E11D48; --accent-ink: #FFE4E6;
+    --accent-050: rgba(244,63,94,.10); --accent-100: rgba(244,63,94,.18);
+    --accent-bd: rgba(244,63,94,.30); --accent-glow: rgba(244,63,94,.22);
   }
+
   .theme-rekening {
-    --accent: #73D2FF; --accent-dark: #208BC5; --accent-ink: #DDF7FF;
-    --accent-050: rgba(115,210,255,.12); --accent-100: rgba(115,210,255,.22);
-    --accent-bd: rgba(115,210,255,.38); --accent-glow: rgba(115,210,255,.28);
+    --accent: #10B981; --accent-dark: #059669; --accent-ink: #D1FAE5;
+    --accent-050: rgba(16,185,129,.10); --accent-100: rgba(16,185,129,.18);
+    --accent-bd: rgba(16,185,129,.30); --accent-glow: rgba(16,185,129,.22);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1073,3 +1074,16 @@
 @media (prefers-reduced-motion: reduce) {
 *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+/* ═══ THEME OVERRIDES — must be last to win cascade ══════════ */
+.theme-resign .btn-primary { background: linear-gradient(135deg, #FB7185, #E11D48) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(244,63,94,.25) !important; }
+.theme-resign .btn-primary:hover { box-shadow: 0 6px 20px rgba(244,63,94,.35) !important; }
+.theme-resign .sb-item.active { background: linear-gradient(135deg, #FB7185, #E11D48) !important; box-shadow: 0 4px 12px rgba(244,63,94,.22); }
+.theme-resign .fp-mark { background: linear-gradient(135deg, #FB7185, #E11D48) !important; box-shadow: 0 4px 12px rgba(244,63,94,.22); }
+.theme-resign .chip.active { background: linear-gradient(135deg, #FB7185, #E11D48) !important; box-shadow: 0 3px 10px rgba(244,63,94,.20); }
+
+.theme-rekening .btn-primary { background: linear-gradient(135deg, #34D399, #059669) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(16,185,129,.25) !important; }
+.theme-rekening .btn-primary:hover { box-shadow: 0 6px 20px rgba(16,185,129,.35) !important; }
+.theme-rekening .sb-item.active { background: linear-gradient(135deg, #34D399, #059669) !important; color: #064E3B; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
+.theme-rekening .fp-mark { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
+.theme-rekening .chip.active { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 3px 10px rgba(16,185,129,.20); }
