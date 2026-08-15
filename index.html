@@ -105,7 +105,7 @@
     <div class="modal-head"><h3>Login Admin</h3></div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Masuk untuk mengelola data, staff, dan aturan. Tanpa login, dashboard hanya bisa dilihat dan menerima pengajuan.</p>
-      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@gmail.com"></div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@hokijitu.local"></div>
       <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <div class="msg" id="loginMsg"></div>
     </div>
@@ -203,6 +203,7 @@
 
     <!-- Panel Ajukan Cuti (toggle) -->
     <div class="form-panel" id="formPanel">
+      <div class="fp-inner">
       <div class="fp-head">
         <div class="fp-mark">✦</div>
         <div class="fp-title">
@@ -268,6 +269,7 @@
         <button class="btn btn-secondary" type="button" onclick="toggleForm(false)">Batal</button>
         <button class="btn btn-primary" id="submitBtn" type="button">📤 Kirim pengajuan</button>
       </div>
+      </div><!-- .fp-inner -->
     </div>
 
     <div class="stat-box" id="statBox"></div>
@@ -333,6 +335,7 @@
 
     <!-- Panel form (toggle) -->
     <div class="form-panel" id="rekFormPanel">
+      <div class="fp-inner">
       <div class="fp-head">
         <div class="fp-mark">✦</div>
         <div class="fp-title">
@@ -411,6 +414,7 @@
         <button class="btn btn-secondary" type="button" onclick="toggleRekForm(false)">Batal</button>
         <button class="btn btn-primary" id="r_submitBtn" type="button">📤 Kirim pengajuan</button>
       </div>
+      </div><!-- .fp-inner -->
     </div>
 
     <div class="stat-box" id="rekStatBox"></div>
@@ -499,6 +503,7 @@
 
     <!-- Panel form resign (toggle) -->
     <div class="form-panel" id="resignFormPanel">
+      <div class="fp-inner">
       <div class="fp-head">
         <div class="fp-mark">✦</div>
         <div class="fp-title">
@@ -557,6 +562,7 @@
         <button class="btn btn-secondary" type="button" onclick="toggleResignForm(false)">Batal</button>
         <button class="btn btn-primary" id="rs_submitBtn" type="button">📤 Kirim pengajuan</button>
       </div>
+      </div><!-- .fp-inner -->
     </div>
 
     <div class="stat-box" id="resignStatBox"></div>
