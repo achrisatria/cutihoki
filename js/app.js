@@ -773,20 +773,7 @@
   function closeConfirm() { if (_confirmCancelFn) _confirmCancelFn(); else document.getElementById('confirmOverlay').classList.remove('open'); }
 
   // ── Tab ───────────────────────────────────────────────────────
-  // ── Sidebar toggle (mobile) ─────────────────────────────────
-  function toggleSidebar(force) {
-    var sb = document.getElementById('sidebar');
-    var ov = document.getElementById('sbOverlay');
-    var open = (force === undefined) ? !sb.classList.contains('open') : !!force;
-    sb.classList.toggle('open', open);
-    if (ov) ov.classList.toggle('open', open);
-    document.body.style.overflow = open ? 'hidden' : '';
-  }
-
   function switchTab(view) {
-    // Close sidebar on mobile
-    if (window.innerWidth <= 768) toggleSidebar(false);
-
     // Accent theme per module
     document.body.classList.remove('theme-resign', 'theme-rekening');
     if (view === 'resign') document.body.classList.add('theme-resign');
