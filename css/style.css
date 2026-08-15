@@ -11,33 +11,33 @@
     --ink: var(--text-primary); --ink-2: #F8FAFC; --ink-soft: var(--text-secondary);
     --muted: var(--text-muted); --faint: var(--text-faint);
 
-    --bg-page:      #081714;
-    --bg-table:     #0D211D;
-    --bg-row-alt:   #0B1C19;
-    --bg-row-hover: rgba(37,183,155,.09);
-    --bg-header:    #0D211D;
-    --bg-sidebar:   #0A1A17;
-    --sidebar-border: rgba(115,214,190,.18);
-    --paper: var(--bg-table); --surface: #14302A; --surface-2: #102620; --surface-3: #0B1C19;
+    --bg-page:      #0C1220;
+    --bg-table:     #111A2C;
+    --bg-row-alt:   #0F1728;
+    --bg-row-hover: rgba(91,141,239,.09);
+    --bg-header:    #111A2C;
+    --bg-sidebar:   #0A1020;
+    --sidebar-border: rgba(100,160,240,.18);
+    --paper: var(--bg-table); --surface: #172236; --surface-2: #131D30; --surface-3: #0F1728;
     --canvas: var(--bg-page); --stripe: var(--bg-row-alt);
 
-    --border:        #1C3B33;
-    --border-strong: #2A5247;
+    --border:        #1A2640;
+    --border-strong: #283A58;
     --hairline:      rgba(148,163,184,.06);
     --line: var(--border); --line-strong: var(--border-strong);
     --table-divider: 1px solid rgba(148,163,184,.18);
 
-    --accent:       #25B79B;
-    --accent-dark:  #16816F;
-    --accent-ink:   #B9F3E6;
-    --accent-050:   rgba(37,183,155,.12);
-    --accent-100:   rgba(37,183,155,.20);
-    --accent-bd:    rgba(37,183,155,.34);
-    --accent-glow:  rgba(37,183,155,.26);
+    --accent:       #5B8DEF;
+    --accent-dark:  #3D6FD4;
+    --accent-ink:   #C4DBFF;
+    --accent-050:   rgba(91,141,239,.12);
+    --accent-100:   rgba(91,141,239,.20);
+    --accent-bd:    rgba(91,141,239,.34);
+    --accent-glow:  rgba(91,141,239,.26);
 
-    --brand: #25B79B; --brand-dark: #16816F; --brand-ink: #B9F3E6;
-    --brand-050: rgba(37,183,155,.12); --brand-100: rgba(37,183,155,.20);
-    --spark: #6FE8D0;
+    --brand: #5B8DEF; --brand-dark: #3D6FD4; --brand-ink: #C4DBFF;
+    --brand-050: rgba(91,141,239,.12); --brand-100: rgba(91,141,239,.20);
+    --spark: #7BAAFF;
 
     --amber: #FBBF24; --amber-bg: rgba(251,191,36,.10); --amber-bd: rgba(251,191,36,.25);
     --red:   #F87171; --red-bg:   rgba(248,113,113,.10); --red-bd:   rgba(248,113,113,.25);
@@ -46,7 +46,7 @@
     --slate: #94A3B8; --slate-bg: rgba(148,163,184,.08);
 
     --role-cs:  #818CF8; --role-cs-bg:  rgba(129,140,248,.12); --role-cs-bd:  rgba(129,140,248,.30);
-    --role-kap: #2DD4BF; --role-kap-bg: rgba(45,212,191,.12); --role-kap-bd: rgba(45,212,191,.30);
+    --role-kap: #5BB8EF; --role-kap-bg: rgba(91,184,239,.12); --role-kap-bd: rgba(91,184,239,.30);
     --role-kas: #FB7185; --role-kas-bg: rgba(251,113,133,.12); --role-kas-bd: rgba(251,113,133,.30);
 
     --pass-yes: #34D399; --pass-yes-bg: rgba(52,211,153,.10); --pass-yes-bd: rgba(52,211,153,.25);
@@ -87,7 +87,7 @@
   .value, .total-value, .periode, .cell-num, td, th { font-variant-numeric: tabular-nums; }
 
   /* ═══ HEADER ════════════════════════════════════════════════ */
-  .app-header { position: sticky; top: 0; z-index: 50; background: var(--bg-header); border-bottom: 1px solid var(--sidebar-border); box-shadow: 0 1px 0 rgba(220,255,246,.04) inset, 0 4px 16px rgba(0,0,0,.42); }
+  .app-header { position: sticky; top: 0; z-index: 50; background: var(--bg-header); border-bottom: 1px solid var(--sidebar-border); box-shadow: 0 1px 0 rgba(180,200,240,.04) inset, 0 4px 16px rgba(0,0,0,.42); }
   .app-header::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 50% 120% at 10% 100%, var(--accent-glow) 0%, transparent 70%); transition: background .5s; }
   .app-header-inner { max-width: none; margin: 0 auto; padding: 0 var(--page-gutter); height: var(--header-h); display: flex; align-items: center; gap: 16px; position: relative; }
   .brand-logo { flex: none; display: flex; align-items: center; height: 38px; padding: 0 4px; }
@@ -1050,8 +1050,8 @@
   }
 
   .sb-item:hover {
-    background: rgba(37,183,155,.08);
-    border-color: rgba(37,183,155,.16);
+    background: rgba(91,141,239,.08);
+    border-color: rgba(91,141,239,.16);
   }
 
   .sb-item.active {
