@@ -1205,9 +1205,9 @@
     btn.innerHTML = open ? '✕ Tutup form' : '＋ Ajukan Cuti';
     btn.classList.toggle('btn-primary', !open);
     btn.classList.toggle('btn-secondary', open);
-    if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else { var m = document.getElementById('formMsg'); m.className = 'msg'; m.textContent = ''; }
+    if (!open) { var m = document.getElementById('formMsg'); m.className = 'msg'; m.textContent = ''; }
   }
+  document.getElementById('formPanel').addEventListener('click', function(e) { if (e.target === this) toggleForm(false); });
 
   var formC = document.getElementById('leaves-container');
   function toggleAddBtn() {
@@ -2188,9 +2188,9 @@
     btn.innerHTML = open ? '✕ Tutup form' : '＋ Ajukan Ganti Rekening';
     btn.classList.toggle('btn-primary', !open);
     btn.classList.toggle('btn-secondary', open);
-    if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else rekMsg('', '');
+    if (!open) rekMsg('', '');
   }
+  document.getElementById('rekFormPanel').addEventListener('click', function(e) { if (e.target === this) toggleRekForm(false); });
   function rekMsg(type, text) {
     var el = document.getElementById('r_formMsg');
     el.className = 'msg ' + (type || ''); el.textContent = text || '';
@@ -2580,9 +2580,9 @@
     btn.innerHTML = open ? '✕ Tutup form' : '＋ Ajukan Resign';
     btn.classList.toggle('btn-primary', !open);
     btn.classList.toggle('btn-secondary', open);
-    if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else resignMsg('', '');
+    if (!open) resignMsg('', '');
   }
+  document.getElementById('resignFormPanel').addEventListener('click', function(e) { if (e.target === this) toggleResignForm(false); });
   function resignMsg(type, text) {
     var el = document.getElementById('rs_formMsg');
     el.className = 'msg ' + (type || ''); el.textContent = text || '';
