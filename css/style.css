@@ -15,8 +15,8 @@
     --bg-table:     #243244;
     --bg-row-alt:   #21303F;
     --bg-row-hover: rgba(91,141,239,.07);
-    --bg-header:    #131B2C;
-    --bg-sidebar:   #141C2E;
+    --bg-header:    #243244;
+    --bg-sidebar:   #223040;
     --sidebar-border: rgba(120,160,220,.10);
     --paper: var(--bg-table); --surface: #2A3A4E; --surface-2: #243444; --surface-3: #21303F;
     --canvas: var(--bg-page); --stripe: var(--bg-row-alt);
@@ -25,7 +25,7 @@
     --border-strong: #4A6078;
     --hairline:      rgba(148,163,184,.06);
     --line: var(--border); --line-strong: var(--border-strong);
-    --table-divider: 1px solid rgba(148,163,184,.18);
+    --table-divider: 1px solid rgba(148,163,184,.28);
 
     --accent:       #5B8DEF;
     --accent-dark:  #3D6FD4;
@@ -87,8 +87,8 @@
   .value, .total-value, .periode, .cell-num, td, th { font-variant-numeric: tabular-nums; }
 
   /* ═══ HEADER ════════════════════════════════════════════════ */
-  .app-header { position: sticky; top: 0; z-index: 50; background: linear-gradient(135deg, #0F1724 0%, #162033 50%, #131A2A 100%); border-bottom: 1px solid rgba(120,160,220,.10); box-shadow: 0 1px 0 rgba(200,220,255,.04) inset, 0 4px 20px rgba(0,0,0,.35); }
-  .app-header::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 40% 100% at 8% 100%, rgba(91,141,239,.12) 0%, transparent 65%), radial-gradient(ellipse 30% 80% at 92% 0%, rgba(91,141,239,.06) 0%, transparent 60%); transition: background .5s; }
+  .app-header { position: sticky; top: 0; z-index: 50; background: var(--bg-header); border-bottom: 1px solid var(--border); box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 2px 10px rgba(0,0,0,.20); }
+  .app-header::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 40% 100% at 8% 100%, rgba(91,141,239,.08) 0%, transparent 65%); transition: background .5s; }
   .app-header-inner { max-width: none; margin: 0 auto; padding: 0 var(--page-gutter); height: var(--header-h); display: flex; align-items: center; gap: 16px; position: relative; }
   .brand-logo { flex: none; display: flex; align-items: center; height: 38px; padding: 0 4px; }
   .brand-logo svg { height: 34px; width: auto; display: block; }
@@ -136,8 +136,7 @@
   .app-layout { display: flex; min-height: calc(100vh - var(--header-h)); }
   .sidebar {
     width: 240px; flex: none; position: sticky; top: var(--header-h); height: calc(100vh - var(--header-h));
-    background: linear-gradient(180deg, #131A2C 0%, #111827 40%, #0F1520 100%);
-    border-right: 1px solid rgba(120,160,220,.08);
+    background: var(--bg-sidebar); border-right: 1px solid var(--border);
     display: flex; flex-direction: column; min-height: 0; overflow-x: hidden; overflow-y: auto; z-index: 20;
   }
   .sidebar::-webkit-scrollbar { width: 4px; }
