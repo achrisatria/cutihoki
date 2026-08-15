@@ -11,18 +11,18 @@
     --ink: var(--text-primary); --ink-2: #F8FAFC; --ink-soft: var(--text-secondary);
     --muted: var(--text-muted); --faint: var(--text-faint);
 
-    --bg-page:      #0C1220;
-    --bg-table:     #111A2C;
-    --bg-row-alt:   #0F1728;
-    --bg-row-hover: rgba(91,141,239,.09);
-    --bg-header:    #111A2C;
-    --bg-sidebar:   #0A1020;
-    --sidebar-border: rgba(100,160,240,.18);
-    --paper: var(--bg-table); --surface: #172236; --surface-2: #131D30; --surface-3: #0F1728;
+    --bg-page:      #1E2A3A;
+    --bg-table:     #243244;
+    --bg-row-alt:   #21303F;
+    --bg-row-hover: rgba(91,141,239,.07);
+    --bg-header:    #1C2B3C;
+    --bg-sidebar:   #192435;
+    --sidebar-border: rgba(100,160,240,.14);
+    --paper: var(--bg-table); --surface: #2A3A4E; --surface-2: #243444; --surface-3: #21303F;
     --canvas: var(--bg-page); --stripe: var(--bg-row-alt);
 
-    --border:        #1A2640;
-    --border-strong: #283A58;
+    --border:        #3B4F65;
+    --border-strong: #4A6078;
     --hairline:      rgba(148,163,184,.06);
     --line: var(--border); --line-strong: var(--border-strong);
     --table-divider: 1px solid rgba(148,163,184,.18);
