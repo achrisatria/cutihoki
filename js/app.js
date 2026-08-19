@@ -1451,7 +1451,7 @@
         renderFilters(); applyFilters(); updateTabCounts();
       }
       closeEdit(); toast('Perubahan tersimpan', 'ok');
-      logActivity('CUTI', 'UPDATE', 'Edit cuti ID: ' + editingId);
+      logActivity('CUTI', 'UPDATE', 'Edit cuti ' + (document.getElementById('e_nama') ? document.getElementById('e_nama').value : editingId));
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       eShow('error', 'Gagal menyimpan: ' + err.message);
@@ -2063,7 +2063,7 @@
       sel.classList.remove('task-saving');
       sel.className = 'task-select ' + taskCls(value); sel.setAttribute('data-status', value);
       sel.classList.add('task-flash'); setTimeout(function() { sel.classList.remove('task-flash'); }, 700);
-      logActivity('CUTI', 'STATUS', 'Status cuti ' + rowId + ' → ' + value);
+      logActivity('CUTI', 'STATUS', (function(){ var n=''; (_cache||[]).forEach(function(r){ if(r.rowId===rowId) n=r.nama; }); return 'Status cuti ' + (n||rowId) + ' → ' + value; })());
       if (_cache) { for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = value; break; } _filterVer++; _memoStatus = null; }
       buildMonthOptions(); buildStatusOptions();   // hitungan filter ikut menyesuaikan
       applyFilters();          // baris otomatis berpindah ke menu yang sesuai
@@ -2448,7 +2448,7 @@
     sbPatch('rekening', 'id=eq.' + encodeURIComponent(rekEditingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       closeRekEdit(); toast('Perubahan tersimpan', 'ok');
-      logActivity('REKENING', 'UPDATE', 'Edit rekening ID: ' + rekEditingId);
+      logActivity('REKENING', 'UPDATE', 'Edit rekening ' + (document.getElementById('rke_nama') ? document.getElementById('rke_nama').value : rekEditingId));
       _rekLoaded = false; loadRekening(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
@@ -2835,7 +2835,7 @@
     sbPatch('resign', 'id=eq.' + encodeURIComponent(resignEditingId), patch).then(function() {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
       closeResignEdit(); toast('Perubahan tersimpan', 'ok');
-      logActivity('RESIGN', 'UPDATE', 'Edit resign ID: ' + resignEditingId);
+      logActivity('RESIGN', 'UPDATE', 'Edit resign ' + (document.getElementById('rse_nama') ? document.getElementById('rse_nama').value : resignEditingId));
       _resignLoaded = false; loadResign(true);
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '💾 Simpan perubahan';
