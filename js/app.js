@@ -408,7 +408,7 @@
   // Mengembalikan null bila boleh, atau objek { kind, ... } bila diblokir:
   //   kind 'active'   → masih ada cuti berjalan (WAITING/SEDANG CUTI)
   //   kind 'cooldown' → cuti terakhir selesai, tapi belum lewat 6 bulan
-  function checkEligibility(nama) {
+  function checkEligibility(nama, cutiStartDate) {
     var qs = 'select=id_pengajuan,nama,task1,start1,end1,start2,end2&nama=eq.' + encodeURIComponent(nama);
     return sbGet('cuti', qs).then(function(rows) {
       // 1) Masih ada pengajuan yang BELUM selesai? (WAITING, DONE CATAT, SEDANG CUTI, dll)
@@ -421,15 +421,16 @@
       }
 
       // 2) Jeda 6 bulan sejak cuti terakhir SELESAI
-      var lastEnd = '';   // tanggal selesai terakhir dari cuti yang sudah beres
+      //    Bandingkan tanggal MULAI CUTI yang diajukan, bukan tanggal hari ini
+      var lastEnd = '';
       rows.forEach(function(r) {
         if (!isArchived(r.task1)) return;
         [r.end1, r.end2].forEach(function(d) { if (d && d > lastEnd) lastEnd = d; });
       });
       if (lastEnd) {
-        var bolehLagi = addMonthsISO(lastEnd, COOLDOWN_MONTHS);   // tanggal saat sudah boleh mengajukan
-        var today = todayISO();
-        if (dayKey(today) < dayKey(bolehLagi)) {
+        var bolehLagi = addMonthsISO(lastEnd, COOLDOWN_MONTHS);
+        var checkDate = cutiStartDate || todayISO();
+        if (dayKey(checkDate) < dayKey(bolehLagi)) {
           return { kind: 'cooldown', lastEnd: lastEnd, eligibleOn: bolehLagi };
         }
       }
@@ -1293,7 +1294,7 @@
     var btn = this;
     btn.disabled = true; btn.textContent = 'Memeriksa…';
 
-    checkEligibility(nama).then(function(block) {
+    checkEligibility(nama, leaves[0].start).then(function(block) {
       if (block) {
         btn.disabled = false; btn.textContent = '📤 Kirim pengajuan';
         if (block.kind === 'active') {
@@ -1302,7 +1303,7 @@
         }
         // kind === 'cooldown'
         return showMsg('warn', '⛔ ' + nama + ' baru selesai cuti ' + formatDate(block.lastEnd) +
-          '. Sesuai aturan jeda ' + COOLDOWN_MONTHS + ' bulan, pengajuan berikutnya bisa dibuat mulai ' +
+          '. Sesuai aturan jeda ' + COOLDOWN_MONTHS + ' bulan, tanggal mulai cuti berikutnya paling cepat ' +
           formatDate(block.eligibleOn) + '.');
       }
       // Lolos syarat pengajuan ulang → cek bentrok jadwal (aturan per role) dgn data terkini
