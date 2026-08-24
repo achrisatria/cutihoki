@@ -1091,14 +1091,39 @@
 }
 
 /* ═══ THEME OVERRIDES — must be last to win cascade ══════════ */
-.theme-resign .btn-primary { background: linear-gradient(135deg, #a8243b, #a50c26) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(244,63,94,.25) !important; }
-.theme-resign .btn-primary:hover { box-shadow: 0 6px 20px rgba(165,12,38,.35) !important; }
-.theme-resign .sb-item.active { background: linear-gradient(135deg, #a8243b, #a50c26) !important; box-shadow: 0 4px 12px rgba(244,63,94,.22); }
-.theme-resign .fp-mark { background: linear-gradient(135deg, #a8243b, #a50c26) !important; box-shadow: 0 4px 12px rgba(244,63,94,.22); }
-.theme-resign .chip.active { background: linear-gradient(135deg, #a8243b, #a50c26) !important; box-shadow: 0 3px 10px rgba(244,63,94,.20); }
+.theme-resign .btn-primary { background: linear-gradient(135deg, #FB7185, #E11D48) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(244,63,94,.25) !important; }
+.theme-resign .btn-primary:hover { box-shadow: 0 6px 20px rgba(244,63,94,.35) !important; }
+.theme-resign .sb-item.active { background: linear-gradient(135deg, #FB7185, #E11D48) !important; box-shadow: 0 4px 12px rgba(244,63,94,.22); }
+.theme-resign .fp-mark { background: linear-gradient(135deg, #FB7185, #E11D48) !important; box-shadow: 0 4px 12px rgba(244,63,94,.22); }
+.theme-resign .chip.active { background: linear-gradient(135deg, #FB7185, #E11D48) !important; box-shadow: 0 3px 10px rgba(244,63,94,.20); }
 
 .theme-rekening .btn-primary { background: linear-gradient(135deg, #34D399, #059669) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(16,185,129,.25) !important; }
 .theme-rekening .btn-primary:hover { box-shadow: 0 6px 20px rgba(16,185,129,.35) !important; }
 .theme-rekening .sb-item.active { background: linear-gradient(135deg, #34D399, #059669) !important; color: #064E3B; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
 .theme-rekening .fp-mark { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
 .theme-rekening .chip.active { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 3px 10px rgba(16,185,129,.20); }
+/* ═══ SIDEBAR REVISI PULSE EFFECT ═════════════════════════════ */
+.sb-badge-pulse {
+  background: var(--amber) !important;
+  color: #000 !important;
+  animation: sbPulse 2s ease infinite;
+}
+@keyframes sbPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.4); }
+  50% { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
+}
+.sb-has-pending {
+  position: relative;
+}
+.sb-has-pending::before {
+  content: "";
+  position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber);
+  animation: sbDot 1.5s ease infinite;
+}
+@keyframes sbDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}
