@@ -3219,21 +3219,23 @@
       var perihal = r.perihal1 || '-';
       if (r.perihal2) perihal += ', ' + r.perihal2;
       var alasanShort = r.alasan.length > 40 ? r.alasan.slice(0, 40) + '…' : r.alasan;
+      var copyCol = '';
+      if (r.status === 'PENDING') {
+        copyCol = isAdmin() ? '<button class="btn btn-sm btn-primary" onclick="openRevisiReview(\'' + esc(r.id) + '\')">Review</button>' : '<span class="pill task-WAITING" style="border-radius:var(--radius-pill);padding:3px 10px;font-size:10px;">Menunggu</span>';
+      } else if (r.status === 'DONE REVISI') {
+        copyCol = '<button class="copy-btn" type="button" onclick="copyRevisi(\'' + esc(r.id) + '\', this)">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+            '<span>Salin</span></button>';
+      }
       var aksi = '';
       if (isAdmin()) {
-        aksi = '<span class="row-actions" style="justify-content:center;display:inline-flex;gap:4px;align-items:center;">';
-        if (r.status === 'PENDING') aksi += '<button class="btn btn-sm btn-primary" style="margin:0;" onclick="openRevisiReview(\'' + esc(r.id) + '\')">Review</button>';
-        aksi += '<button class="icon-btn" title="Ubah" onclick="openRevisiEdit(\'' + esc(r.id) + '\')">' +
+        aksi = '<span class="row-actions" style="justify-content:center;display:inline-flex;gap:4px;align-items:center;">' +
+          '<button class="icon-btn" title="Ubah" onclick="openRevisiEdit(\'' + esc(r.id) + '\')">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
           '<button class="icon-btn danger" title="Hapus" onclick="deleteRevisi(\'' + esc(r.id) + '\',\'' + esc(r.nama) + '\')">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
           '</span>';
       }
-      var copyCol = r.status === 'DONE REVISI'
-        ? '<button class="copy-btn" type="button" onclick="copyRevisi(\'' + esc(r.id) + '\', this)">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
-            '<span>Salin</span></button>'
-        : '';
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
         '<td style="text-align:center;white-space:nowrap;font-size:11px;color:var(--text-muted);">' + esc(formatLogTime(r.timestamp)) + '</td>' +
         '<td style="text-align:left;font-weight:600;font-size:12px;white-space:normal;">' + esc(r.nama) + '</td>' +
