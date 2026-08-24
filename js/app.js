@@ -3210,7 +3210,7 @@
   function renderRevisiTable(rows) {
     var tbody = document.getElementById('revisiTableBody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">Belum ada pengajuan revisi.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">Belum ada pengajuan revisi.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function(r, i) {
@@ -3222,6 +3222,11 @@
       var aksi = isAdmin() && r.status === 'PENDING'
         ? '<button class="btn btn-sm btn-primary" onclick="openRevisiReview(\'' + esc(r.id) + '\')">Review</button>'
         : '';
+      var copyCol = r.status === 'DONE REVISI'
+        ? '<button class="copy-btn" type="button" onclick="copyRevisi(\'' + esc(r.id) + '\', this)">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+            '<span>Salin</span></button>'
+        : '';
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
         '<td style="text-align:center;white-space:nowrap;font-size:11.5px;color:var(--text-muted);">' + esc(formatLogTime(r.timestamp)) + '</td>' +
         '<td style="text-align:left;font-weight:600;">' + esc(r.nama) + '</td>' +
@@ -3229,9 +3234,48 @@
         '<td style="text-align:center;"><span class="pill pill-perihal">' + esc(perihal) + '</span></td>' +
         '<td style="text-align:center;" title="' + esc(r.alasan) + '">' + esc(alasanShort) + '</td>' +
         '<td style="text-align:center;"><span class="pill ' + revisiStatusCls(r.status) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(r.status) + '</span></td>' +
+        '<td style="text-align:center;">' + copyCol + '</td>' +
         '<td style="text-align:center;" class="admin-only">' + aksi + '</td>' +
       '</tr>';
     }).join('');
+  }
+
+  function buildRevisiFormat(r) {
+    var lines = [
+      'REVISI CUTI STAFF',
+      '',
+      'Nama Staff : ' + r.nama,
+      '',
+      'Cuti 1 (Revisi) :',
+      'Perihal : ' + (r.perihal1 || '-'),
+      'Tanggal : ' + formatDate(r.start1) + ' — ' + formatDate(r.end1)
+    ];
+    if (r.start2 && r.end2) {
+      lines.push('');
+      lines.push('Cuti 2 (Revisi) :');
+      lines.push('Perihal : ' + (r.perihal2 || '-'));
+      lines.push('Tanggal : ' + formatDate(r.start2) + ' — ' + formatDate(r.end2));
+    }
+    lines.push('');
+    lines.push('Alasan Revisi : ' + (r.alasan || '-'));
+    lines.push('');
+    lines.push('ACC : ' + currentLeader());
+    return lines.join('\n');
+  }
+
+  function copyRevisi(revId, btn) {
+    var r = null;
+    (_revisiCache || []).forEach(function(x) { if (x.id === revId) r = x; });
+    if (!r) return;
+    var text = buildRevisiFormat(r);
+    copyText(text).then(function() {
+      toast('Format revisi disalin', 'ok');
+      if (btn) {
+        var label = btn.querySelector('span'), asli = label ? label.textContent : '';
+        btn.classList.add('done'); if (label) label.textContent = 'Tersalin';
+        setTimeout(function() { btn.classList.remove('done'); if (label) label.textContent = asli; }, 1600);
+      }
+    }).catch(function() { showCopyFallback(text); });
   }
 
   // ── Review revisi (admin) ─────────────────────────────────────
