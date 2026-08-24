@@ -786,7 +786,7 @@
     });
     // Sidebar active
     var sbMap = { dashboard:'sbDashboard', ongoing:'sbOngoing', archive:'sbArchive',
-      calendar:'sbCalendar', resign:'sbResign', rekening:'sbRekening', log:'sbLog' };
+      calendar:'sbCalendar', resign:'sbResign', rekening:'sbRekening', log:'sbLog', revisi:'sbRevisi' };
     document.querySelectorAll('.sb-item').forEach(function(s) { s.classList.remove('active'); });
     var sbEl = document.getElementById(sbMap[view]);
     if (sbEl) sbEl.classList.add('active');
@@ -809,6 +809,7 @@
     if (view === 'rekening') loadRekening(false);
     if (view === 'resign') loadResign(false);
     if (view === 'log') loadLog(false);
+    if (view === 'revisi') loadRevisi(false);
   }
 
   // Kembalikan semua filter dashboard ke kondisi awal (dipakai saat pindah menu)
@@ -1882,8 +1883,11 @@
     return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
   }
   function actionCell(rowId, label) {
-    // Non-admin: tanpa tombol ubah/hapus
-    if (!isAdmin()) return '<span class="row-actions" style="color:var(--faint);font-size:12px;">—</span>';
+    // Non-admin: tombol revisi saja
+    if (!isAdmin()) return '<span class="row-actions">' +
+      '<button class="icon-btn" title="Ajukan Revisi" onclick="openRevisiForm(\'' + esc(rowId) + '\')" style="border-color:var(--amber-bd);color:var(--amber);">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+      '</button></span>';
     return '<span class="row-actions">' +
       '<button class="icon-btn" title="Ubah" onclick="openEdit(\'' + esc(rowId) + '\')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
@@ -2106,7 +2110,7 @@
   document.getElementById('copyOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopy(); });
   document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); }
+    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); closeRevisiForm(); closeRevisiReview(); }
   });
 
   // ══════════════════════════════════════════════════════════════
@@ -3044,6 +3048,235 @@
     });
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // MODUL REVISI CUTI
+  // ══════════════════════════════════════════════════════════════
+  var _revisiCache = null, _revisiLoaded = false;
+  var revisiFilter = { status: 'ALL', search: '' };
+  var _revisiReviewId = null;
+
+  function getRevisi() {
+    return sbGet('revisi_cuti', 'select=*&order=created_at.desc').then(function(rows) {
+      return rows.map(function(r) {
+        return {
+          id: r.id, cutiId: r.cuti_id, nama: r.nama, timestamp: r.created_at || '',
+          start1: r.start1_baru || '', end1: r.end1_baru || '', perihal1: r.perihal1_baru || '',
+          start2: r.start2_baru || '', end2: r.end2_baru || '', perihal2: r.perihal2_baru || '',
+          alasan: r.alasan || '', status: r.status || 'PENDING',
+          catatan: r.catatan_admin || ''
+        };
+      });
+    });
+  }
+
+  // ── Form ajukan revisi (non-admin) ────────────────────────────
+  function openRevisiForm(cutiId) {
+    var r = null;
+    (_cache || []).forEach(function(x) { if (x.rowId === cutiId) r = x; });
+    if (!r) return toast('Data cuti tidak ditemukan', 'err');
+    document.getElementById('rv_cutiId').value = cutiId;
+    document.getElementById('rv_nama').value = r.nama;
+    document.getElementById('rv_perihal1').value = r.perihal1 || 'CUTI KERJA';
+    document.getElementById('rv_start1').value = r.start1Raw || '';
+    document.getElementById('rv_end1').value = r.end1Raw || '';
+    document.getElementById('rv_perihal2').value = r.perihal2 || '';
+    document.getElementById('rv_start2').value = r.start2Raw || '';
+    document.getElementById('rv_end2').value = r.end2Raw || '';
+    document.getElementById('rv_alasan').value = '';
+    var m = document.getElementById('rv_msg'); m.className = 'msg'; m.textContent = '';
+    document.getElementById('revisiOverlay').classList.add('open');
+  }
+  function closeRevisiForm() { document.getElementById('revisiOverlay').classList.remove('open'); }
+  document.getElementById('revisiOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiForm(); });
+
+  document.getElementById('rv_submitBtn').addEventListener('click', function() {
+    var cutiId = document.getElementById('rv_cutiId').value;
+    var nama = document.getElementById('rv_nama').value;
+    var alasan = document.getElementById('rv_alasan').value.trim();
+    var s1 = document.getElementById('rv_start1').value;
+    var e1 = document.getElementById('rv_end1').value;
+    var p1 = document.getElementById('rv_perihal1').value;
+    var s2 = document.getElementById('rv_start2').value;
+    var e2 = document.getElementById('rv_end2').value;
+    var p2 = document.getElementById('rv_perihal2').value;
+    var msg = document.getElementById('rv_msg');
+
+    if (!s1 || !e1 || !p1) { msg.className = 'msg error'; msg.textContent = 'Isi minimal Cuti 1 (perihal, tanggal mulai & selesai).'; return; }
+    if (!alasan) { msg.className = 'msg error'; msg.textContent = 'Isi alasan revisi.'; return; }
+
+    var id = 'RV-' + Date.now() + '-' + randSuffix(8);
+    var payload = {
+      id: id, cuti_id: cutiId, nama: nama,
+      start1_baru: s1, end1_baru: e1, perihal1_baru: p1,
+      start2_baru: s2 || null, end2_baru: e2 || null, perihal2_baru: p2 || null,
+      alasan: alasan, status: 'PENDING'
+    };
+    var btn = this; btn.disabled = true; btn.textContent = 'Mengirim…';
+    sbPost('revisi_cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
+      btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
+      toast('Revisi berhasil diajukan', 'ok');
+      logActivity('CUTI', 'CREATE', 'Ajukan revisi cuti ' + nama);
+      closeRevisiForm();
+      _revisiLoaded = false; loadRevisi(true);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
+      msg.className = 'msg error'; msg.textContent = 'Gagal: ' + err.message;
+    });
+  });
+
+  // ── Load & render revisi ──────────────────────────────────────
+  function loadRevisi(force) {
+    var loading = document.getElementById('revisiLoading');
+    var content = document.getElementById('revisiContent');
+    if (!force && _revisiLoaded && _revisiCache) { renderRevisiAll(); content.style.display = 'block'; loading.style.display = 'none'; return; }
+    loading.style.display = 'block'; content.style.display = 'none';
+    getRevisi().then(function(rows) {
+      _revisiCache = rows; _revisiLoaded = true;
+      loading.style.display = 'none'; renderRevisiAll(); content.style.display = 'block';
+    }).catch(function(err) { loading.textContent = '❌ Gagal: ' + err.message; });
+  }
+
+  function renderRevisiAll() { renderRevisiChips(); applyRevisiFilters(); updateRevisiCount(); }
+
+  function updateRevisiCount() {
+    var n = (_revisiCache || []).filter(function(r) { return r.status === 'PENDING'; }).length;
+    var sb = document.getElementById('sbRevisiCount');
+    if (sb) { sb.textContent = n; sb.style.display = n ? '' : 'none'; }
+  }
+
+  function renderRevisiChips() {
+    var wrap = document.getElementById('revisiChips');
+    var list = ['ALL', 'PENDING', 'DONE REVISI', 'DITOLAK'];
+    wrap.innerHTML = list.map(function(s) {
+      var active = revisiFilter.status === s ? ' active' : '';
+      return '<button class="chip' + active + '" data-rvs="' + esc(s) + '">' + esc(s === 'ALL' ? 'Semua' : s) + '</button>';
+    }).join('');
+    wrap.querySelectorAll('.chip').forEach(function(c) {
+      c.addEventListener('click', function() { revisiFilter.status = c.dataset.rvs; renderRevisiChips(); applyRevisiFilters(); });
+    });
+  }
+
+  var _revisiSearchTimer = null;
+  document.getElementById('revisiSearch').addEventListener('input', function() {
+    var v = this.value.trim().toLowerCase();
+    clearTimeout(_revisiSearchTimer);
+    _revisiSearchTimer = setTimeout(function() { revisiFilter.search = v; applyRevisiFilters(); }, 140);
+  });
+
+  function applyRevisiFilters() {
+    if (!_revisiCache) return;
+    var rows = _revisiCache.filter(function(r) {
+      if (revisiFilter.status !== 'ALL' && r.status !== revisiFilter.status) return false;
+      if (revisiFilter.search && (r.nama + ' ' + r.alasan).toLowerCase().indexOf(revisiFilter.search) === -1) return false;
+      return true;
+    });
+    document.getElementById('revisiResultCount').innerHTML =
+      'Menampilkan <strong>' + rows.length + '</strong> dari ' + _revisiCache.length + ' revisi';
+    renderRevisiTable(rows);
+  }
+
+  function revisiStatusCls(s) {
+    if (s === 'PENDING') return 'task-WAITING';
+    if (s === 'DONE REVISI') return 'task-SELESAI';
+    if (s === 'DITOLAK') return 'task-DONE';
+    return '';
+  }
+
+  function renderRevisiTable(rows) {
+    var tbody = document.getElementById('revisiTableBody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">Belum ada pengajuan revisi.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r, i) {
+      var periode = formatDate(r.start1) + ' — ' + formatDate(r.end1);
+      if (r.start2 && r.end2) periode += '<br><span style="color:var(--faint);font-size:10px;">↳</span> ' + formatDate(r.start2) + ' — ' + formatDate(r.end2);
+      var perihal = r.perihal1 || '-';
+      if (r.perihal2) perihal += ', ' + r.perihal2;
+      var alasanShort = r.alasan.length > 40 ? r.alasan.slice(0, 40) + '…' : r.alasan;
+      var aksi = isAdmin() && r.status === 'PENDING'
+        ? '<button class="btn btn-sm btn-primary" onclick="openRevisiReview(\'' + esc(r.id) + '\')">Review</button>'
+        : '';
+      return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
+        '<td style="text-align:center;white-space:nowrap;font-size:11.5px;color:var(--text-muted);">' + esc(formatLogTime(r.timestamp)) + '</td>' +
+        '<td style="text-align:left;font-weight:600;">' + esc(r.nama) + '</td>' +
+        '<td style="text-align:left;font-size:12px;white-space:normal;">' + periode + '</td>' +
+        '<td style="text-align:center;"><span class="pill pill-perihal">' + esc(perihal) + '</span></td>' +
+        '<td style="text-align:center;" title="' + esc(r.alasan) + '">' + esc(alasanShort) + '</td>' +
+        '<td style="text-align:center;"><span class="pill ' + revisiStatusCls(r.status) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(r.status) + '</span></td>' +
+        '<td style="text-align:center;" class="admin-only">' + aksi + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Review revisi (admin) ─────────────────────────────────────
+  function openRevisiReview(revId) {
+    var r = null;
+    (_revisiCache || []).forEach(function(x) { if (x.id === revId) r = x; });
+    if (!r) return;
+    _revisiReviewId = revId;
+    var detail = '<div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">' +
+      '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:8px;">' + esc(r.nama) + '</div>' +
+      '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
+      '<div style="font-size:9px;font-weight:800;letter-spacing:.10em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Revisi Cuti 1</div>' +
+      '<div>' + esc(r.perihal1) + ': ' + formatDate(r.start1) + ' — ' + formatDate(r.end1) + '</div>' +
+      '</div>' +
+      (r.start2 && r.end2 ? '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
+      '<div style="font-size:9px;font-weight:800;letter-spacing:.10em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Revisi Cuti 2</div>' +
+      '<div>' + esc(r.perihal2) + ': ' + formatDate(r.start2) + ' — ' + formatDate(r.end2) + '</div></div>' : '') +
+      '<div style="margin-top:6px;"><strong>Alasan:</strong> ' + esc(r.alasan) + '</div>' +
+      '</div>';
+    document.getElementById('rvr_detail').innerHTML = detail;
+    document.getElementById('rvr_catatan').value = '';
+    var m = document.getElementById('rvr_msg'); m.className = 'msg'; m.textContent = '';
+    document.getElementById('revisiReviewOverlay').classList.add('open');
+  }
+  function closeRevisiReview() { document.getElementById('revisiReviewOverlay').classList.remove('open'); _revisiReviewId = null; }
+  document.getElementById('revisiReviewOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiReview(); });
+
+  function reviewRevisi(keputusan) {
+    if (!_revisiReviewId) return;
+    var r = null;
+    (_revisiCache || []).forEach(function(x) { if (x.id === _revisiReviewId) r = x; });
+    if (!r) return;
+    var catatan = document.getElementById('rvr_catatan').value.trim();
+    var msg = document.getElementById('rvr_msg');
+    var statusSave = keputusan === 'ACC' ? 'DONE REVISI' : 'DITOLAK';
+
+    // Update status revisi
+    sbPatch('revisi_cuti', 'id=eq.' + encodeURIComponent(_revisiReviewId), {
+      status: statusSave, catatan_admin: catatan
+    }).then(function() {
+      if (keputusan === 'ACC') {
+        // Terapkan perubahan ke cuti asli
+        var patch = {
+          start1: r.start1 || null, end1: r.end1 || null, perihal1: r.perihal1 || null,
+          start2: r.start2 || null, end2: r.end2 || null, perihal2: r.perihal2 || null,
+          durasi1: r.start1 && r.end1 ? calcDurasi(r.start1, r.end1) + ' Hari' : null,
+          durasi2: r.start2 && r.end2 ? calcDurasi(r.start2, r.end2) + ' Hari' : null
+        };
+        return sbPatch('cuti', 'id=eq.' + encodeURIComponent(r.cutiId), patch).then(function() {
+          toast('Revisi di-ACC & diterapkan ke data cuti', 'ok');
+          logActivity('CUTI', 'UPDATE', 'ACC revisi cuti ' + r.nama);
+          invalidate(); loadDashboard(true);
+        });
+      } else {
+        toast('Revisi ditolak', 'ok');
+        logActivity('CUTI', 'STATUS', 'Tolak revisi cuti ' + r.nama);
+      }
+    }).then(function() {
+      closeRevisiReview();
+      _revisiLoaded = false; loadRevisi(true);
+    }).catch(function(err) {
+      msg.className = 'msg error'; msg.textContent = 'Gagal: ' + err.message;
+    });
+  }
+
+  function calcDurasi(start, end) {
+    var s = new Date(start), e = new Date(end);
+    return Math.round((e - s) / (1000 * 60 * 60 * 24));
+  }
+
   // ── KALENDER ──────────────────────────────────────────────────
   var calRef = new Date(); calRef.setDate(1);
 
@@ -3259,6 +3492,7 @@
       renderRekChips();
       renderResignChips();
       renderLogChips();
+      renderRevisiChips();
       addFormLeave(false);
       fillLdr();
       renderFilters();
@@ -3267,6 +3501,7 @@
       // Pre-fetch resign & rekening counts untuk sidebar badges
       getResign().then(function(rows) { _resignCache = rows; _resignLoaded = true; updateResignCount(); }).catch(function() {});
       getRekening().then(function(rows) { _rekCache = rows; _rekLoaded = true; updateRekCount(); }).catch(function() {});
+      getRevisi().then(function(rows) { _revisiCache = rows; _revisiLoaded = true; updateRevisiCount(); }).catch(function() {});
     }).catch(function(err) {
       toast('Gagal memuat konfigurasi — cek SUPABASE_URL & KEY', 'err');
       alert('Gagal memuat konfigurasi: ' + err.message + '\n\nPastikan SUPABASE_URL dan SUPABASE_KEY sudah benar.');
