@@ -106,7 +106,7 @@
     <div class="modal-head"><h3>Login Admin</h3></div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Masuk untuk mengelola data, staff, dan aturan. Tanpa login, dashboard hanya bisa dilihat dan menerima pengajuan.</p>
-      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@gmail.com"></div>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="admin@hokijitu.local"></div>
       <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <div class="msg" id="loginMsg"></div>
     </div>
@@ -139,6 +139,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       <span>Selesai Cuti</span>
       <em class="sb-badge" id="sbArchiveCount">0</em>
+    </button>
+
+    <button class="sb-item" id="sbRevisi" onclick="switchTab('revisi')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>Revisi Cuti</span>
+      <em class="sb-badge" id="sbRevisiCount">0</em>
     </button>
 
     <button class="sb-item" id="sbResign" onclick="switchTab('resign')">
@@ -646,11 +652,117 @@
     </div>
   </div>
 
+  <!-- VIEW REVISI CUTI -->
+  <div class="view" id="view-revisi">
+    <div class="dash-head">
+      <div>
+        <h2>Pengajuan Revisi Cuti</h2>
+        <p>Daftar permintaan revisi dari staff — admin dapat menyetujui atau menolak.</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-secondary btn-sm" onclick="loadRevisi(true)">🔄 Muat ulang</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <span id="revisiChips"></span>
+      </div>
+      <div class="search-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="revisiSearch" type="text" placeholder="Cari nama staff…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="result-count" id="revisiResultCount"></div>
+    <div id="revisiLoading" style="display:none; color:var(--muted); padding:16px 0;">Memuat data…</div>
+
+    <div class="table-wrap" id="revisiContent" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:140px;">Waktu</th>
+            <th style="min-width:170px;">Nama Staff</th>
+            <th style="min-width:180px;">Revisi Periode</th>
+            <th style="min-width:90px;">Perihal</th>
+            <th style="min-width:180px;">Alasan</th>
+            <th style="min-width:90px;">Status</th>
+            <th style="min-width:80px;" class="admin-only">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="revisiTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 </main>
 </div><!-- .app-layout -->
 
-<!-- Modal Edit -->
+<!-- Modal Ajukan Revisi (non-admin) -->
+<div class="overlay" id="revisiOverlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3>📝 Ajukan Revisi Cuti</h3>
+      <button class="close" type="button" onclick="closeRevisiForm()" aria-label="Tutup">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rv_cutiId">
+      <div class="field" style="margin-bottom:12px;">
+        <label>Nama Staff</label>
+        <input id="rv_nama" type="text" readonly>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Cuti 1 — Data Baru</div>
+        <div class="grid" style="max-width:100%;">
+          <div class="field"><label>Perihal</label><select id="rv_perihal1"><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+          <div class="field"><label>Tanggal Mulai</label><input id="rv_start1" type="date"></div>
+          <div class="field"><label>Tanggal Selesai</label><input id="rv_end1" type="date"></div>
+        </div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Cuti 2 — Data Baru (opsional)</div>
+        <div class="grid" style="max-width:100%;">
+          <div class="field"><label>Perihal</label><select id="rv_perihal2"><option value="">— Kosong —</option><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+          <div class="field"><label>Tanggal Mulai</label><input id="rv_start2" type="date"></div>
+          <div class="field"><label>Tanggal Selesai</label><input id="rv_end2" type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Alasan Revisi</label>
+        <textarea id="rv_alasan" rows="3" placeholder="Contoh: Perubahan jadwal penerbangan"></textarea>
+      </div>
+      <div class="msg" id="rv_msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeRevisiForm()">Batal</button>
+      <button class="btn btn-primary" id="rv_submitBtn" type="button">📤 Kirim Revisi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Review Revisi (admin) -->
+<div class="overlay" id="revisiReviewOverlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h3>📋 Review Revisi</h3>
+      <button class="close" type="button" onclick="closeRevisiReview()" aria-label="Tutup">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="rvr_detail"></div>
+      <div class="field" style="margin-top:12px;">
+        <label>Catatan Admin (opsional)</label>
+        <textarea id="rvr_catatan" rows="2" placeholder="Catatan untuk staff…"></textarea>
+      </div>
+      <div class="msg" id="rvr_msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="rvr_tolak" type="button" onclick="reviewRevisi('DITOLAK')">❌ Tolak</button>
+      <button class="btn btn-primary" id="rvr_acc" type="button" onclick="reviewRevisi('ACC')">✅ ACC & Terapkan</button>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="editOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
     <div class="modal-head">
