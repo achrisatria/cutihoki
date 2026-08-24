@@ -1746,10 +1746,12 @@
         statCard('Total Hari Diambil', hariArsip, 'var(--brand-ink)', 'var(--brand-050)', '📅');
 
     } else {
+      var revisiPending = (_revisiCache || []).filter(function(r) { return r.status === 'PENDING'; }).length;
       box.innerHTML =
         statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
         statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
-        statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️');
+        statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️') +
+        statCard('Minta Revisi', revisiPending, 'var(--red)', 'var(--red-bg)', '📝');
     }
   }
   function statCard(label, value, color, bg, icon) {
