@@ -764,6 +764,41 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Edit Revisi (admin) -->
+<div class="overlay" id="revisiEditOverlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3>✏️ Ubah Revisi Cuti</h3>
+      <button class="close" type="button" onclick="closeRevisiEdit()" aria-label="Tutup">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:12px;">
+        <label>Nama Staff</label>
+        <input id="rve_nama" type="text">
+      </div>
+      <div class="grid" style="margin-bottom:12px;">
+        <div class="field"><label>Perihal Cuti 1</label><select id="rve_perihal1"><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+        <div class="field"><label>Mulai</label><input id="rve_start1" type="date"></div>
+        <div class="field"><label>Selesai</label><input id="rve_end1" type="date"></div>
+      </div>
+      <div class="grid" style="margin-bottom:12px;">
+        <div class="field"><label>Perihal Cuti 2</label><select id="rve_perihal2"><option value="">— Kosong —</option><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+        <div class="field"><label>Mulai</label><input id="rve_start2" type="date"></div>
+        <div class="field"><label>Selesai</label><input id="rve_end2" type="date"></div>
+      </div>
+      <div class="grid" style="margin-bottom:12px;">
+        <div class="field"><label>Alasan</label><textarea id="rve_alasan" rows="2"></textarea></div>
+        <div class="field"><label>Status</label><select id="rve_status"><option>PENDING</option><option>DONE REVISI</option><option>DITOLAK</option></select></div>
+      </div>
+      <div class="msg" id="rve_msg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeRevisiEdit()">Batal</button>
+      <button class="btn btn-primary" id="rve_saveBtn" type="button">💾 Simpan</button>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="editOverlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
     <div class="modal-head">
