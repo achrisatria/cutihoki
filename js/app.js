@@ -1888,6 +1888,14 @@
     // Non-admin: tombol revisi hanya di menu Dashboard
     if (!isAdmin()) {
       if (filterState.segment === 'AKTIF') {
+        // Cek apakah sudah ada revisi PENDING untuk cuti ini
+        var hasPending = (_revisiCache || []).some(function(r) { return r.cutiId === rowId && r.status === 'PENDING'; });
+        if (hasPending) {
+          return '<span class="row-actions">' +
+            '<button class="icon-btn" title="Revisi sedang diproses" disabled style="border-color:var(--amber-bd);color:var(--amber);opacity:.5;cursor:not-allowed;">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+            '</button></span>';
+        }
         return '<span class="row-actions">' +
           '<button class="icon-btn" title="Ajukan Revisi" onclick="openRevisiForm(\'' + esc(rowId) + '\')" style="border-color:var(--amber-bd);color:var(--amber);">' +
             '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
@@ -3078,6 +3086,10 @@
 
   // ── Form ajukan revisi (non-admin) ────────────────────────────
   function openRevisiForm(cutiId) {
+    // Cek duplikat PENDING
+    var hasPending = (_revisiCache || []).some(function(r) { return r.cutiId === cutiId && r.status === 'PENDING'; });
+    if (hasPending) return toast('Revisi untuk cuti ini sedang menunggu persetujuan admin', 'err');
+
     var r = null;
     (_cache || []).forEach(function(x) { if (x.rowId === cutiId) r = x; });
     if (!r) return toast('Data cuti tidak ditemukan', 'err');
@@ -3148,7 +3160,13 @@
   function updateRevisiCount() {
     var n = (_revisiCache || []).filter(function(r) { return r.status === 'PENDING'; }).length;
     var sb = document.getElementById('sbRevisiCount');
-    if (sb) { sb.textContent = n; sb.style.display = n ? '' : 'none'; }
+    if (sb) {
+      sb.textContent = n; sb.style.display = n ? '' : 'none';
+      sb.classList.toggle('sb-badge-pulse', n > 0);
+    }
+    // Juga beri efek pada sidebar item
+    var sbItem = document.getElementById('sbRevisi');
+    if (sbItem) sbItem.classList.toggle('sb-has-pending', n > 0);
   }
 
   function renderRevisiChips() {
