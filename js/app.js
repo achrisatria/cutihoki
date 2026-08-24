@@ -2125,7 +2125,7 @@
   document.getElementById('copyOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopy(); });
   document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); closeRevisiForm(); closeRevisiReview(); }
+    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); closeRevisiForm(); closeRevisiReview(); closeRevisiEdit(); }
   });
 
   // ══════════════════════════════════════════════════════════════
@@ -3219,9 +3219,16 @@
       var perihal = r.perihal1 || '-';
       if (r.perihal2) perihal += ', ' + r.perihal2;
       var alasanShort = r.alasan.length > 40 ? r.alasan.slice(0, 40) + '…' : r.alasan;
-      var aksi = isAdmin() && r.status === 'PENDING'
-        ? '<button class="btn btn-sm btn-primary" onclick="openRevisiReview(\'' + esc(r.id) + '\')">Review</button>'
-        : '';
+      var aksi = '';
+      if (isAdmin()) {
+        aksi = '<span class="row-actions">';
+        if (r.status === 'PENDING') aksi += '<button class="btn btn-sm btn-primary" style="margin-right:4px;" onclick="openRevisiReview(\'' + esc(r.id) + '\')">Review</button>';
+        aksi += '<button class="icon-btn" title="Ubah" onclick="openRevisiEdit(\'' + esc(r.id) + '\')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+          '<button class="icon-btn danger" title="Hapus" onclick="deleteRevisi(\'' + esc(r.id) + '\',\'' + esc(r.nama) + '\')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+          '</span>';
+      }
       var copyCol = r.status === 'DONE REVISI'
         ? '<button class="copy-btn" type="button" onclick="copyRevisi(\'' + esc(r.id) + '\', this)">' +
             '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
@@ -3277,6 +3284,76 @@
       }
     }).catch(function() { showCopyFallback(text); });
   }
+
+  // ── Edit revisi (admin) ───────────────────────────────────────
+  var _revisiEditId = null;
+  function openRevisiEdit(revId) {
+    var r = null;
+    (_revisiCache || []).forEach(function(x) { if (x.id === revId) r = x; });
+    if (!r) return;
+    _revisiEditId = revId;
+    document.getElementById('rve_nama').value = r.nama;
+    document.getElementById('rve_perihal1').value = r.perihal1 || '';
+    document.getElementById('rve_start1').value = r.start1 || '';
+    document.getElementById('rve_end1').value = r.end1 || '';
+    document.getElementById('rve_perihal2').value = r.perihal2 || '';
+    document.getElementById('rve_start2').value = r.start2 || '';
+    document.getElementById('rve_end2').value = r.end2 || '';
+    document.getElementById('rve_alasan').value = r.alasan || '';
+    document.getElementById('rve_status').value = r.status || 'PENDING';
+    var m = document.getElementById('rve_msg'); m.className = 'msg'; m.textContent = '';
+    document.getElementById('revisiEditOverlay').classList.add('open');
+  }
+  function closeRevisiEdit() { document.getElementById('revisiEditOverlay').classList.remove('open'); _revisiEditId = null; }
+
+  document.getElementById('rve_saveBtn').addEventListener('click', function() {
+    if (!_revisiEditId) return;
+    var msg = document.getElementById('rve_msg');
+    var patch = {
+      nama: document.getElementById('rve_nama').value.trim(),
+      start1_baru: document.getElementById('rve_start1').value || null,
+      end1_baru: document.getElementById('rve_end1').value || null,
+      perihal1_baru: document.getElementById('rve_perihal1').value || null,
+      start2_baru: document.getElementById('rve_start2').value || null,
+      end2_baru: document.getElementById('rve_end2').value || null,
+      perihal2_baru: document.getElementById('rve_perihal2').value || null,
+      alasan: document.getElementById('rve_alasan').value.trim(),
+      status: document.getElementById('rve_status').value
+    };
+    var btn = this; btn.disabled = true; btn.textContent = 'Menyimpan…';
+    sbPatch('revisi_cuti', 'id=eq.' + encodeURIComponent(_revisiEditId), patch).then(function() {
+      btn.disabled = false; btn.textContent = '💾 Simpan';
+      closeRevisiEdit(); toast('Revisi diperbarui', 'ok');
+      logActivity('CUTI', 'UPDATE', 'Edit revisi cuti ' + patch.nama);
+      _revisiLoaded = false; loadRevisi(true);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '💾 Simpan';
+      msg.className = 'msg error'; msg.textContent = 'Gagal: ' + err.message;
+    });
+  });
+
+  function deleteRevisi(revId, label) {
+    confirmDialog({
+      title: 'Hapus Revisi',
+      warn: 'DATA REVISI AKAN DIHAPUS PERMANEN',
+      text: 'Hapus pengajuan revisi milik "' + label + '"?',
+      okLabel: 'Ya, hapus', okClass: 'btn-danger'
+    }, function() {
+      sbDelete('revisi_cuti', 'id=eq.' + encodeURIComponent(revId)).then(function(res) {
+        if (!res || !res.length) { toast('Gagal hapus — periksa izin RLS', 'err'); return; }
+        if (_revisiCache) {
+          for (var i = 0; i < _revisiCache.length; i++) {
+            if (_revisiCache[i].id === revId) { _revisiCache.splice(i, 1); break; }
+          }
+          applyRevisiFilters(); updateRevisiCount();
+        }
+        toast('Revisi dihapus', 'ok');
+        logActivity('CUTI', 'DELETE', 'Hapus revisi cuti ' + label);
+      }).catch(function(err) { toast('Gagal: ' + err.message, 'err'); });
+    });
+  }
+
+  document.getElementById('revisiEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiEdit(); });
 
   // ── Review revisi (admin) ─────────────────────────────────────
   function openRevisiReview(revId) {
