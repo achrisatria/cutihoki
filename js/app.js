@@ -3235,14 +3235,14 @@
             '<span>Salin</span></button>'
         : '';
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
-        '<td style="text-align:center;white-space:nowrap;font-size:11.5px;color:var(--text-muted);">' + esc(formatLogTime(r.timestamp)) + '</td>' +
-        '<td style="text-align:left;font-weight:600;">' + esc(r.nama) + '</td>' +
-        '<td style="text-align:left;font-size:12px;white-space:normal;">' + periode + '</td>' +
-        '<td style="text-align:center;"><span class="pill pill-perihal">' + esc(perihal) + '</span></td>' +
-        '<td style="text-align:center;" title="' + esc(r.alasan) + '">' + esc(alasanShort) + '</td>' +
-        '<td style="text-align:center;"><span class="pill ' + revisiStatusCls(r.status) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(r.status) + '</span></td>' +
+        '<td style="text-align:center;white-space:nowrap;font-size:11px;color:var(--text-muted);">' + esc(formatLogTime(r.timestamp)) + '</td>' +
+        '<td style="text-align:left;font-weight:600;font-size:12px;white-space:normal;">' + esc(r.nama) + '</td>' +
+        '<td style="text-align:left;font-size:11.5px;white-space:normal;color:var(--text-secondary);">' + periode + '</td>' +
+        '<td style="text-align:center;"><span class="pill pill-perihal" style="font-size:10px;">' + esc(perihal) + '</span></td>' +
+        '<td style="text-align:center;font-size:11.5px;white-space:normal;color:var(--text-secondary);" title="' + esc(r.alasan) + '">' + esc(alasanShort) + '</td>' +
+        '<td style="text-align:center;"><span class="pill ' + revisiStatusCls(r.status) + '" style="border-radius:var(--radius-pill);padding:3px 10px;font-size:10px;">' + esc(r.status) + '</span></td>' +
         '<td style="text-align:center;">' + copyCol + '</td>' +
-        '<td style="text-align:center;" class="admin-only">' + aksi + '</td>' +
+        '<td style="text-align:center;white-space:nowrap;" class="admin-only">' + aksi + '</td>' +
       '</tr>';
     }).join('');
   }
