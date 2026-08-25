@@ -3164,7 +3164,7 @@
     loading.style.display = 'block'; content.style.display = 'none';
 
     // Pastikan cache cuti tersedia untuk kolom Periode Awal
-    var cutiPromise = _cache ? Promise.resolve() : getData().then(function(rows) { _cache = rows; _loaded = true; });
+    var cutiPromise = _cache ? Promise.resolve() : getCuti().then(function(rows) { _cache = rows; _loaded = true; });
 
     cutiPromise.then(function() {
       return getRevisi();
