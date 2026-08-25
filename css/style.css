@@ -443,10 +443,19 @@
   .task-select:hover { filter: brightness(1.2); border-color: currentColor; box-shadow: 0 4px 14px rgba(0,0,0,.35); transform: translateY(-1px); }
   .task-select:active { transform: translateY(0); filter: brightness(1.05); box-shadow: 0 2px 6px rgba(0,0,0,.3); }
   .task-select:focus { box-shadow: 0 0 0 3px var(--accent-glow); outline: none; }
+  /* Daftar opsi saat dropdown dibuka — browser merender ini di popup native (biasanya latar terang),
+     jadi warna teks status (amber/hijau/dsb, yg didesain utk latar gelap) dipaksa netral di sini
+     supaya tetap kebaca terlepas dari status apa yang lagi aktif. */
+  .task-select option { background-color: var(--surface); color: var(--text-primary); font-weight: 600; }
   /* Warna tiap status — background dipertegas & border diperjelas supaya kontras dgn baris tabel gelap.
-     Teks status DONE CATAT dinaikkan terangnya (bukan warna --text-muted) karena paling sering pudar. */
+     Teks status DONE CATAT (generik, dipakai Resign/Revisi) dinaikkan terangnya karena paling sering pudar. */
   .task-WAITING { background-color: rgba(251,191,36,.18); color: var(--amber); border-color: rgba(251,191,36,.42); }
   .task-SEDANG  { background-color: rgba(96,165,250,.18); color: var(--blue);  border-color: rgba(96,165,250,.42); }
+  /* Khusus dashboard Pengajuan Cuti (bukan Resign/Rekening/Revisi — itu pakai task-SELESAI/task-DONE di atas
+     dgn arti berbeda: ACC/selesai = hijau, ditolak = netral). Di sini DONE CATAT sengaja dibuat hijau dominan,
+     dan SELESAI CUTI dibuat merah pudar/opacity rendah sesuai permintaan. */
+  .task-donecatat   { background-color: rgba(52,211,153,.18); color: var(--green); border-color: rgba(52,211,153,.42); }
+  .task-selesaicuti { background-color: rgba(248,113,113,.07); color: #E4A0A6; border-color: rgba(248,113,113,.22); }
   .task-SELESAI { background-color: rgba(52,211,153,.18); color: var(--green); border-color: rgba(52,211,153,.42); }
   .task-DONE    { background-color: rgba(148,163,184,.20); color: #D7DEE7;     border-color: rgba(148,163,184,.42); }
   .task-saving  { opacity: .5; pointer-events: none; }
