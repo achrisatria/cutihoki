@@ -1891,7 +1891,8 @@
     var u = (v || '').toUpperCase();
     if (u === 'WAITING') return 'task-WAITING';
     if (u === 'SEDANG CUTI') return 'task-SEDANG';
-    if (u === 'SELESAI CUTI') return 'task-SELESAI';
+    if (u === 'SELESAI CUTI') return 'task-selesaicuti';   // khusus dashboard cuti: merah pudar
+    if (u === 'DONE CATAT') return 'task-donecatat';        // khusus dashboard cuti: hijau dominan
     return 'task-DONE';
   }
   function clashCell(perihal, startRaw, endRaw, nama, intervals, role, rowId, slot) {
