@@ -3210,10 +3210,18 @@
   function renderRevisiTable(rows) {
     var tbody = document.getElementById('revisiTableBody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty">Belum ada pengajuan revisi.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">Belum ada pengajuan revisi.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function(r, i) {
+      // Cari data cuti asli dari cache
+      var orig = null;
+      (_cache || []).forEach(function(c) { if (c.rowId === r.cutiId) orig = c; });
+      var periodeAwal = '-';
+      if (orig) {
+        periodeAwal = formatDate(orig.start1Raw) + ' — ' + formatDate(orig.end1Raw);
+        if (orig.start2Raw && orig.end2Raw) periodeAwal += '<br><span style="color:var(--faint);font-size:10px;">↳</span> ' + formatDate(orig.start2Raw) + ' — ' + formatDate(orig.end2Raw);
+      }
       var periode = formatDate(r.start1) + ' — ' + formatDate(r.end1);
       if (r.start2 && r.end2) periode += '<br><span style="color:var(--faint);font-size:10px;">↳</span> ' + formatDate(r.start2) + ' — ' + formatDate(r.end2);
       var perihal = r.perihal1 || '-';
@@ -3239,6 +3247,7 @@
       return '<tr class="rec' + (i % 2 === 1 ? ' rec-alt' : '') + '">' +
         '<td style="text-align:center;white-space:nowrap;font-size:11px;color:var(--text-muted);">' + esc(formatLogTime(r.timestamp)) + '</td>' +
         '<td style="text-align:left;font-weight:600;font-size:12px;white-space:normal;">' + esc(r.nama) + '</td>' +
+        '<td style="text-align:left;font-size:11.5px;white-space:normal;color:var(--text-muted);">' + periodeAwal + '</td>' +
         '<td style="text-align:left;font-size:11.5px;white-space:normal;color:var(--text-secondary);">' + periode + '</td>' +
         '<td style="text-align:center;"><span class="pill pill-perihal" style="font-size:10px;">' + esc(perihal) + '</span></td>' +
         '<td style="text-align:center;font-size:11.5px;white-space:normal;color:var(--text-secondary);" title="' + esc(r.alasan) + '">' + esc(alasanShort) + '</td>' +
