@@ -1489,7 +1489,7 @@
   }
 
   // ── DASHBOARD ─────────────────────────────────────────────────
-  function invalidate() { _loaded = false; _cache = null; _prefetch = null; _clashIdx = null; _filterVer++; _memoMonth = null; _memoMonthKey = null; _memoStatus = null; _memoStatusKey = null; _rekLoaded = false; _rekCache = null; _resignLoaded = false; _resignCache = null; }
+  function invalidate() { _loaded = false; _cache = null; _prefetch = null; _clashIdx = null; _filterVer++; _memoMonth = null; _memoMonthKey = null; _memoStatus = null; _memoStatusKey = null; _rekLoaded = false; _rekCache = null; _resignLoaded = false; _resignCache = null; _revisiLoaded = false; _revisiCache = null; _logLoaded = false; _logCache = null; }
 
   function loadDashboard(force) {
     var loading = document.getElementById('dashboardLoading');
@@ -2889,15 +2889,18 @@
 
   // ── Format Copy ───────────────────────────────────────────────
   function buildResignFormat(r) {
-    return [
+    var lines = [
       'No Paspor : ' + r.paspor,
       'Nama Staff : ' + r.nama,
       'Tanggal Pengajuan Resign : ' + formatDate(r.tglResign),
       'Tanggal Last Kerja : ' + formatDate(r.tglLast),
-      'Keterangan : ' + (r.keterangan || '-'),
-      '',
-      'ACC : ' + currentLeader()
-    ].join('\n');
+      'Keterangan : ' + (r.keterangan || '-')
+    ];
+    if (String(r.task).toUpperCase() === 'ACC') {
+      lines.push('');
+      lines.push('ACC : ' + currentLeader());
+    }
+    return lines.join('\n');
   }
 
   function copyResign(rowId, btn) {
@@ -3086,7 +3089,7 @@
 
   // ── Form ajukan revisi (non-admin) ────────────────────────────
   function openRevisiForm(cutiId) {
-    // Cek duplikat PENDING
+    // Cek duplikat PENDING - lokal dulu
     var hasPending = (_revisiCache || []).some(function(r) { return r.cutiId === cutiId && r.status === 'PENDING'; });
     if (hasPending) return toast('Revisi untuk cuti ini sedang menunggu persetujuan admin', 'err');
 
@@ -3130,13 +3133,23 @@
       start2_baru: s2 || null, end2_baru: e2 || null, perihal2_baru: p2 || null,
       alasan: alasan, status: 'PENDING'
     };
-    var btn = this; btn.disabled = true; btn.textContent = 'Mengirim…';
-    sbPost('revisi_cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
-      btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
-      toast('Revisi berhasil diajukan', 'ok');
-      logActivity('CUTI', 'CREATE', 'Ajukan revisi cuti ' + nama);
-      closeRevisiForm();
-      _revisiLoaded = false; loadRevisi(true);
+    var btn = this; btn.disabled = true; btn.textContent = 'Memeriksa…';
+
+    // Server-side duplicate check
+    sbGet('revisi_cuti', 'select=id&cuti_id=eq.' + encodeURIComponent(cutiId) + '&status=eq.PENDING&limit=1').then(function(existing) {
+      if (existing && existing.length > 0) {
+        btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
+        msg.className = 'msg error'; msg.textContent = 'Revisi untuk cuti ini sudah ada yang PENDING. Tunggu admin mereview.';
+        return;
+      }
+      btn.textContent = 'Mengirim…';
+      return sbPost('revisi_cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
+        btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
+        toast('Revisi berhasil diajukan', 'ok');
+        logActivity('CUTI', 'CREATE', 'Ajukan revisi cuti ' + nama);
+        closeRevisiForm();
+        _revisiLoaded = false; loadRevisi(true);
+      });
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
       msg.className = 'msg error'; msg.textContent = 'Gagal: ' + err.message;
@@ -3149,7 +3162,13 @@
     var content = document.getElementById('revisiContent');
     if (!force && _revisiLoaded && _revisiCache) { renderRevisiAll(); content.style.display = 'block'; loading.style.display = 'none'; return; }
     loading.style.display = 'block'; content.style.display = 'none';
-    getRevisi().then(function(rows) {
+
+    // Pastikan cache cuti tersedia untuk kolom Periode Awal
+    var cutiPromise = _cache ? Promise.resolve() : getData().then(function(rows) { _cache = rows; _loaded = true; });
+
+    cutiPromise.then(function() {
+      return getRevisi();
+    }).then(function(rows) {
       _revisiCache = rows; _revisiLoaded = true;
       loading.style.display = 'none'; renderRevisiAll(); content.style.display = 'block';
     }).catch(function(err) { loading.textContent = '❌ Gagal: ' + err.message; });
@@ -3431,7 +3450,7 @@
 
   function calcDurasi(start, end) {
     var s = new Date(start), e = new Date(end);
-    return Math.round((e - s) / (1000 * 60 * 60 * 24));
+    return Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1;
   }
 
   // ── KALENDER ──────────────────────────────────────────────────
