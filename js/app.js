@@ -535,6 +535,10 @@
   var CLASH_MAX_PEOPLE = { CS: 2, KASIR: 2, KAPTEN: 1 };
   var CLASH_MAX_OVERLAP_DAYS = 3;
 
+  // Background dashboard (gambar custom + opacity) — nilai default; ditimpa oleh tabel settings.
+  var BG_IMAGE = '';
+  var BG_OPACITY = 100;
+
   // ── Aturan dari tabel settings (bisa diedit admin) ────────────
   // Muat nilai aturan dari DB & terapkan ke konstanta yang dipakai validasi.
   function loadRules() {
@@ -550,6 +554,10 @@
       MAX_DURASI.CS = num('max_durasi_cs', MAX_DURASI.CS);
       MAX_DURASI.KAPTEN = num('max_durasi_kapten', MAX_DURASI.KAPTEN);
       MAX_DURASI.KASIR = num('max_durasi_kasir', MAX_DURASI.KASIR);
+      // Background dashboard (opsional — kolom baru dari background_setup.sql)
+      BG_IMAGE = m.bg_image || '';
+      BG_OPACITY = num('bg_opacity', BG_OPACITY);
+      applyBackground();
       return m;
     }).catch(function() { return {}; });   // tabel belum ada → pakai default, jangan gagalkan app
   }
@@ -614,6 +622,124 @@
       msg.className = 'msg error'; msg.textContent = 'Gagal menyimpan: ' + err.message;
     });
   }
+
+  // ── BACKGROUND DASHBOARD (gambar custom + opacity, admin) ──────
+  // Terapkan BG_IMAGE & BG_OPACITY yang sedang aktif ke layer di belakang halaman.
+  function applyBackground() {
+    var layer = document.getElementById('appBgLayer');
+    if (!layer) return;
+    layer.style.backgroundImage = BG_IMAGE ? 'url(' + BG_IMAGE + ')' : 'none';
+    layer.style.opacity = String(Math.max(0, Math.min(100, BG_OPACITY)) / 100);
+  }
+
+  var _bgPendingImage = null;   // null = belum diubah dari yang tersimpan; '' = akan dihapus
+  var _bgPendingOpacity = null;
+
+  function bgPreviewRefresh() {
+    var box = document.getElementById('bgPreviewBox');
+    if (!box) return;
+    var img = (_bgPendingImage !== null) ? _bgPendingImage : BG_IMAGE;
+    if (img) { box.style.backgroundImage = 'url(' + img + ')'; box.textContent = ''; }
+    else { box.style.backgroundImage = 'none'; box.textContent = 'Belum ada gambar'; }
+  }
+
+  function openBgSettings() {
+    if (!isAdmin()) return;
+    _bgPendingImage = null; _bgPendingOpacity = null;
+    document.getElementById('bg_file').value = '';
+    document.getElementById('bg_opacity').value = BG_OPACITY;
+    document.getElementById('bg_opacity_val').textContent = BG_OPACITY + '%';
+    var sizeMsg = document.getElementById('bgSizeMsg'); sizeMsg.className = 'msg'; sizeMsg.textContent = '';
+    var m = document.getElementById('bgMsg'); m.className = 'msg'; m.textContent = '';
+    bgPreviewRefresh();
+    document.getElementById('bgOverlay').classList.add('open');
+  }
+  function closeBgSettings() { document.getElementById('bgOverlay').classList.remove('open'); }
+
+  // Ubah ukuran & kompres gambar via canvas supaya string base64 yang disimpan tetap ringan.
+  // Mencoba beberapa kualitas JPEG berurutan sampai ukurannya wajar untuk disimpan di kolom TEXT.
+  function compressImage(file) {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function() { reject(new Error('Gagal membaca file gambar')); };
+      reader.onload = function() {
+        var img = new Image();
+        img.onerror = function() { reject(new Error('File bukan gambar yang valid')); };
+        img.onload = function() {
+          var MAX_DIM = 1920;
+          var w = img.naturalWidth, h = img.naturalHeight;
+          if (w > MAX_DIM || h > MAX_DIM) {
+            var scale = Math.min(MAX_DIM / w, MAX_DIM / h);
+            w = Math.round(w * scale); h = Math.round(h * scale);
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          var qualities = [0.75, 0.6, 0.45, 0.3];
+          var LIMIT = 1500000;   // ~1.5MB string base64 — batas aman untuk kolom settings.value
+          var out = null;
+          for (var i = 0; i < qualities.length; i++) {
+            var candidate = canvas.toDataURL('image/jpeg', qualities[i]);
+            out = candidate;
+            if (candidate.length <= LIMIT) break;
+          }
+          if (out.length > LIMIT) { reject(new Error('Gambar masih terlalu besar setelah dikompres. Coba gambar dengan resolusi lebih kecil.')); return; }
+          resolve(out);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('bg_file').addEventListener('change', function() {
+    var file = this.files && this.files[0];
+    var sizeMsg = document.getElementById('bgSizeMsg');
+    if (!file) return;
+    sizeMsg.className = 'msg'; sizeMsg.textContent = 'Memproses gambar…';
+    compressImage(file).then(function(dataUrl) {
+      _bgPendingImage = dataUrl;
+      bgPreviewRefresh();
+      sizeMsg.className = 'msg success';
+      sizeMsg.textContent = 'Gambar siap (' + Math.round(dataUrl.length / 1024) + ' KB setelah dikompres).';
+    }).catch(function(err) {
+      sizeMsg.className = 'msg error'; sizeMsg.textContent = err.message;
+    });
+  });
+
+  document.getElementById('bg_opacity').addEventListener('input', function() {
+    _bgPendingOpacity = parseInt(this.value, 10);
+    document.getElementById('bg_opacity_val').textContent = _bgPendingOpacity + '%';
+  });
+
+  document.getElementById('bgRemoveBtn').addEventListener('click', function() {
+    _bgPendingImage = '';
+    document.getElementById('bg_file').value = '';
+    var sizeMsg = document.getElementById('bgSizeMsg'); sizeMsg.className = 'msg'; sizeMsg.textContent = '';
+    bgPreviewRefresh();
+  });
+
+  document.getElementById('bgSaveBtn').addEventListener('click', function() {
+    if (!isAdmin()) return;
+    var msg = document.getElementById('bgMsg');
+    var newImage = (_bgPendingImage !== null) ? _bgPendingImage : BG_IMAGE;
+    var newOpacity = (_bgPendingOpacity !== null) ? _bgPendingOpacity : BG_OPACITY;
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Menyimpan…';
+    Promise.all([saveRule('bg_image', newImage), saveRule('bg_opacity', newOpacity)]).then(function() {
+      BG_IMAGE = newImage; BG_OPACITY = newOpacity;
+      applyBackground();
+      btn.disabled = false; btn.textContent = '💾 Simpan';
+      closeBgSettings(); toast('Background diperbarui', 'ok');
+      logActivity('CUTI', 'UPDATE', 'Ubah background dashboard');
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '💾 Simpan';
+      msg.className = 'msg error'; msg.textContent = 'Gagal menyimpan: ' + err.message +
+        ' — pastikan sudah menjalankan background_setup.sql di Supabase.';
+    });
+  });
+
+  document.getElementById('bgOverlay').addEventListener('click', function(e) { if (e.target === this) closeBgSettings(); });
 
   // Ambil interval cuti dari server untuk sebuah role (data TERKINI, bukan cache).
   // CUTI LOKAL & INDO DIGABUNG jadi satu daftar — yang dihitung adalah "berapa orang
@@ -2125,7 +2251,7 @@
   document.getElementById('copyOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopy(); });
   document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); closeRevisiForm(); closeRevisiReview(); closeRevisiEdit(); }
+    if (e.key === 'Escape') { closeEdit(); closeCopy(); closeConfirm(); closeRekEdit(); closeResignEdit(); closeRevisiForm(); closeRevisiReview(); closeRevisiEdit(); closeBgSettings(); }
   });
 
   // ══════════════════════════════════════════════════════════════
