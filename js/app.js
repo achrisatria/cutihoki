@@ -1739,7 +1739,7 @@
   }
   // Bangun opsi dropdown Status dari status yang benar-benar ada di menu ini
   function buildStatusOptions() {
-    var memoKey = filterState.segment + '|' + _filterVer + '|' + filterState.status;
+    var memoKey = filterState.segment + '|' + _filterVer + '|' + filterState.status + '|' + _revisiVer;
     if (_memoStatusKey === memoKey && _memoStatus !== null) {
       document.getElementById('statusFilter').innerHTML = _memoStatus;
       return;
@@ -1750,6 +1750,8 @@
       var s = String(r.task1 || '').toUpperCase() || '(kosong)';
       count[s] = (count[s] || 0) + 1;
     });
+    var revisiCount = 0;
+    data.forEach(function(r) { if (findPendingRevisi(r.rowId)) revisiCount++; });
     // Urutkan mengikuti urutan pada CONFIG.TASK bila ada, sisanya menyusul alfabetis
     var order = (CONFIG.TASK || []).map(function(s) { return s.toUpperCase(); });
     var keys = Object.keys(count).sort(function(a, b) {
@@ -1762,18 +1764,24 @@
 
     var sel = document.getElementById('statusFilter');
     var opts = ['<option value="ALL">Semua Status</option>'];
+    if (revisiCount > 0) {
+      opts.push('<option value="ADA_REVISI"' + (filterState.status === 'ADA_REVISI' ? ' selected' : '') + '>🟡 Ada Revisi · ' + revisiCount + '</option>');
+    }
     keys.forEach(function(s) {
       opts.push('<option value="' + esc(s) + '"' + (s === filterState.status ? ' selected' : '') + '>' +
         esc(s) + ' · ' + count[s] + '</option>');
     });
     // Pilihan lama yang tak ada lagi di menu ini → kembalikan ke "Semua Status"
-    if (filterState.status !== 'ALL' && !count[filterState.status]) {
+    if (filterState.status === 'ADA_REVISI' && revisiCount === 0) {
+      filterState.status = 'ALL';
+      opts[0] = '<option value="ALL" selected>Semua Status</option>';
+    } else if (filterState.status !== 'ALL' && filterState.status !== 'ADA_REVISI' && !count[filterState.status]) {
       filterState.status = 'ALL';
       opts[0] = '<option value="ALL" selected>Semua Status</option>';
     }
     var html = opts.join('');
     sel.innerHTML = html;
-    _memoStatus = html; _memoStatusKey = filterState.segment + '|' + _filterVer + '|' + filterState.status;
+    _memoStatus = html; _memoStatusKey = filterState.segment + '|' + _filterVer + '|' + filterState.status + '|' + _revisiVer;
   }
   function renderFilters() { renderRoleChips(); buildMonthOptions(); buildStatusOptions(); }
 
@@ -1791,7 +1799,9 @@
       if (hay.indexOf(filterState.search) === -1) return false;
     }
     if (!recordInMonth(r, filterState.month)) return false;
-    if (filterState.status !== 'ALL' && String(r.task1 || '').toUpperCase() !== filterState.status) return false;
+    if (filterState.status === 'ADA_REVISI') {
+      if (!findPendingRevisi(r.rowId)) return false;
+    } else if (filterState.status !== 'ALL' && String(r.task1 || '').toUpperCase() !== filterState.status) return false;
     return true;
   }
 
@@ -1880,11 +1890,21 @@
         statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
         statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
         statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️') +
-        statCard('Minta Revisi', revisiPending, 'var(--red)', 'var(--red-bg)', '📝');
+        statCard('Minta Revisi', revisiPending, 'var(--yellow)', 'var(--yellow-bg)', '📝',
+          revisiPending > 0 ? { extraClass: ' stat-alert', onclick: 'filterRevisiPending()', title: 'Klik untuk lihat baris yang mengajukan revisi cuti' } : null);
     }
   }
-  function statCard(label, value, color, bg, icon) {
-    return '<div class="stat-item">' +
+  // Terapkan filter status "Ada Revisi" — dipanggil dari klik kartu notifikasi "Minta Revisi"
+  function filterRevisiPending() {
+    filterState.status = 'ADA_REVISI';
+    buildStatusOptions(); applyFilters();
+  }
+  function statCard(label, value, color, bg, icon, opts) {
+    opts = opts || {};
+    var extraClass = opts.extraClass || '';
+    var attrs = (opts.onclick ? ' onclick="' + opts.onclick + '" role="button" tabindex="0"' : '') +
+      (opts.title ? ' title="' + esc(opts.title) + '"' : '');
+    return '<div class="stat-item' + extraClass + '"' + attrs + '>' +
       '<div class="stat-ic" style="background:' + bg + ';color:' + color + '">' + icon + '</div>' +
       '<div class="stat-txt"><div class="label">' + esc(label) + '</div><div class="value">' + value + '</div></div>' +
     '</div>';
@@ -2014,26 +2034,39 @@
     var opts = taskList.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
     return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
   }
+  function findPendingRevisi(rowId) {
+    var found = null;
+    (_revisiCache || []).some(function(r) { if (r.cutiId === rowId && r.status === 'PENDING') { found = r; return true; } return false; });
+    return found;
+  }
   function actionCell(rowId, label) {
     // Non-admin: tombol revisi hanya di menu Dashboard
     if (!isAdmin()) {
       if (filterState.segment === 'AKTIF') {
         // Cek apakah sudah ada revisi PENDING untuk cuti ini
-        var hasPending = (_revisiCache || []).some(function(r) { return r.cutiId === rowId && r.status === 'PENDING'; });
+        var hasPending = !!findPendingRevisi(rowId);
         if (hasPending) {
           return '<span class="row-actions">' +
-            '<button class="icon-btn" title="Revisi sedang diproses" disabled style="border-color:var(--amber-bd);color:var(--amber);opacity:.5;cursor:not-allowed;">' +
+            '<button class="icon-btn" title="Revisi sedang diproses" disabled style="border-color:var(--yellow-bd);color:var(--yellow);opacity:.5;cursor:not-allowed;">' +
               '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
             '</button></span>';
         }
         return '<span class="row-actions">' +
-          '<button class="icon-btn" title="Ajukan Revisi" onclick="openRevisiForm(\'' + esc(rowId) + '\')" style="border-color:var(--amber-bd);color:var(--amber);">' +
+          '<button class="icon-btn" title="Ajukan Revisi" onclick="openRevisiForm(\'' + esc(rowId) + '\')" style="border-color:var(--yellow-bd);color:var(--yellow);">' +
             '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
           '</button></span>';
       }
       return '<span class="row-actions" style="color:var(--faint);font-size:12px;">—</span>';
     }
+    // Admin: kalau baris ini punya pengajuan revisi yang menunggu, tambahkan ikon Review (kuning)
+    var pendingRevisi = findPendingRevisi(rowId);
+    var revisiBtn = pendingRevisi
+      ? '<button class="icon-btn" title="Review pengajuan revisi cuti" onclick="openRevisiReview(\'' + esc(pendingRevisi.id) + '\')" style="border-color:var(--yellow-bd);color:var(--yellow);">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+        '</button>'
+      : '';
     return '<span class="row-actions">' +
+      revisiBtn +
       '<button class="icon-btn" title="Ubah" onclick="openEdit(\'' + esc(rowId) + '\')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
       '</button>' +
@@ -2175,8 +2208,9 @@
     shown.forEach(function(r, ri) {
       var has2 = !!(r.start2Raw || r.perihal2);
       var alt = (ri % 2 === 1) ? ' rec-alt' : '';
+      var hasRevisi = !!findPendingRevisi(r.rowId);
       var line2 = function(html) { return has2 ? '<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(148,163,184,.1);">' + html + '</div>' : ''; };
-      parts.push('<tr class="rec' + alt + '">' +
+      parts.push('<tr class="rec' + alt + (hasRevisi ? ' has-revisi' : '') + '">' +
         '<td><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
         '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
         '<td style="white-space:normal;">' + periodeCell(r.start1Raw, r.end1Raw) +
@@ -3199,7 +3233,7 @@
   // ══════════════════════════════════════════════════════════════
   // MODUL REVISI CUTI
   // ══════════════════════════════════════════════════════════════
-  var _revisiCache = null, _revisiLoaded = false;
+  var _revisiCache = null, _revisiLoaded = false, _revisiVer = 0;
   var revisiFilter = { status: 'ALL', search: '' };
   var _revisiReviewId = null;
 
@@ -3313,9 +3347,15 @@
       sb.textContent = n; sb.style.display = n ? '' : 'none';
       sb.classList.toggle('sb-badge-pulse', n > 0);
     }
-    // Juga beri efek pada sidebar item
+    // Juga beri efek pada sidebar item (aman walau elemen sudah tak ada di sidebar)
     var sbItem = document.getElementById('sbRevisi');
     if (sbItem) sbItem.classList.toggle('sb-has-pending', n > 0);
+    // Segarkan tabel Pengajuan Cuti — baris yg punya revisi pending, dropdown status,
+    // dan kartu notifikasi "Minta Revisi" semua bergantung pada _revisiCache.
+    _revisiVer++; _memoStatus = null;
+    if (_cache && document.getElementById('view-dashboard').classList.contains('active')) {
+      buildStatusOptions(); applyFilters();
+    }
   }
 
   function renderRevisiChips() {
