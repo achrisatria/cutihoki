@@ -1859,7 +1859,11 @@
     var rc = _domResultCount;
     var filtered = (filterState.role !== 'ALL' || filterState.search || filterState.month !== 'ALL');
     rc.innerHTML = 'Menampilkan <strong>' + rows.length + '</strong> dari ' + _cache.length + ' pengajuan' + (filtered ? ' · terfilter' : '');
-    renderStats(rows);
+    // Kartu stat SELALU menampilkan total keseluruhan menu ini (Dashboard/Sedang Cuti/
+    // Selesai Cuti), tidak ikut menyusut saat role/pencarian/bulan/status sedang difilter —
+    // supaya angkanya tetap jadi acuan yang stabil, bukan cuma "sisa hasil filter".
+    var segmentRows = _cache.filter(function(r) { return inSegment(r, filterState.segment); });
+    renderStats(segmentRows);
     renderTable(rows, clashIndex());  // indeks ter-cache: filter/pencarian tetap ringan
   }
 
