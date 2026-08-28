@@ -901,10 +901,13 @@
 
   // ── Tab ───────────────────────────────────────────────────────
   function switchTab(view) {
-    // Accent theme per module
-    document.body.classList.remove('theme-resign', 'theme-rekening');
+    // Accent theme per module (dipakai juga untuk warna hover tabel — lihat style.css)
+    document.body.classList.remove('theme-resign', 'theme-rekening', 'theme-ongoing', 'theme-archive', 'theme-revisi');
     if (view === 'resign') document.body.classList.add('theme-resign');
     else if (view === 'rekening') document.body.classList.add('theme-rekening');
+    else if (view === 'ongoing') document.body.classList.add('theme-ongoing');
+    else if (view === 'archive') document.body.classList.add('theme-archive');
+    else if (view === 'revisi') document.body.classList.add('theme-revisi');
 
     // Tab active (legacy, hidden)
     document.querySelectorAll('.tab').forEach(function(t) {
