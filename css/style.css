@@ -11,15 +11,15 @@
     --ink: var(--text-primary); --ink-2: #F8FAFC; --ink-soft: var(--text-secondary);
     --muted: var(--text-muted); --faint: var(--text-faint);
 
-    --bg-page:      #1E2A3A;
+    --bg-page:      #172435;
     --bg-table:     #1C2B40;
     --bg-row-alt:   #182537;
     --bg-row-hover: rgba(77,124,255,.06);
-    --bg-header:    #243244;
+    --bg-header:    #1C2B40;
     --table-header-bg: #182537;
-    --bg-sidebar:   #223040;
+    --bg-sidebar:   #1A283C;
     --sidebar-border: rgba(120,160,220,.10);
-    --paper: var(--bg-table); --surface: #2A3A4E; --surface-2: #243444; --surface-3: #21303F;
+    --paper: var(--bg-table); --surface: #21324B; --surface-2: #1C2B40; --surface-3: #182537;
     --canvas: var(--bg-page); --stripe: var(--bg-row-alt);
 
     --border:        #3B4F65;
@@ -343,6 +343,10 @@
   tbody td:nth-child(2) { white-space: normal; }
   tbody tr.rec td:nth-child(1), tbody tr.rec td:nth-child(2), tbody tr.rec td:nth-child(3) { text-align: left; }
   tbody tr.rec td:nth-child(n+4) { text-align: center; }
+  /* Dashboard Cuti: kolom Role (1) & Periode Cuti (3) dibuat rata tengah;
+     kolom Nama (2) tetap rata kiri seperti semula. */
+  #dashboardContent tbody tr.rec td:nth-child(1),
+  #dashboardContent tbody tr.rec td:nth-child(3) { text-align: center; }
   tbody tr.rec td { border-bottom: var(--table-divider); }
   tbody tr.rec td + td { border-left: var(--table-divider); }
   tbody tr:last-child td { border-bottom: none; }
