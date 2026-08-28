@@ -48,6 +48,11 @@
     --blue:  #60A5FA; --blue-bg:  rgba(96,165,250,.07); --blue-bd:  rgba(96,165,250,.55);
     --slate: #94A3B8; --slate-bg: rgba(148,163,184,.08); --slate-bd: rgba(148,163,184,.40);
 
+    /* Warna hover per-menu sidebar (soft, dipakai juga untuk tabel di menu terkait) */
+    --orange: #FB923C; --orange-bg: rgba(251,146,60,.08); --orange-bd: rgba(251,146,60,.35);
+    --maroon: #B91C1C; --maroon-bg: rgba(185,28,28,.10); --maroon-bd: rgba(185,28,28,.38);
+    --yellow: #EAB308; --yellow-bg: rgba(234,179,8,.08); --yellow-bd: rgba(234,179,8,.35);
+
     --role-cs:  #818CF8; --role-cs-bg:  rgba(129,140,248,.08); --role-cs-bd:  rgba(129,140,248,.55);
     --role-kap: #5BB8EF; --role-kap-bg: rgba(91,184,239,.08); --role-kap-bd: rgba(91,184,239,.55);
     --role-kas: #FB7185; --role-kas-bg: rgba(251,113,133,.08); --role-kas-bd: rgba(251,113,133,.55);
@@ -172,6 +177,12 @@
     position: relative;
   }
   .sb-item:hover { background: rgba(148,163,184,.08); color: var(--text-secondary); }
+  /* Hover khas per-menu — soft, warnanya senada dengan tabel di menu terkait */
+  #sbOngoing:hover  { background: var(--orange-bg); color: #FDBA74; }   /* Sedang Cuti — oranye */
+  #sbArchive:hover  { background: var(--red-bg);    color: #FCA5A5; }   /* Selesai Cuti — merah */
+  #sbRevisi:hover   { background: var(--yellow-bg); color: #FDE68A; }   /* Revisi Cuti — kuning */
+  #sbResign:hover   { background: var(--maroon-bg); color: #E8949B; }   /* Resign — merah tua */
+  #sbRekening:hover { background: var(--green-bg);  color: #6EE7B7; }   /* Ganti Rekening — hijau */
   .sb-item.active { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 2px 8px var(--accent-glow); }
   .sb-item svg { flex: none; opacity: .7; }
   .sb-item.active svg { opacity: 1; }
@@ -1155,6 +1166,16 @@
 .theme-rekening .sb-item.active { background: linear-gradient(135deg, #34D399, #059669) !important; color: #064E3B; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
 .theme-rekening .fp-mark { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
 .theme-rekening .chip.active { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 3px 10px rgba(16,185,129,.20); }
+
+/* ═══ HOVER TABEL PER-MENU — senada dengan hover sidebar, tetap soft ══
+   theme-ongoing/theme-archive/theme-revisi ditambahkan lewat switchTab()
+   di app.js (sama seperti theme-resign/theme-rekening yang sudah ada). */
+body.theme-ongoing  #dashboardContent tbody tr.rec:hover td { background: var(--orange-bg) !important; }
+body.theme-archive  #dashboardContent tbody tr.rec:hover td { background: var(--red-bg)    !important; }
+body.theme-resign   #resignContent    tbody tr.rec:hover td { background: var(--maroon-bg) !important; }
+body.theme-rekening #rekContent       tbody tr.rec:hover td { background: var(--green-bg)  !important; }
+body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--yellow-bg) !important; }
+
 /* ═══ SIDEBAR REVISI PULSE EFFECT ═════════════════════════════ */
 .sb-badge-pulse {
   background: var(--amber) !important;
