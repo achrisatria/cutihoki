@@ -1613,6 +1613,14 @@
         }
         toast('Pengajuan dihapus permanen', 'ok');
         logActivity('CUTI', 'DELETE', 'Hapus cuti ' + label);
+        // Ikut bersihkan riwayat revisi (bila ada) supaya tidak jadi data "yatim"
+        // yang menunjuk ke cuti_id yang sudah tidak ada.
+        sbDelete('revisi_cuti', 'cuti_id=eq.' + encodeURIComponent(rowId)).then(function(hapusRevisi) {
+          if (hapusRevisi && hapusRevisi.length > 0 && _revisiCache) {
+            _revisiCache = _revisiCache.filter(function(r) { return r.cutiId !== rowId; });
+            updateRevisiCount();
+          }
+        }).catch(function() { /* diam-diam gagal — bukan blocker penghapusan cuti utamanya */ });
       }).catch(function(err) { toast('Gagal menghapus: ' + err.message, 'err'); });
     });
   }
@@ -1902,7 +1910,8 @@
   function statCard(label, value, color, bg, icon, opts) {
     opts = opts || {};
     var extraClass = opts.extraClass || '';
-    var attrs = (opts.onclick ? ' onclick="' + opts.onclick + '" role="button" tabindex="0"' : '') +
+    var attrs = (opts.onclick ? ' onclick="' + opts.onclick + '" role="button" tabindex="0" ' +
+        'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"' : '') +
       (opts.title ? ' title="' + esc(opts.title) + '"' : '');
     return '<div class="stat-item' + extraClass + '"' + attrs + '>' +
       '<div class="stat-ic" style="background:' + bg + ';color:' + color + '">' + icon + '</div>' +
@@ -2058,11 +2067,13 @@
       }
       return '<span class="row-actions" style="color:var(--faint);font-size:12px;">—</span>';
     }
-    // Admin: kalau baris ini punya pengajuan revisi yang menunggu, tambahkan ikon Review (kuning)
+    // Admin: kalau baris ini punya pengajuan revisi yang menunggu, tambahkan tombol Review
+    // yang sengaja tampil beda (pill kuning berlabel) dari tombol ikon Ubah/Hapus di sebelahnya.
     var pendingRevisi = findPendingRevisi(rowId);
     var revisiBtn = pendingRevisi
-      ? '<button class="icon-btn" title="Review pengajuan revisi cuti" onclick="openRevisiReview(\'' + esc(pendingRevisi.id) + '\')" style="border-color:var(--yellow-bd);color:var(--yellow);">' +
-          '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+      ? '<button class="btn-review-revisi" title="Review pengajuan revisi cuti" onclick="openRevisiReview(\'' + esc(pendingRevisi.id) + '\')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          '<span>Review</span>' +
         '</button>'
       : '';
     return '<span class="row-actions">' +
@@ -3261,6 +3272,7 @@
     (_cache || []).forEach(function(x) { if (x.rowId === cutiId) r = x; });
     if (!r) return toast('Data cuti tidak ditemukan', 'err');
     document.getElementById('rv_cutiId').value = cutiId;
+    document.getElementById('rv_role').value = r.role || '';
     document.getElementById('rv_nama').value = r.nama;
     document.getElementById('rv_perihal1').value = r.perihal1 || 'CUTI KERJA';
     document.getElementById('rv_start1').value = r.start1Raw || '';
@@ -3285,6 +3297,7 @@
     var s2 = document.getElementById('rv_start2').value;
     var e2 = document.getElementById('rv_end2').value;
     var p2 = document.getElementById('rv_perihal2').value;
+    var role = document.getElementById('rv_role').value;
     var msg = document.getElementById('rv_msg');
 
     if (!s1 || !e1 || !p1) { msg.className = 'msg error'; msg.textContent = 'Isi minimal Cuti 1 (perihal, tanggal mulai & selesai).'; return; }
@@ -3298,6 +3311,7 @@
       alasan: alasan, status: 'PENDING'
     };
     var btn = this; btn.disabled = true; btn.textContent = 'Memeriksa…';
+    msg.className = 'msg'; msg.textContent = '';
 
     // Server-side duplicate check
     sbGet('revisi_cuti', 'select=id&cuti_id=eq.' + encodeURIComponent(cutiId) + '&status=eq.PENDING&limit=1').then(function(existing) {
@@ -3306,13 +3320,25 @@
         msg.className = 'msg error'; msg.textContent = 'Revisi untuk cuti ini sudah ada yang PENDING. Tunggu admin mereview.';
         return;
       }
-      btn.textContent = 'Mengirim…';
-      return sbPost('revisi_cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
-        btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
-        toast('Revisi berhasil diajukan', 'ok');
-        logActivity('CUTI', 'CREATE', 'Ajukan revisi cuti ' + nama);
-        closeRevisiForm();
-        _revisiLoaded = false; loadRevisi(true);
+      // Tanggal baru yang diajukan juga wajib lolos aturan bentrok — sama seperti
+      // pengajuan cuti biasa, memakai gerbang validasi & pool data terkini yang sama.
+      btn.textContent = 'Memeriksa bentrok…';
+      var leaves = [{ perihal: p1, start: s1, end: e1 }];
+      if (p2 && s2 && e2) leaves.push({ perihal: p2, start: s2, end: e2 });
+      return checkClashOnSubmit(nama, role, leaves).then(function(clashReason) {
+        if (clashReason) {
+          btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
+          msg.className = 'msg error'; msg.textContent = clashReason;
+          return;
+        }
+        btn.textContent = 'Mengirim…';
+        return sbPost('revisi_cuti', payload, { 'Prefer': 'return=minimal' }).then(function() {
+          btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
+          toast('Revisi berhasil diajukan', 'ok');
+          logActivity('CUTI', 'CREATE', 'Ajukan revisi cuti ' + nama);
+          closeRevisiForm();
+          _revisiLoaded = false; loadRevisi(true);
+        });
       });
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
@@ -3556,20 +3582,41 @@
   document.getElementById('revisiEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiEdit(); });
 
   // ── Review revisi (admin) ─────────────────────────────────────
+  // Satu blok perbandingan "Sebelum → Sesudah" untuk satu slot cuti (1 atau 2).
+  function revBeforeAfterRow(label, beforePerihal, beforeS, beforeE, afterPerihal, afterS, afterE) {
+    if (!beforeS && !afterS) return '';   // slot ini memang tidak dipakai sama sekali
+    var changed = beforePerihal !== afterPerihal || beforeS !== afterS || beforeE !== afterE;
+    return '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
+      '<div style="font-size:9px;font-weight:800;letter-spacing:.10em;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">' + esc(label) + '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:150px;">' +
+          '<div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Sebelum Revisi</div>' +
+          (beforeS ? '<div style="text-decoration:line-through;color:var(--text-muted);">' + esc(beforePerihal || '-') + ': ' + formatDate(beforeS) + ' — ' + formatDate(beforeE) + '</div>' : '<div style="color:var(--text-faint);">— Tidak ada —</div>') +
+        '</div>' +
+        '<div style="color:var(--yellow);font-size:16px;font-weight:700;">→</div>' +
+        '<div style="flex:1;min-width:150px;">' +
+          '<div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Sesudah Revisi</div>' +
+          (afterS ? '<div style="font-weight:700;color:' + (changed ? 'var(--yellow)' : 'var(--text-primary)') + ';">' + esc(afterPerihal || '-') + ': ' + formatDate(afterS) + ' — ' + formatDate(afterE) + '</div>' : '<div style="color:var(--text-faint);">— Dihapus —</div>') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
   function openRevisiReview(revId) {
     var r = null;
     (_revisiCache || []).forEach(function(x) { if (x.id === revId) r = x; });
     if (!r) return;
     _revisiReviewId = revId;
+    // Cari data cuti asli (sebelum revisi) untuk perbandingan
+    var orig = null;
+    (_cache || []).forEach(function(x) { if (x.rowId === r.cutiId) orig = x; });
+    var warnOrphan = !orig
+      ? '<div class="msg warn" style="margin-bottom:10px;">⚠️ Data cuti asli tidak ditemukan (kemungkinan sudah dihapus) — perbandingan "Sebelum" tidak tersedia.</div>'
+      : '';
+    var slot1 = revBeforeAfterRow('Cuti 1', orig && orig.perihal1, orig && orig.start1Raw, orig && orig.end1Raw, r.perihal1, r.start1, r.end1);
+    var slot2 = revBeforeAfterRow('Cuti 2', orig && orig.perihal2, orig && orig.start2Raw, orig && orig.end2Raw, r.perihal2, r.start2, r.end2);
     var detail = '<div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">' +
-      '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:8px;">' + esc(r.nama) + '</div>' +
-      '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
-      '<div style="font-size:9px;font-weight:800;letter-spacing:.10em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Revisi Cuti 1</div>' +
-      '<div>' + esc(r.perihal1) + ': ' + formatDate(r.start1) + ' — ' + formatDate(r.end1) + '</div>' +
-      '</div>' +
-      (r.start2 && r.end2 ? '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
-      '<div style="font-size:9px;font-weight:800;letter-spacing:.10em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Revisi Cuti 2</div>' +
-      '<div>' + esc(r.perihal2) + ': ' + formatDate(r.start2) + ' — ' + formatDate(r.end2) + '</div></div>' : '') +
+      '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:10px;">' + esc(r.nama) + '</div>' +
+      warnOrphan + slot1 + slot2 +
       '<div style="margin-top:6px;"><strong>Alasan:</strong> ' + esc(r.alasan) + '</div>' +
       '</div>';
     document.getElementById('rvr_detail').innerHTML = detail;
