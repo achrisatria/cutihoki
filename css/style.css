@@ -500,6 +500,16 @@
   .icon-btn { border: 1px solid var(--border-strong); background: var(--surface); width: 26px; height: 26px; border-radius: 7px; cursor: pointer; display: grid; place-items: center; color: var(--text-muted); transition: all .15s; flex: none; }
   .icon-btn:hover { border-color: var(--accent-bd); color: var(--accent-ink); background: var(--accent-050); }
   .icon-btn.danger:hover { border-color: var(--red-bd); color: var(--red); background: var(--red-bg); }
+  /* Tombol "Review" pengajuan revisi cuti — sengaja beda dari icon-btn polos
+     (pill berlabel, bukan kotak ikon saja) supaya langsung terlihat menonjol. */
+  .btn-review-revisi {
+    display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px;
+    border-radius: var(--radius-pill); border: 1px solid var(--yellow-bd); background: var(--yellow-bg);
+    color: var(--yellow); font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer;
+    flex: none; transition: all .15s;
+  }
+  .btn-review-revisi svg { flex: none; }
+  .btn-review-revisi:hover { background: var(--yellow); color: #1a1400; border-color: var(--yellow); }
   .copy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted); font: inherit; font-size: 11px; font-weight: 600; padding: 4px 9px; min-height: 26px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
   .copy-btn:hover { border-color: var(--accent-bd); color: var(--accent-ink); background: var(--accent-050); }
   .copy-btn:active { transform: translateY(1px); }
