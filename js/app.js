@@ -1778,10 +1778,13 @@
 
     var sel = document.getElementById('statusFilter');
     var opts = ['<option value="ALL">Semua Status</option>'];
-    if (revisiCount > 0) {
+    // Opsi ini tetap ditampilkan (walau hitungannya 0) selama memang sedang aktif
+    // dipilih — supaya klik dari kartu stat "Minta Revisi"/"Segera Kembali" selalu
+    // benar-benar menyaring tabel, bukan diam-diam dibatalkan balik ke Semua Status.
+    if (revisiCount > 0 || filterState.status === 'ADA_REVISI') {
       opts.push('<option value="ADA_REVISI"' + (filterState.status === 'ADA_REVISI' ? ' selected' : '') + '>🟡 Ada Revisi · ' + revisiCount + '</option>');
     }
-    if (segeraCount > 0) {
+    if (segeraCount > 0 || filterState.status === 'SEGERA_KEMBALI') {
       opts.push('<option value="SEGERA_KEMBALI"' + (filterState.status === 'SEGERA_KEMBALI' ? ' selected' : '') + '>⏰ Segera Kembali · ' + segeraCount + '</option>');
     }
     keys.forEach(function(s) {
@@ -1789,10 +1792,11 @@
         esc(s) + ' · ' + count[s] + '</option>');
     });
     // Pilihan lama yang tak ada lagi di menu ini → kembalikan ke "Semua Status"
+    // (ADA_REVISI & SEGERA_KEMBALI tidak pernah dianggap "hilang" — lihat komentar di atas)
     var statusMasihValid = filterState.status === 'ALL' ||
-      (filterState.status === 'ADA_REVISI' && revisiCount > 0) ||
-      (filterState.status === 'SEGERA_KEMBALI' && segeraCount > 0) ||
-      (filterState.status !== 'ADA_REVISI' && filterState.status !== 'SEGERA_KEMBALI' && count[filterState.status]);
+      filterState.status === 'ADA_REVISI' ||
+      filterState.status === 'SEGERA_KEMBALI' ||
+      count[filterState.status];
     if (!statusMasihValid) {
       filterState.status = 'ALL';
       opts[0] = '<option value="ALL" selected>Semua Status</option>';
