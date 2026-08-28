@@ -2175,12 +2175,12 @@
     shown.forEach(function(r, ri) {
       var has2 = !!(r.start2Raw || r.perihal2);
       var alt = (ri % 2 === 1) ? ' rec-alt' : '';
-      var line2 = function(html) { return has2 ? '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,.1);">' + html + '</div>' : ''; };
+      var line2 = function(html) { return has2 ? '<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(148,163,184,.1);">' + html + '</div>' : ''; };
       parts.push('<tr class="rec' + alt + '">' +
         '<td><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
         '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
         '<td style="white-space:normal;">' + periodeCell(r.start1Raw, r.end1Raw) +
-          (has2 ? '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,.1);"><span style="color:var(--faint);margin-right:3px;font-size:11px;">↳</span>' + periodeCell(r.start2Raw, r.end2Raw) + '</div>' : '') + '</td>' +
+          (has2 ? '<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(148,163,184,.1);"><span style="color:var(--faint);margin-right:3px;font-size:11px;">↳</span>' + periodeCell(r.start2Raw, r.end2Raw) + '</div>' : '') + '</td>' +
         '<td style="white-space:normal;"><span class="pill pill-durasi">' + esc(r.durasi1) + '</span>' +
           (has2 ? line2('<span class="pill pill-durasi">' + esc(r.durasi2) + '</span>') : '') + '</td>' +
         '<td style="white-space:normal;"><span class="pill pill-perihal">' + esc(r.perihal1) + '</span>' +
