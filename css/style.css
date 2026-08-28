@@ -319,7 +319,8 @@
   .stat-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 12px; width: 100%; }
   .stat-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow-card); transition: all .2s; position: relative; overflow: hidden; }
   .stat-item::after { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: var(--accent); border-radius: 0 3px 3px 0; opacity: 0; transition: all .2s; }
-  .stat-item:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
+  /* Efek hover (naik sedikit + berdenyut) didefinisikan di bagian bawah file,
+     dekat kartu notifikasi — lihat "SEMUA KARTU STAT". */
   .stat-item:hover::after { opacity: 1; }
   .stat-ic { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-size: 16px; flex: none; }
   .stat-txt { min-width: 0; }
@@ -1204,25 +1205,34 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
 }
 
 /* ═══ SEMUA KARTU STAT — klik untuk langsung menyaring tabel ═══ */
-/* Setiap kartu bisa diklik; saat mouse di atasnya, ikonnya berdenyut jelas
-   supaya afordansi "klik aku" langsung terasa — inilah satu-satunya efek
-   hover yang tersisa untuk fitur ini (tidak ada lagi hover di baris tabel). */
+/* Setiap kartu bisa diklik; saat mouse di atasnya, kartunya sendiri yang
+   berdenyut jelas (bukan ikon di dalamnya — ikon adalah anak dari .stat-item
+   yang overflow:hidden, jadi box-shadow anak akan terpotong dan TIDAK
+   kelihatan; box-shadow milik elemen itu sendiri tidak ikut terpotong oleh
+   overflow miliknya sendiri, makanya animasinya ditaruh di .stat-item). Ini
+   satu-satunya efek hover yang tersisa untuk fitur ini — tidak ada lagi
+   hover berwarna di baris tabel. */
 .stat-item { cursor: pointer; }
-.stat-item:hover .stat-ic { animation: statHoverPulse .9s ease-in-out infinite; }
+.stat-item:hover {
+  transform: translateY(-1px);
+  animation: statHoverPulse .9s ease-in-out infinite;
+}
 @keyframes statHoverPulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
-  50% { box-shadow: 0 0 0 8px transparent; }
+  0%, 100% { box-shadow: var(--shadow-card-hover), 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: var(--shadow-card-hover), 0 0 0 9px transparent; }
 }
 /* Kartu notifikasi (Minta Revisi / Segera Kembali saat count > 0) — tetap
    berdenyut pelan walau tidak di-hover, sebagai penanda "ada yang perlu dilihat". */
-.stat-item.stat-alert .stat-ic {
+.stat-item.stat-alert {
   animation: statPulse 2s ease infinite;
 }
-.stat-item.stat-alert:hover { background: var(--yellow-bg); border-radius: var(--radius-md, 12px); }
-.stat-item.stat-alert:hover .stat-ic { animation: statHoverPulse .9s ease-in-out infinite; }
+.stat-item.stat-alert:hover {
+  background: var(--yellow-bg); border-radius: var(--radius-md, 12px);
+  animation: statHoverPulse .9s ease-in-out infinite;
+}
 @keyframes statPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(234,179,8,.45); }
-  50% { box-shadow: 0 0 0 7px rgba(234,179,8,0); }
+  0%, 100% { box-shadow: var(--shadow-card), 0 0 0 0 rgba(234,179,8,.45); }
+  50% { box-shadow: var(--shadow-card), 0 0 0 8px rgba(234,179,8,0); }
 }
 .sb-has-pending {
   position: relative;
