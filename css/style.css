@@ -374,6 +374,10 @@
   tbody tr.rec:has(.pill-clash-alert) td { background: rgba(248,113,113,.06); }
   tbody tr.rec:has(.pill-clash-alert):hover td { background: rgba(248,113,113,.11) !important; }
   tbody tr.rec:has(.pill-clash-alert) td:first-child { box-shadow: inset 4px 0 0 var(--red); }
+  /* Baris dengan pengajuan revisi cuti yang masih PENDING — efek hover kuning */
+  #dashboardContent tbody tr.rec.has-revisi td { background: rgba(234,179,8,.06); }
+  #dashboardContent tbody tr.rec.has-revisi:hover td { background: rgba(234,179,8,.14) !important; }
+  #dashboardContent tbody tr.rec.has-revisi td:first-child { box-shadow: inset 4px 0 0 var(--yellow); }
   .cell-name { font-weight: 600; color: var(--text-primary); font-size: 12.5px; display: block; width: 100%; word-break: break-word; }
   .periode { display: inline-flex; align-items: center; gap: var(--table-content-gap); white-space: nowrap; color: var(--text-secondary); font-weight: 500; font-size: 12.5px; }
   .periode i { font-style: normal; color: var(--text-faint); font-size: 10px; }
@@ -1188,6 +1192,17 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
 @keyframes sbPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.4); }
   50% { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
+}
+
+/* ═══ KARTU NOTIFIKASI "MINTA REVISI" ═════════════════════════ */
+.stat-item.stat-alert { cursor: pointer; }
+.stat-item.stat-alert .stat-ic {
+  animation: statPulse 2s ease infinite;
+}
+.stat-item.stat-alert:hover { background: var(--yellow-bg); border-radius: var(--radius-md, 12px); }
+@keyframes statPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234,179,8,.45); }
+  50% { box-shadow: 0 0 0 7px rgba(234,179,8,0); }
 }
 .sb-has-pending {
   position: relative;
