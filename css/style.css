@@ -346,6 +346,11 @@
   tbody tr.rec td { border-bottom: var(--table-divider); }
   tbody tr.rec td + td { border-left: var(--table-divider); }
   tbody tr:last-child td { border-bottom: none; }
+  /* Baris di Dashboard Cuti bisa memuat 2 periode cuti sekaligus (lebih tinggi
+     dari baris biasa). Disamakan tingginya di sini supaya semua baris rapi
+     sejajar — baris berisi 1 periode otomatis ikut tinggi ini (kontennya
+     tetap center secara vertikal berkat vertical-align:middle di atas). */
+  #dashboardContent tbody tr.rec { height: 68px; }
   tbody tr.rec-alt td { background: var(--bg-row-alt); }
   tbody tr.rec:hover td { background: var(--bg-row-hover) !important; }
   tbody tr.rec:has(.pill-clash-alert) td { background: rgba(248,113,113,.06); }
