@@ -178,11 +178,14 @@
   }
   .sb-item:hover { background: rgba(148,163,184,.08); color: var(--text-secondary); }
   /* Hover khas per-menu — soft, warnanya senada dengan tabel di menu terkait */
-  #sbOngoing:hover  { background: var(--orange-bg); color: #FDBA74; }   /* Sedang Cuti — oranye */
-  #sbArchive:hover  { background: var(--red-bg);    color: #FCA5A5; }   /* Selesai Cuti — merah */
-  #sbRevisi:hover   { background: var(--yellow-bg); color: #FDE68A; }   /* Revisi Cuti — kuning */
-  #sbResign:hover   { background: var(--maroon-bg); color: #E8949B; }   /* Resign — merah tua */
-  #sbRekening:hover { background: var(--green-bg);  color: #6EE7B7; }   /* Ganti Rekening — hijau */
+  /* :not(.active) — supaya saat item ini sedang aktif (latar gradiennya sendiri
+     sudah tampil), teks tetap putih bersih dan tidak ketiban warna hover saat
+     kursor mouse masih berada di atasnya (mis. sesaat setelah diklik). */
+  #sbOngoing:hover:not(.active)  { background: var(--orange-bg); color: #FDBA74; }   /* Sedang Cuti — oranye */
+  #sbArchive:hover:not(.active)  { background: var(--red-bg);    color: #FCA5A5; }   /* Selesai Cuti — merah */
+  #sbRevisi:hover:not(.active)   { background: var(--yellow-bg); color: #FDE68A; }   /* Revisi Cuti — kuning */
+  #sbResign:hover:not(.active)   { background: var(--maroon-bg); color: #E8949B; }   /* Resign — merah tua */
+  #sbRekening:hover:not(.active) { background: var(--green-bg);  color: #6EE7B7; }   /* Ganti Rekening — hijau */
   .sb-item.active { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 2px 8px var(--accent-glow); }
   .sb-item svg { flex: none; opacity: .7; }
   .sb-item.active svg { opacity: 1; }
