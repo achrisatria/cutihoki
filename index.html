@@ -239,6 +239,7 @@
       <div class="dash-actions">
         <button class="btn btn-primary btn-sm" id="toggleFormBtn" type="button" onclick="toggleForm()">＋ Ajukan Cuti</button>
         <button class="btn btn-secondary btn-sm admin-only" id="rulesBtn" type="button" onclick="openRules()">⚙️ Atur Aturan</button>
+        <button class="btn btn-secondary btn-sm admin-only" id="revisiHistoryBtn" type="button" onclick="switchTab('revisi')">🕘 Riwayat Revisi</button>
         <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="loadDashboard(true)">🔄 Muat ulang</button>
       </div>
     </div>
@@ -694,6 +695,7 @@
         <p>Daftar permintaan revisi dari staff — admin dapat menyetujui atau menolak.</p>
       </div>
       <div class="dash-actions">
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('dashboard')">← Kembali ke Dashboard</button>
         <button class="btn btn-secondary btn-sm" onclick="loadRevisi(true)">🔄 Muat ulang</button>
       </div>
     </div>
@@ -745,6 +747,7 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="rv_cutiId">
+      <input type="hidden" id="rv_role">
       <div class="field" style="margin-bottom:12px;">
         <label>Nama Staff</label>
         <input id="rv_nama" type="text" readonly>
