@@ -1900,7 +1900,7 @@
           { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang sedang cuti' }) +
         statCard('Segera Kembali (≤3 hari)', segera, 'var(--amber)', 'var(--amber-bg)', '⏰',
           { onclick: "filterByStatus('SEGERA_KEMBALI')", title: 'Klik untuk lihat staff yang segera kembali (≤3 hari)',
-            extraClass: segera > 0 ? ' stat-alert' : '' });
+            extraClass: segera > 0 ? ' stat-alert' : '', pulseRgb: '251,191,36' });
 
     } else if (filterState.segment === 'ARSIP') {
       var hariArsip = 0;
@@ -1917,12 +1917,13 @@
         statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋',
           { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua pengajuan' }) +
         statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳',
-          { onclick: "filterByStatus('WAITING')", title: 'Klik untuk lihat pengajuan berstatus Waiting' }) +
+          { onclick: "filterByStatus('WAITING')", title: 'Klik untuk lihat pengajuan berstatus Waiting',
+            extraClass: waiting > 0 ? ' stat-alert' : '', pulseRgb: '251,191,36' }) +
         statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️',
           { onclick: "filterByStatus('DONE CATAT')", title: 'Klik untuk lihat pengajuan berstatus Done Catat' }) +
         statCard('Minta Revisi', revisiPending, 'var(--yellow)', 'var(--yellow-bg)', '📝',
           { onclick: "filterByStatus('ADA_REVISI')", title: 'Klik untuk lihat baris yang mengajukan revisi cuti',
-            extraClass: revisiPending > 0 ? ' stat-alert' : '' });
+            extraClass: revisiPending > 0 ? ' stat-alert' : '', pulseRgb: '234,179,8' });
     }
   }
   // Terapkan filter status sesuai stat card yang diklik — satu fungsi generik untuk semua kartu.
@@ -1951,7 +1952,8 @@
     var extraClass = opts.extraClass || '';
     var attrs = (opts.onclick ? ' onclick="' + opts.onclick + '" role="button" tabindex="0" ' +
         'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"' : '') +
-      (opts.title ? ' title="' + esc(opts.title) + '"' : '');
+      (opts.title ? ' title="' + esc(opts.title) + '"' : '') +
+      (opts.pulseRgb ? ' style="--stat-alert-rgb:' + opts.pulseRgb + '"' : '');
     return '<div class="stat-item' + extraClass + '"' + attrs + '>' +
       '<div class="stat-ic" style="background:' + bg + ';color:' + color + '">' + icon + '</div>' +
       '<div class="stat-txt"><div class="label">' + esc(label) + '</div><div class="value">' + value + '</div></div>' +
