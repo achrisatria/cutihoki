@@ -1760,6 +1760,12 @@
     });
     var revisiCount = 0;
     data.forEach(function(r) { if (findPendingRevisi(r.rowId)) revisiCount++; });
+    // "Segera Kembali" hanya relevan di menu Sedang Cuti (BERJALAN)
+    var segeraCount = 0;
+    if (filterState.segment === 'BERJALAN') {
+      var hariIni = todayKey();
+      data.forEach(function(r) { if (isSegeraKembali(r, hariIni)) segeraCount++; });
+    }
     // Urutkan mengikuti urutan pada CONFIG.TASK bila ada, sisanya menyusul alfabetis
     var order = (CONFIG.TASK || []).map(function(s) { return s.toUpperCase(); });
     var keys = Object.keys(count).sort(function(a, b) {
@@ -1775,15 +1781,19 @@
     if (revisiCount > 0) {
       opts.push('<option value="ADA_REVISI"' + (filterState.status === 'ADA_REVISI' ? ' selected' : '') + '>🟡 Ada Revisi · ' + revisiCount + '</option>');
     }
+    if (segeraCount > 0) {
+      opts.push('<option value="SEGERA_KEMBALI"' + (filterState.status === 'SEGERA_KEMBALI' ? ' selected' : '') + '>⏰ Segera Kembali · ' + segeraCount + '</option>');
+    }
     keys.forEach(function(s) {
       opts.push('<option value="' + esc(s) + '"' + (s === filterState.status ? ' selected' : '') + '>' +
         esc(s) + ' · ' + count[s] + '</option>');
     });
     // Pilihan lama yang tak ada lagi di menu ini → kembalikan ke "Semua Status"
-    if (filterState.status === 'ADA_REVISI' && revisiCount === 0) {
-      filterState.status = 'ALL';
-      opts[0] = '<option value="ALL" selected>Semua Status</option>';
-    } else if (filterState.status !== 'ALL' && filterState.status !== 'ADA_REVISI' && !count[filterState.status]) {
+    var statusMasihValid = filterState.status === 'ALL' ||
+      (filterState.status === 'ADA_REVISI' && revisiCount > 0) ||
+      (filterState.status === 'SEGERA_KEMBALI' && segeraCount > 0) ||
+      (filterState.status !== 'ADA_REVISI' && filterState.status !== 'SEGERA_KEMBALI' && count[filterState.status]);
+    if (!statusMasihValid) {
       filterState.status = 'ALL';
       opts[0] = '<option value="ALL" selected>Semua Status</option>';
     }
@@ -1809,6 +1819,8 @@
     if (!recordInMonth(r, filterState.month)) return false;
     if (filterState.status === 'ADA_REVISI') {
       if (!findPendingRevisi(r.rowId)) return false;
+    } else if (filterState.status === 'SEGERA_KEMBALI') {
+      if (!isSegeraKembali(r)) return false;
     } else if (filterState.status !== 'ALL' && String(r.task1 || '').toUpperCase() !== filterState.status) return false;
     return true;
   }
@@ -1867,45 +1879,64 @@
 
     if (filterState.segment === 'BERJALAN') {
       // Hitung berapa yang akan segera kembali (cuti berakhir dalam <= 3 hari)
-      var now = new Date();
-      var hariIni = ymdKey(now.getFullYear(), now.getMonth(), now.getDate());
+      var hariIni = todayKey();
       var hari = 0, segera = 0;
       rows.forEach(function(r) {
         hari += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total;
-        var akhir = null;
-        [r.end1Raw, r.end2Raw].forEach(function(d) {
-          if (!d) return;
-          var k = dayKey(d);
-          if (akhir === null || k > akhir) akhir = k;
-        });
-        if (akhir !== null && akhir >= hariIni && akhir - hariIni <= 3) segera++;
+        if (isSegeraKembali(r, hariIni)) segera++;
       });
       box.innerHTML =
-        statCard('Total Sedang Cuti', total, 'var(--blue)', 'var(--blue-bg)', '🏝️') +
-        statCard('Total Hari Berjalan', hari, 'var(--brand-ink)', 'var(--brand-050)', '📅') +
-        statCard('Segera Kembali (≤3 hari)', segera, 'var(--amber)', 'var(--amber-bg)', '⏰');
+        statCard('Total Sedang Cuti', total, 'var(--blue)', 'var(--blue-bg)', '🏝️',
+          { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang sedang cuti' }) +
+        statCard('Total Hari Berjalan', hari, 'var(--brand-ink)', 'var(--brand-050)', '📅',
+          { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang sedang cuti' }) +
+        statCard('Segera Kembali (≤3 hari)', segera, 'var(--amber)', 'var(--amber-bg)', '⏰',
+          { onclick: "filterByStatus('SEGERA_KEMBALI')", title: 'Klik untuk lihat staff yang segera kembali (≤3 hari)',
+            extraClass: segera > 0 ? ' stat-alert' : '' });
 
     } else if (filterState.segment === 'ARSIP') {
       var hariArsip = 0;
       rows.forEach(function(r) { hariArsip += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total; });
       box.innerHTML =
-        statCard('Total Selesai Cuti', total, 'var(--green)', 'var(--green-bg)', '✅') +
-        statCard('Total Hari Diambil', hariArsip, 'var(--brand-ink)', 'var(--brand-050)', '📅');
+        statCard('Total Selesai Cuti', total, 'var(--green)', 'var(--green-bg)', '✅',
+          { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang selesai cuti' }) +
+        statCard('Total Hari Diambil', hariArsip, 'var(--brand-ink)', 'var(--brand-050)', '📅',
+          { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang selesai cuti' });
 
     } else {
       var revisiPending = (_revisiCache || []).filter(function(r) { return r.status === 'PENDING'; }).length;
       box.innerHTML =
-        statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋') +
-        statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳') +
-        statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️') +
+        statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋',
+          { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua pengajuan' }) +
+        statCard('Waiting', waiting, 'var(--amber)', 'var(--amber-bg)', '⏳',
+          { onclick: "filterByStatus('WAITING')", title: 'Klik untuk lihat pengajuan berstatus Waiting' }) +
+        statCard('Done Catat', done, 'var(--slate)', 'var(--slate-bg)', '🗂️',
+          { onclick: "filterByStatus('DONE CATAT')", title: 'Klik untuk lihat pengajuan berstatus Done Catat' }) +
         statCard('Minta Revisi', revisiPending, 'var(--yellow)', 'var(--yellow-bg)', '📝',
-          revisiPending > 0 ? { extraClass: ' stat-alert', onclick: 'filterRevisiPending()', title: 'Klik untuk lihat baris yang mengajukan revisi cuti' } : null);
+          { onclick: "filterByStatus('ADA_REVISI')", title: 'Klik untuk lihat baris yang mengajukan revisi cuti',
+            extraClass: revisiPending > 0 ? ' stat-alert' : '' });
     }
   }
-  // Terapkan filter status "Ada Revisi" — dipanggil dari klik kartu notifikasi "Minta Revisi"
-  function filterRevisiPending() {
-    filterState.status = 'ADA_REVISI';
+  // Terapkan filter status sesuai stat card yang diklik — satu fungsi generik untuk semua kartu.
+  function filterByStatus(status) {
+    filterState.status = status;
     buildStatusOptions(); applyFilters();
+  }
+  // Hari ini sebagai day-key (epoch hari, UTC) — dipakai untuk hitungan "segera kembali".
+  function todayKey() { var n = new Date(); return ymdKey(n.getFullYear(), n.getMonth(), n.getDate()); }
+  // Tanggal akhir cuti TERAKHIR milik satu baris (ambil yang paling belakangan dari 2 periode).
+  function rowLastEndDay(r) {
+    var akhir = null;
+    [r.end1Raw, r.end2Raw].forEach(function(d) {
+      if (!d) return;
+      var k = dayKey(d);
+      if (akhir === null || k > akhir) akhir = k;
+    });
+    return akhir;
+  }
+  function isSegeraKembali(r, hariIni) {
+    var akhir = rowLastEndDay(r);
+    return akhir !== null && akhir >= (hariIni != null ? hariIni : todayKey()) && akhir - (hariIni != null ? hariIni : todayKey()) <= 3;
   }
   function statCard(label, value, color, bg, icon, opts) {
     opts = opts || {};
@@ -2220,8 +2251,9 @@
       var has2 = !!(r.start2Raw || r.perihal2);
       var alt = (ri % 2 === 1) ? ' rec-alt' : '';
       var hasRevisi = !!findPendingRevisi(r.rowId);
+      var isWaiting = String(r.task1 || '').toUpperCase() === 'WAITING';
       var line2 = function(html) { return has2 ? '<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(148,163,184,.1);">' + html + '</div>' : ''; };
-      parts.push('<tr class="rec' + alt + (hasRevisi ? ' has-revisi' : '') + '">' +
+      parts.push('<tr class="rec' + alt + (isWaiting ? ' is-waiting' : '') + (hasRevisi ? ' has-revisi' : '') + '">' +
         '<td><span class="pill pill-role ' + roleCls(r.role) + '">' + esc(r.role) + '</span></td>' +
         '<td><span class="cell-name" title="' + esc(r.nama) + '">' + esc(r.nama) + '</span></td>' +
         '<td style="white-space:normal;">' + periodeCell(r.start1Raw, r.end1Raw) +
