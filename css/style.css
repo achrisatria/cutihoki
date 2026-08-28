@@ -841,7 +841,7 @@
   table { font-size: 11px; }
   thead th { height: 40px; padding: 9px 10px; font-size: 8px; }
   tbody td { padding: 7px 9px; }
-  .cell-name, .periode { font-size: 11px; }
+  .cell-name, .periode { font-size: 12px; }
 
   .form-panel.open { border-radius: 13px; }
   .fp-head { padding: 17px 14px 15px; }
