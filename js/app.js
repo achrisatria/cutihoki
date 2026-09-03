@@ -971,11 +971,10 @@
 
   // Perbarui angka pada tab Sedang Cuti & Selesai Cuti
   function updateTabCounts() {
-    var nOngoing = 0, nArchive = 0, hasWaiting = false;
+    var nOngoing = 0, nArchive = 0;
     (_cache || []).forEach(function(r) {
       if (inSegment(r, 'BERJALAN')) nOngoing++;
       else if (inSegment(r, 'ARSIP')) nArchive++;
-      if (String(r.task1 || '').toUpperCase() === 'WAITING') hasWaiting = true;
     });
     var oEl = _domOngoingCount || document.getElementById('ongoingCount');
     var aEl = _domArchiveCount || document.getElementById('archiveCount');
@@ -986,9 +985,19 @@
     var sbA = document.getElementById('sbArchiveCount');
     if (sbO) { sbO.textContent = nOngoing; sbO.style.display = nOngoing ? '' : 'none'; }
     if (sbA) { sbA.textContent = nArchive; sbA.style.display = nArchive ? '' : 'none'; }
-    // Selama masih ada pengajuan WAITING di mana pun, seluruh menu sidebar
-    // dapat efek "menyapu" saat di-hover — penanda global bahwa ada yang
-    // perlu diproses, tidak dibatasi pada menu yang sedang dibuka.
+    refreshWaitingAlert();
+  }
+
+  // Selama masih ada pengajuan yang BELUM diproses di mana pun — cuti WAITING,
+  // ganti rekening WAITING, atau resign PENDING — seluruh menu sidebar dapat
+  // efek "menyapu" saat di-hover. Ini penanda GLOBAL: tidak dibatasi pada
+  // menu/data yang kebetulan sedang dimuat, jadi tiap cache (_cache/_rekCache/
+  // _resignCache) dicek apa adanya (null/belum dimuat dianggap "tidak ada").
+  function refreshWaitingAlert() {
+    var hasWaiting =
+      (_cache || []).some(function(r) { return String(r.task1 || '').toUpperCase() === 'WAITING'; }) ||
+      (_rekCache || []).some(function(r) { return String(r.task || '').toUpperCase() === 'WAITING'; }) ||
+      (_resignCache || []).some(function(r) { return String(r.task || '').toUpperCase() === 'PENDING'; });
     document.body.classList.toggle('has-waiting-alert', hasWaiting);
   }
 
@@ -2520,6 +2529,7 @@
     if (el) { el.textContent = waiting; el.style.display = waiting ? '' : 'none'; }
     var sb = document.getElementById('sbRekCount');
     if (sb) { sb.textContent = total; sb.style.display = total ? '' : 'none'; }
+    refreshWaitingAlert();
   }
 
   function renderRekChips() {
@@ -2911,6 +2921,7 @@
     if (el) { el.textContent = pending; el.style.display = pending ? '' : 'none'; }
     var sb = document.getElementById('sbResignCount');
     if (sb) { sb.textContent = total; sb.style.display = total ? '' : 'none'; }
+    refreshWaitingAlert();
   }
 
   function renderResignChips() {
@@ -3915,6 +3926,10 @@
         document.getElementById('dashboardLoading').style.display = 'none';
         renderFilters(); applyFilters(); updateTabCounts();
         document.getElementById('dashboardContent').style.display = 'block';
+      } else {
+        // Meski view Dashboard Pengajuan belum aktif, badge sidebar & notifikasi
+        // "menyapu" tetap harus tahu ada cuti WAITING sejak awal.
+        refreshWaitingAlert();
       }
       return rows;
     }).catch(function() { _prefetch = null; return null; });
