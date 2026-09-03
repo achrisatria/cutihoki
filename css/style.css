@@ -1206,9 +1206,10 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
 }
 
 /* ═══ NOTIFIKASI "MENYAPU" — ADA PENGAJUAN WAITING DI MANA SAJA ═══ */
-/* Selama masih ada pengajuan cuti berstatus WAITING (di mana pun, bukan cuma
-   di menu yang lagi dibuka), SETIAP item sidebar dapat kilau "menyapu" saat
-   di-hover — penanda halus tapi jelas bahwa masih ada yang perlu diproses. */
+/* Selama masih ada pengajuan (cuti/ganti rekening/resign) yang belum diproses
+   di mana pun, SETIAP item sidebar dapat kilau "menyapu" — berjalan sendiri
+   (ambient, berulang) supaya tetap terlihat SEBELUM kursor mendekat, dan
+   mempercepat saat di-hover sebagai penegasan tambahan. */
 body.has-waiting-alert .sb-item { overflow: hidden; }
 body.has-waiting-alert .sb-item::after {
   content: "";
@@ -1216,7 +1217,21 @@ body.has-waiting-alert .sb-item::after {
   background: linear-gradient(115deg, transparent, rgba(251,191,36,.55), transparent);
   transform: skewX(-20deg);
   pointer-events: none;
+  animation: sbSweep 3.4s ease-in-out infinite;
 }
+/* Jeda berbeda per item (dihitung dari urutan <button> di sidebar, aman
+   walau diselingi label section seperti "MENU UTAMA") supaya kilaunya
+   menyapu turun bergiliran, bukan berkedip bersamaan. */
+body.has-waiting-alert .sb-item:nth-of-type(2)::after { animation-delay: .3s; }
+body.has-waiting-alert .sb-item:nth-of-type(3)::after { animation-delay: .6s; }
+body.has-waiting-alert .sb-item:nth-of-type(4)::after { animation-delay: .9s; }
+body.has-waiting-alert .sb-item:nth-of-type(5)::after { animation-delay: 1.2s; }
+body.has-waiting-alert .sb-item:nth-of-type(6)::after { animation-delay: 1.5s; }
+body.has-waiting-alert .sb-item:nth-of-type(7)::after { animation-delay: 1.8s; }
+body.has-waiting-alert .sb-item:nth-of-type(8)::after { animation-delay: 2.1s; }
+body.has-waiting-alert .sb-item:nth-of-type(9)::after { animation-delay: 2.4s; }
+body.has-waiting-alert .sb-item:nth-of-type(10)::after { animation-delay: 2.7s; }
+/* Hover selalu menang: sapuan cepat dari awal, tidak peduli jeda ambient-nya. */
 body.has-waiting-alert .sb-item:hover::after {
   animation: sbSweep .85s ease;
 }
