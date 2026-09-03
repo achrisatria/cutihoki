@@ -1778,11 +1778,11 @@
     });
     var revisiCount = 0;
     data.forEach(function(r) { if (findPendingRevisi(r.rowId)) revisiCount++; });
-    // "Segera Kembali" hanya relevan di menu Sedang Cuti (BERJALAN)
-    var segeraCount = 0;
+    // "Kembali Besok" hanya relevan di menu Sedang Cuti (BERJALAN)
+    var besokCount = 0;
     if (filterState.segment === 'BERJALAN') {
       var hariIni = todayKey();
-      data.forEach(function(r) { if (isSegeraKembali(r, hariIni)) segeraCount++; });
+      data.forEach(function(r) { if (isKembaliBesok(r, hariIni)) besokCount++; });
     }
     // Urutkan mengikuti urutan pada CONFIG.TASK bila ada, sisanya menyusul alfabetis
     var order = (CONFIG.TASK || []).map(function(s) { return s.toUpperCase(); });
@@ -1797,23 +1797,23 @@
     var sel = document.getElementById('statusFilter');
     var opts = ['<option value="ALL">Semua Status</option>'];
     // Opsi ini tetap ditampilkan (walau hitungannya 0) selama memang sedang aktif
-    // dipilih — supaya klik dari kartu stat "Minta Revisi"/"Segera Kembali" selalu
+    // dipilih — supaya klik dari kartu stat "Minta Revisi"/"Kembali Besok" selalu
     // benar-benar menyaring tabel, bukan diam-diam dibatalkan balik ke Semua Status.
     if (revisiCount > 0 || filterState.status === 'ADA_REVISI') {
       opts.push('<option value="ADA_REVISI"' + (filterState.status === 'ADA_REVISI' ? ' selected' : '') + '>🟡 Ada Revisi · ' + revisiCount + '</option>');
     }
-    if (segeraCount > 0 || filterState.status === 'SEGERA_KEMBALI') {
-      opts.push('<option value="SEGERA_KEMBALI"' + (filterState.status === 'SEGERA_KEMBALI' ? ' selected' : '') + '>⏰ Segera Kembali · ' + segeraCount + '</option>');
+    if (besokCount > 0 || filterState.status === 'KEMBALI_BESOK') {
+      opts.push('<option value="KEMBALI_BESOK"' + (filterState.status === 'KEMBALI_BESOK' ? ' selected' : '') + '>📅 Kembali Besok · ' + besokCount + '</option>');
     }
     keys.forEach(function(s) {
       opts.push('<option value="' + esc(s) + '"' + (s === filterState.status ? ' selected' : '') + '>' +
         esc(s) + ' · ' + count[s] + '</option>');
     });
     // Pilihan lama yang tak ada lagi di menu ini → kembalikan ke "Semua Status"
-    // (ADA_REVISI & SEGERA_KEMBALI tidak pernah dianggap "hilang" — lihat komentar di atas)
+    // (ADA_REVISI & KEMBALI_BESOK tidak pernah dianggap "hilang" — lihat komentar di atas)
     var statusMasihValid = filterState.status === 'ALL' ||
       filterState.status === 'ADA_REVISI' ||
-      filterState.status === 'SEGERA_KEMBALI' ||
+      filterState.status === 'KEMBALI_BESOK' ||
       count[filterState.status];
     if (!statusMasihValid) {
       filterState.status = 'ALL';
@@ -1841,8 +1841,8 @@
     if (!recordInMonth(r, filterState.month)) return false;
     if (filterState.status === 'ADA_REVISI') {
       if (!findPendingRevisi(r.rowId)) return false;
-    } else if (filterState.status === 'SEGERA_KEMBALI') {
-      if (!isSegeraKembali(r)) return false;
+    } else if (filterState.status === 'KEMBALI_BESOK') {
+      if (!isKembaliBesok(r)) return false;
     } else if (filterState.status !== 'ALL' && String(r.task1 || '').toUpperCase() !== filterState.status) return false;
     return true;
   }
@@ -1904,21 +1904,21 @@
     var box = _domStatBox;
 
     if (filterState.segment === 'BERJALAN') {
-      // Hitung berapa yang akan segera kembali (cuti berakhir dalam <= 3 hari)
+      // Hitung berapa yang mulai masuk kerja lagi besok (cuti berakhir hari ini)
       var hariIni = todayKey();
-      var hari = 0, segera = 0;
+      var hari = 0, besok = 0;
       rows.forEach(function(r) {
         hari += computeTotal([r.durasi1, r.durasi2], r.tambahan, r.role).total;
-        if (isSegeraKembali(r, hariIni)) segera++;
+        if (isKembaliBesok(r, hariIni)) besok++;
       });
       box.innerHTML =
         statCard('Total Sedang Cuti', total, 'var(--blue)', 'var(--blue-bg)', '🏝️',
           { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang sedang cuti' }) +
         statCard('Total Hari Berjalan', hari, 'var(--brand-ink)', 'var(--brand-050)', '📅',
           { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang sedang cuti' }) +
-        statCard('Segera Kembali (≤3 hari)', segera, 'var(--amber)', 'var(--amber-bg)', '⏰',
-          { onclick: "filterByStatus('SEGERA_KEMBALI')", title: 'Klik untuk lihat staff yang segera kembali (≤3 hari)',
-            extraClass: segera > 0 ? ' stat-alert' : '', pulseRgb: '251,191,36' });
+        statCard('Kembali Besok', besok, 'var(--amber)', 'var(--amber-bg)', '⏰',
+          { onclick: "filterByStatus('KEMBALI_BESOK')", title: 'Klik untuk lihat staff yang mulai masuk kerja lagi besok',
+            extraClass: besok > 0 ? ' stat-alert' : '', pulseRgb: '251,191,36' });
 
     } else if (filterState.segment === 'ARSIP') {
       var hariArsip = 0;
@@ -1961,9 +1961,11 @@
     });
     return akhir;
   }
-  function isSegeraKembali(r, hariIni) {
+  // "Kembali Besok" = hari terakhir cuti adalah HARI INI, jadi besok staff ybs
+  // mulai masuk kerja lagi (bukan lagi rentang "≤3 hari" seperti sebelumnya).
+  function isKembaliBesok(r, hariIni) {
     var akhir = rowLastEndDay(r);
-    return akhir !== null && akhir >= (hariIni != null ? hariIni : todayKey()) && akhir - (hariIni != null ? hariIni : todayKey()) <= 3;
+    return akhir !== null && akhir === (hariIni != null ? hariIni : todayKey());
   }
   function statCard(label, value, color, bg, icon, opts) {
     opts = opts || {};
@@ -2135,8 +2137,16 @@
           '<span>Review</span>' +
         '</button>'
       : '';
+    // Khusus menu Sedang Cuti: tombol untuk menandai staff sudah masuk kerja
+    // kembali (memindahkan status ke "Selesai Cuti") tanpa perlu buka dropdown.
+    var markReturnBtn = (filterState.segment === 'BERJALAN')
+      ? '<button class="btn-mark-return" title="Tandai staff ini sudah masuk kerja kembali" onclick="tandaiSudahMasuk(\'' + esc(rowId) + '\',\'' + esc(label) + '\')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<span>Sudah Masuk</span>' +
+        '</button>'
+      : '';
     return '<span class="row-actions">' +
-      revisiBtn +
+      revisiBtn + markReturnBtn +
       '<button class="icon-btn" title="Ubah" onclick="openEdit(\'' + esc(rowId) + '\')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
       '</button>' +
@@ -2330,6 +2340,33 @@
         : 'Status diperbarui', 'ok');
     }).catch(function(err) {
       sel.classList.remove('task-saving'); sel.value = oldVal; toast('Gagal update status: ' + err.message, 'err');
+    });
+  }
+
+  // Cari elemen <select> status milik satu baris cuti tanpa bergantung pada
+  // penulisan rowId di dalam selector CSS (aman dari karakter aneh sekalipun).
+  function findTaskSelect(rowId) {
+    var els = document.querySelectorAll('select.task-select');
+    for (var i = 0; i < els.length; i++) if (els[i].dataset.rowid === rowId) return els[i];
+    return null;
+  }
+
+  // Tombol "Tandai Sudah Masuk Kerja" di baris Sedang Cuti — memindahkan
+  // status cuti ke "Selesai Cuti" lewat jalur yang sama persis dengan ganti
+  // status manual (simpanStatus), supaya cache/filter/toast semuanya konsisten.
+  function tandaiSudahMasuk(rowId, label) {
+    var sel = findTaskSelect(rowId);
+    if (!sel) { toast('Baris tidak ditemukan — muat ulang halaman dan coba lagi', 'err'); return; }
+    var oldVal = sel.getAttribute('data-status') || sel.value;
+    if (String(oldVal).toUpperCase() === 'SELESAI CUTI') return; // sudah selesai, tak perlu apa-apa
+    confirmDialog({
+      title: 'Tandai Sudah Masuk Kerja',
+      text: 'Tandai "' + label + '" sudah masuk kerja kembali? Status cutinya akan dipindah ke "Selesai Cuti".',
+      okLabel: 'Ya, sudah masuk',
+      okClass: 'btn-primary',
+      cancelLabel: 'Batal'
+    }, function() {
+      simpanStatus(sel, rowId, 'SELESAI CUTI', oldVal);
     });
   }
 
