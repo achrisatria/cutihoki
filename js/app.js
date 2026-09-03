@@ -2365,30 +2365,52 @@
     });
   }
 
-  // Cari elemen <select> status milik satu baris cuti tanpa bergantung pada
-  // penulisan rowId di dalam selector CSS (aman dari karakter aneh sekalipun).
-  function findTaskSelect(rowId) {
-    var els = document.querySelectorAll('select.task-select');
-    for (var i = 0; i < els.length; i++) if (els[i].dataset.rowid === rowId) return els[i];
-    return null;
-  }
-
   // Tombol "Tandai Sudah Masuk Kerja" di baris Sedang Cuti — memindahkan
-  // status cuti ke "Selesai Cuti" lewat jalur yang sama persis dengan ganti
-  // status manual (simpanStatus), supaya cache/filter/toast semuanya konsisten.
+  // status cuti ke "Selesai Cuti" langsung lewat sbPatch (kolom Status di
+  // menu ini sudah bukan <select> lagi, jadi TIDAK bisa lagi numpang lewat
+  // simpanStatus() yang butuh elemen <select> asli). Kalau baris ini masih
+  // punya pengajuan revisi yang PENDING, revisi itu otomatis ditolak juga —
+  // cuti sudah ditutup, jadi permintaan ubah tanggal untuknya sudah tidak
+  // relevan lagi dan tidak boleh menggantung selamanya sebagai "Minta Revisi".
   function tandaiSudahMasuk(rowId, label) {
-    var sel = findTaskSelect(rowId);
-    if (!sel) { toast('Baris tidak ditemukan — muat ulang halaman dan coba lagi', 'err'); return; }
-    var oldVal = sel.getAttribute('data-status') || sel.value;
-    if (String(oldVal).toUpperCase() === 'SELESAI CUTI') return; // sudah selesai, tak perlu apa-apa
+    var row = null;
+    (_cache || []).forEach(function(r) { if (r.rowId === rowId) row = r; });
+    if (row && String(row.task1 || '').toUpperCase() === 'SELESAI CUTI') return; // sudah selesai, tak perlu apa-apa
+
+    var pendingRevisi = findPendingRevisi(rowId);
+    var warnRevisi = pendingRevisi
+      ? ' Pengajuan revisi cuti yang masih menunggu untuk baris ini akan otomatis ditolak.'
+      : '';
+
     confirmDialog({
       title: 'Tandai Sudah Masuk Kerja',
-      text: 'Tandai "' + label + '" sudah masuk kerja kembali? Status cutinya akan dipindah ke "Selesai Cuti".',
+      text: 'Tandai "' + label + '" sudah masuk kerja kembali? Status cutinya akan dipindah ke "Selesai Cuti".' + warnRevisi,
       okLabel: 'Ya, sudah masuk',
       okClass: 'btn-primary',
       cancelLabel: 'Batal'
     }, function() {
-      simpanStatus(sel, rowId, 'SELESAI CUTI', oldVal);
+      sbPatch('cuti', 'id=eq.' + encodeURIComponent(rowId), { task1: 'SELESAI CUTI' }).then(function() {
+        logActivity('CUTI', 'STATUS', 'Status cuti ' + (label || rowId) + ' → SELESAI CUTI (tandai sudah masuk kerja)');
+        if (_cache) { for (var i = 0; i < _cache.length; i++) if (_cache[i].rowId === rowId) { _cache[i].task1 = 'SELESAI CUTI'; break; } _filterVer++; _memoStatus = null; }
+        buildMonthOptions(); buildStatusOptions();
+        applyFilters();
+        updateTabCounts();
+        toast('"' + label + '" ditandai sudah masuk kerja — dipindahkan ke Selesai Cuti', 'ok');
+
+        if (!pendingRevisi) return;
+        return sbPatch('revisi_cuti', 'id=eq.' + encodeURIComponent(pendingRevisi.id), {
+          status: 'DITOLAK', catatan_admin: 'Otomatis ditolak — cuti sudah ditandai selesai (Sudah Masuk Kerja)'
+        }).then(function() {
+          if (_revisiCache) {
+            for (var j = 0; j < _revisiCache.length; j++) {
+              if (_revisiCache[j].id === pendingRevisi.id) { _revisiCache[j].status = 'DITOLAK'; break; }
+            }
+          }
+          updateRevisiCount();
+        }).catch(function() { /* diam-diam gagal — bukan blocker status cuti utamanya */ });
+      }).catch(function(err) {
+        toast('Gagal menandai — ' + (err && err.message ? err.message : 'coba lagi'), 'err');
+      });
     });
   }
 
