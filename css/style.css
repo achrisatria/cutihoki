@@ -1213,7 +1213,7 @@ body.has-waiting-alert .sb-item { overflow: hidden; }
 body.has-waiting-alert .sb-item::after {
   content: "";
   position: absolute; top: 0; left: -75%; width: 45%; height: 100%;
-  background: linear-gradient(115deg, transparent, rgba(255,255,255,.45), transparent);
+  background: linear-gradient(115deg, transparent, rgba(251,191,36,.55), transparent);
   transform: skewX(-20deg);
   pointer-events: none;
 }
