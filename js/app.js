@@ -2115,6 +2115,21 @@
     var opts = list.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
     return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
   }
+
+  // Kolom Status pada tabel utama. Khusus menu Sedang Cuti (BERJALAN) untuk
+  // admin: setiap baris di sana SELALU berstatus "Sedang Cuti" (itulah
+  // syarat masuk segmen ini), jadi dropdownnya diganti langsung dengan
+  // tombol konfirmasi "Sudah Masuk" — satu aksi yang jelas, bukan dropdown
+  // + tombol terpisah di kolom Aksi yang bikin berdesakan/rancu.
+  function statusCell(r, taskList) {
+    if (filterState.segment === 'BERJALAN' && isAdmin()) {
+      return '<button class="btn-mark-return" title="Tandai staff ini sudah masuk kerja kembali" onclick="tandaiSudahMasuk(\'' + esc(r.rowId) + '\',\'' + esc(r.nama) + '\')">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<span>Sudah Masuk</span>' +
+        '</button>';
+    }
+    return taskSelect(r.task1, r.rowId, taskList);
+  }
   function findPendingRevisi(rowId) {
     var found = null;
     (_revisiCache || []).some(function(r) { if (r.cutiId === rowId && r.status === 'PENDING') { found = r; return true; } return false; });
@@ -2148,16 +2163,12 @@
           '<span>Review</span>' +
         '</button>'
       : '';
-    // Khusus menu Sedang Cuti: tombol untuk menandai staff sudah masuk kerja
-    // kembali (memindahkan status ke "Selesai Cuti") tanpa perlu buka dropdown.
-    var markReturnBtn = (filterState.segment === 'BERJALAN')
-      ? '<button class="btn-mark-return" title="Tandai staff ini sudah masuk kerja kembali" onclick="tandaiSudahMasuk(\'' + esc(rowId) + '\',\'' + esc(label) + '\')">' +
-          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-          '<span>Sudah Masuk</span>' +
-        '</button>'
-      : '';
+    // Catatan: tombol "Tandai Sudah Masuk Kerja" untuk menu Sedang Cuti TIDAK
+    // ditaruh di sini lagi — sekarang menggantikan dropdown di kolom Status
+    // itu sendiri (lihat statusCell), supaya tidak ada dua cara berbeda untuk
+    // hal yang sama dan kolom Aksi tidak berdesakan.
     return '<span class="row-actions">' +
-      revisiBtn + markReturnBtn +
+      revisiBtn +
       '<button class="icon-btn" title="Ubah" onclick="openEdit(\'' + esc(rowId) + '\')">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
       '</button>' +
@@ -2315,7 +2326,7 @@
           (has2 ? line2(clashCell(r.perihal2, r.start2Raw, r.end2Raw, r.nama, intervals, r.role, r.rowId, 2)) : '') + '</td>' +
         '<td>' + totalCell(r) + '</td>' +
         '<td>' + passportCell(r.keterangan) + '</td>' +
-        '<td>' + taskSelect(r.task1, r.rowId, taskList) + '</td>' +
+        '<td>' + statusCell(r, taskList) + '</td>' +
         '<td>' + copyCell(r.rowId) + '</td>' +
         '<td>' + actionCell(r.rowId, r.nama) + '</td>' +
       '</tr>');
