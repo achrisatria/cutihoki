@@ -2101,7 +2101,18 @@
   function taskSelect(currentVal, rowId, taskList) {
     // Non-admin: status ditampilkan statis (tak bisa diubah)
     if (!isAdmin()) return '<span class="pill ' + taskCls(currentVal) + '" style="border-radius:var(--radius-pill);padding:4px 11px;">' + esc(currentVal) + '</span>';
-    var opts = taskList.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+    // Begitu statusnya sudah masuk fase Sedang Cuti / Selesai Cuti, opsi
+    // "Waiting" & "Done Catat" tidak lagi ditawarkan — tidak boleh mundur
+    // ke fase sebelum staff itu benar-benar mulai cuti.
+    var curUp = String(currentVal || '').toUpperCase();
+    var list = taskList;
+    if (curUp === 'SEDANG CUTI' || curUp === 'SELESAI CUTI') {
+      list = taskList.filter(function(t) {
+        var u = String(t).toUpperCase();
+        return u !== 'WAITING' && u !== 'DONE CATAT';
+      });
+    }
+    var opts = list.map(function(t) { return '<option' + (t === currentVal ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
     return '<select class="task-select ' + taskCls(currentVal) + '" data-rowid="' + esc(rowId) + '" data-status="' + esc(currentVal) + '">' + opts + '</select>';
   }
   function findPendingRevisi(rowId) {
