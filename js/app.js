@@ -971,10 +971,11 @@
 
   // Perbarui angka pada tab Sedang Cuti & Selesai Cuti
   function updateTabCounts() {
-    var nOngoing = 0, nArchive = 0;
+    var nOngoing = 0, nArchive = 0, hasWaiting = false;
     (_cache || []).forEach(function(r) {
       if (inSegment(r, 'BERJALAN')) nOngoing++;
       else if (inSegment(r, 'ARSIP')) nArchive++;
+      if (String(r.task1 || '').toUpperCase() === 'WAITING') hasWaiting = true;
     });
     var oEl = _domOngoingCount || document.getElementById('ongoingCount');
     var aEl = _domArchiveCount || document.getElementById('archiveCount');
@@ -985,6 +986,10 @@
     var sbA = document.getElementById('sbArchiveCount');
     if (sbO) { sbO.textContent = nOngoing; sbO.style.display = nOngoing ? '' : 'none'; }
     if (sbA) { sbA.textContent = nArchive; sbA.style.display = nArchive ? '' : 'none'; }
+    // Selama masih ada pengajuan WAITING di mana pun, seluruh menu sidebar
+    // dapat efek "menyapu" saat di-hover — penanda global bahwa ada yang
+    // perlu diproses, tidak dibatasi pada menu yang sedang dibuka.
+    document.body.classList.toggle('has-waiting-alert', hasWaiting);
   }
 
   // ── Dropdown helpers ──────────────────────────────────────────
@@ -2576,6 +2581,7 @@
     return '<span class="rek-cell" title="' + esc(pemilik) + '">' +
       '<span class="rek-no">' + esc(nomor) + '</span>' +
       '<span class="rek-bank">' + esc(bank) + '</span>' +
+      (pemilik ? '<span class="rek-pemilik">' + esc(pemilik) + '</span>' : '') +
     '</span>';
   }
 
