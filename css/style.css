@@ -1245,7 +1245,7 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
   animation: sbWaitingPulse 2s ease-in-out infinite;
 }
 .sb-item.sb-waiting-alert:hover {
-  animation: sbWaitingPulse .9s ease-in-out infinite;
+  animation: sbWaitingPulse 1.5s ease-in-out infinite;
 }
 @keyframes sbWaitingPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.55); }
