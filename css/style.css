@@ -1205,41 +1205,18 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
   50% { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
 }
 
-/* ═══ NOTIFIKASI "MENYAPU" — HANYA PADA MENU YANG ADA PENGAJUAN WAITING ═══ */
+/* ═══ NOTIFIKASI BERDENYUT — HANYA PADA MENU YANG ADA PENGAJUAN WAITING ═══ */
 /* Class .sb-waiting-alert dipasang lewat JS (refreshWaitingAlert) HANYA ke
    menu sidebar yang benar-benar punya pengajuan belum diproses (Dashboard
    Pengajuan utk cuti WAITING, Ganti Rekening utk WAITING, Resign utk
-   PENDING) — menu lain sama sekali tidak tersentuh efek ini. Berjalan
-   sendiri (ambient, berulang) supaya tetap terlihat SEBELUM kursor
-   mendekat, dan mempercepat saat di-hover sebagai penegasan tambahan. */
-.sb-item.sb-waiting-alert { overflow: hidden; }
-.sb-item.sb-waiting-alert::after {
-  content: "";
-  position: absolute; top: 0; left: -75%; width: 45%; height: 100%;
-  background: linear-gradient(115deg, transparent, rgba(251,191,36,.55), transparent);
-  transform: skewX(-20deg);
-  pointer-events: none;
-  animation: sbSweep 3.4s ease-in-out infinite;
+   PENDING) — menu lain sama sekali tidak tersentuh. Efeknya berupa cincin
+   cahaya amber yang berdenyut, muncul hanya saat kursor hover di menu itu. */
+.sb-item.sb-waiting-alert:hover {
+  animation: sbWaitingPulse .9s ease-in-out infinite;
 }
-/* Jeda berbeda per item (dihitung dari urutan <button> di sidebar, aman
-   walau diselingi label section seperti "MENU UTAMA") supaya kalau lebih
-   dari satu menu sedang menyala, kilaunya tidak berkedip bersamaan. */
-.sb-item.sb-waiting-alert:nth-of-type(2)::after { animation-delay: .3s; }
-.sb-item.sb-waiting-alert:nth-of-type(3)::after { animation-delay: .6s; }
-.sb-item.sb-waiting-alert:nth-of-type(4)::after { animation-delay: .9s; }
-.sb-item.sb-waiting-alert:nth-of-type(5)::after { animation-delay: 1.2s; }
-.sb-item.sb-waiting-alert:nth-of-type(6)::after { animation-delay: 1.5s; }
-.sb-item.sb-waiting-alert:nth-of-type(7)::after { animation-delay: 1.8s; }
-.sb-item.sb-waiting-alert:nth-of-type(8)::after { animation-delay: 2.1s; }
-.sb-item.sb-waiting-alert:nth-of-type(9)::after { animation-delay: 2.4s; }
-.sb-item.sb-waiting-alert:nth-of-type(10)::after { animation-delay: 2.7s; }
-/* Hover selalu menang: sapuan cepat dari awal, tidak peduli jeda ambient-nya. */
-.sb-item.sb-waiting-alert:hover::after {
-  animation: sbSweep .85s ease;
-}
-@keyframes sbSweep {
-  from { left: -75%; }
-  to   { left: 135%; }
+@keyframes sbWaitingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.55); }
+  50% { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
 }
 
 /* ═══ SEMUA KARTU STAT — klik untuk langsung menyaring tabel ═══ */
