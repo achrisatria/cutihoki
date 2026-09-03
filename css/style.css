@@ -1222,7 +1222,12 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
    menu sidebar yang benar-benar punya pengajuan belum diproses (Dashboard
    Pengajuan utk cuti WAITING, Ganti Rekening utk WAITING, Resign utk
    PENDING) — menu lain sama sekali tidak tersentuh. Efeknya berupa cincin
-   cahaya amber yang berdenyut, muncul hanya saat kursor hover di menu itu. */
+   cahaya amber yang berdenyut — berjalan SENDIRI (ambient, pelan) supaya
+   tetap terlihat walau kursor belum menghampiri, lalu mempercepat saat
+   di-hover sebagai penegasan tambahan. */
+.sb-item.sb-waiting-alert {
+  animation: sbWaitingPulse 2s ease-in-out infinite;
+}
 .sb-item.sb-waiting-alert:hover {
   animation: sbWaitingPulse .9s ease-in-out infinite;
 }
