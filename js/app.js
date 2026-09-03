@@ -988,17 +988,21 @@
     refreshWaitingAlert();
   }
 
-  // Selama masih ada pengajuan yang BELUM diproses di mana pun — cuti WAITING,
-  // ganti rekening WAITING, atau resign PENDING — seluruh menu sidebar dapat
-  // efek "menyapu" saat di-hover. Ini penanda GLOBAL: tidak dibatasi pada
-  // menu/data yang kebetulan sedang dimuat, jadi tiap cache (_cache/_rekCache/
-  // _resignCache) dicek apa adanya (null/belum dimuat dianggap "tidak ada").
+  // Efek "menyapu" HANYA menyala pada menu sidebar yang benar-benar punya
+  // pengajuan belum diproses — bukan global ke semua menu. WAITING pada cuti
+  // hanya pernah tampil di menu Dashboard Pengajuan (lihat inSegment: baris
+  // WAITING bukan bagian dari segmen BERJALAN/ARSIP), jadi cukup ditandai di
+  // situ; ganti rekening & resign masing-masing ditandai di menunya sendiri.
   function refreshWaitingAlert() {
-    var hasWaiting =
-      (_cache || []).some(function(r) { return String(r.task1 || '').toUpperCase() === 'WAITING'; }) ||
-      (_rekCache || []).some(function(r) { return String(r.task || '').toUpperCase() === 'WAITING'; }) ||
-      (_resignCache || []).some(function(r) { return String(r.task || '').toUpperCase() === 'PENDING'; });
-    document.body.classList.toggle('has-waiting-alert', hasWaiting);
+    var cutiWaiting = (_cache || []).some(function(r) { return String(r.task1 || '').toUpperCase() === 'WAITING'; });
+    var rekWaiting = (_rekCache || []).some(function(r) { return String(r.task || '').toUpperCase() === 'WAITING'; });
+    var resignPending = (_resignCache || []).some(function(r) { return String(r.task || '').toUpperCase() === 'PENDING'; });
+    var sbDash = document.getElementById('sbDashboard');
+    var sbRek = document.getElementById('sbRekening');
+    var sbRes = document.getElementById('sbResign');
+    if (sbDash) sbDash.classList.toggle('sb-waiting-alert', cutiWaiting);
+    if (sbRek) sbRek.classList.toggle('sb-waiting-alert', rekWaiting);
+    if (sbRes) sbRes.classList.toggle('sb-waiting-alert', resignPending);
   }
 
   // ── Dropdown helpers ──────────────────────────────────────────
