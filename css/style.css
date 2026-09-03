@@ -1193,18 +1193,24 @@
 .theme-rekening .fp-mark { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 4px 12px rgba(16,185,129,.22); }
 .theme-rekening .chip.active { background: linear-gradient(135deg, #34D399, #059669) !important; box-shadow: 0 3px 10px rgba(16,185,129,.20); }
 
-/* Menu sidebar SELALU biru saat aktif, di modul apa pun — .theme-resign dan
-   .theme-rekening menimpa --accent/--accent-050/--accent-bd/--accent-ink
-   secara global (dipakai banyak elemen lain secara sengaja), tapi khusus
-   .sb-item.active kita kunci ke biru baku supaya konsisten dengan menu lain,
-   di kedua varian tampilan (solid-fill di layar sempit & soft-tint di
-   layar lebar/min-width:721px). */
-.theme-resign .sb-item.active,
-.theme-rekening .sb-item.active {
-  background: #5B8DEF !important;
-  border-color: rgba(91,141,239,.30) !important;
-  color: #fff !important;
-  box-shadow: 0 2px 8px rgba(91,141,239,.26) !important;
+/* Menu sidebar SELALU pakai biru baku saat aktif, di modul apa pun —
+   .theme-resign/.theme-rekening menimpa --accent/--accent-050/--accent-bd/
+   --accent-ink secara global (dipakai banyak elemen LAIN secara sengaja:
+   tombol, chip, dst), tapi KHUSUS di dalam .sb-nav kita kembalikan variabel
+   itu ke nilai biru baku (sama persis dengan definisi :root). Dengan begini
+   .sb-item.active tidak perlu disalin ulang — otomatis dapat tampilan yang
+   PERSIS SAMA seperti menu lain di breakpoint mana pun (solid-fill di layar
+   sempit, soft-tint di layar lebar/min-width:721px), karena rule aslinya
+   yang jalan, cuma variabelnya yang dikembalikan ke default. */
+.theme-resign .sb-nav,
+.theme-rekening .sb-nav {
+  --accent:      #5B8DEF;
+  --accent-dark: #3D6FD4;
+  --accent-ink:  #C4DBFF;
+  --accent-050:  rgba(91,141,239,.12);
+  --accent-100:  rgba(91,141,239,.20);
+  --accent-bd:   rgba(91,141,239,.34);
+  --accent-glow: rgba(91,141,239,.26);
 }
 
 /* ═══ HOVER TABEL PER-MENU — senada dengan hover sidebar, tetap soft ══
