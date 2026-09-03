@@ -511,6 +511,16 @@
   }
   .btn-review-revisi svg { flex: none; }
   .btn-review-revisi:hover { background: var(--yellow); color: #1a1400; border-color: var(--yellow); }
+  /* Tombol "Sudah Masuk" (Tandai Sudah Masuk Kerja) — khusus menu Sedang Cuti,
+     pola sama dengan .btn-review-revisi tapi hijau (senada "Selesai Cuti"). */
+  .btn-mark-return {
+    display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px;
+    border-radius: var(--radius-pill); border: 1px solid var(--green-bd); background: var(--green-bg);
+    color: var(--green); font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer;
+    flex: none; transition: all .15s;
+  }
+  .btn-mark-return svg { flex: none; }
+  .btn-mark-return:hover { background: var(--green); color: #06231A; border-color: var(--green); }
   .copy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted); font: inherit; font-size: 11px; font-weight: 600; padding: 4px 9px; min-height: 26px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
   .copy-btn:hover { border-color: var(--accent-bd); color: var(--accent-ink); background: var(--accent-050); }
   .copy-btn:active { transform: translateY(1px); }
