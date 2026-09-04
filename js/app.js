@@ -349,10 +349,14 @@
     var m = s.match(/penambahan\s+(\d+)\s*hari/i) || s.match(/(\d+)\s*hari/i);
     return m ? parseInt(m[1], 10) : 0;
   }
-  // Ambil angka dari teks durasi, mis. "7 Hari" → 7
+  // Ambil angka dari teks durasi, mis. "7 Hari" → 7 (termasuk tanda minus bila ada,
+  // mis. "-4 Hari" → -4 — dulu regex-nya tidak menangkap "-" sehingga durasi negatif
+  // yang salah hitung terbaca sebagai angka positif dan mencemari statistik total
+  // hari secara diam-diam; lihat catatan audit bug #4. Durasi negatif seharusnya
+  // sudah dicegah masuk lewat validateLeaves(), ini cuma jaring pengaman tambahan.
   function parseDurasi(str) {
-    var m = String(str || '').match(/(\d+)/);
-    return m ? parseInt(m[1], 10) : 0;
+    var m = String(str || '').match(/-?\d+/);
+    return m ? parseInt(m[0], 10) : 0;
   }
   // Total cuti = jumlah hari rentang tanggal (cuti 1 + cuti 2).
   // extra = berapa hari dari jatah tambahan yang benar-benar terpakai
@@ -1274,6 +1278,20 @@
     if (withAdd !== false) parts.push('<option value="' + ADD + '">＋ Tambah opsi baru…</option>');
     sel.innerHTML = parts.join('');
   }
+  // Isi dropdown PERIHAL (dipakai modal Ajukan Revisi & Ubah Revisi) — SELALU dari
+  // CONFIG.PERIHAL yang sebenarnya (bukan daftar statis 3 opsi), supaya kategori
+  // seperti CUTI MELAHIRKAN / CUTI NIKAH / opsi kustom lain tidak hilang saat form
+  // dibuka lalu disimpan ulang. `optional`=true untuk slot Cuti 2 yang boleh kosong
+  // (opsi "— Kosong —" bisa dipilih ulang, bukan placeholder disabled).
+  function fillPerihalSelect(sel, selected, optional) {
+    var list = CONFIG.PERIHAL || [];
+    var parts = optional
+      ? ['<option value="">— Kosong —</option>']
+      : ['<option value="" disabled' + (selected ? '' : ' selected') + '>Pilih…</option>'];
+    list.forEach(function(v) { parts.push('<option' + (v === selected ? ' selected' : '') + '>' + esc(v) + '</option>'); });
+    parts.push('<option value="' + ADD + '">＋ Tambah opsi baru…</option>');
+    sel.innerHTML = parts.join('');
+  }
   // dropdown "tambah opsi baru"
   document.addEventListener('change', function(e) {
     var sel = e.target;
@@ -1930,7 +1948,12 @@
           { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua staff yang selesai cuti' });
 
     } else {
-      var revisiPending = (_revisiCache || []).filter(function(r) { return r.status === 'PENDING'; }).length;
+      // Dihitung dari `rows` (baris di segmen menu ini saja), BUKAN dari seluruh
+      // _revisiCache — supaya angkanya selalu sama dengan jumlah baris yang benar-
+      // benar muncul saat kartu ini diklik (filterByStatus('ADA_REVISI') hanya
+      // menyaring baris dalam segmen yang sedang aktif, lihat matchFilters()).
+      var revisiPending = 0;
+      rows.forEach(function(r) { if (findPendingRevisi(r.rowId)) revisiPending++; });
       box.innerHTML =
         statCard('Total Aktif', total, 'var(--brand-ink)', 'var(--brand-050)', '📋',
           { onclick: "filterByStatus('ALL')", title: 'Klik untuk lihat semua pengajuan' }) +
@@ -2134,6 +2157,28 @@
     var found = null;
     (_revisiCache || []).some(function(r) { if (r.cutiId === rowId && r.status === 'PENDING') { found = r; return true; } return false; });
     return found;
+  }
+  // Bila sebuah baris cuti pindah ke status arsip (mis. SELESAI CUTI), pengajuan
+  // revisi PENDING yang masih menggantung untuk baris itu otomatis ditolak — cuti
+  // sudah ditutup, jadi permintaan ubah tanggal untuknya sudah tidak relevan dan
+  // tidak boleh menggantung selamanya sebagai "Minta Revisi". Dipakai dari SEMUA
+  // jalur yang bisa memindahkan status ke arsip (tombol "Sudah Masuk Kerja" MAUPUN
+  // dropdown status biasa) supaya keduanya konsisten — sebelumnya hanya salah satu
+  // jalur yang membersihkan revisi PENDING, yang lain membiarkannya menggantung.
+  function autoRejectPendingRevisiForRow(rowId) {
+    var pendingRevisi = findPendingRevisi(rowId);
+    if (!pendingRevisi) return Promise.resolve(null);
+    return sbPatch('revisi_cuti', 'id=eq.' + encodeURIComponent(pendingRevisi.id), {
+      status: 'DITOLAK', catatan_admin: 'Otomatis ditolak — cuti sudah ditandai selesai/diarsipkan'
+    }).then(function() {
+      if (_revisiCache) {
+        for (var j = 0; j < _revisiCache.length; j++) {
+          if (_revisiCache[j].id === pendingRevisi.id) { _revisiCache[j].status = 'DITOLAK'; break; }
+        }
+      }
+      updateRevisiCount();
+      return pendingRevisi;
+    }).catch(function() { return null; /* diam-diam gagal — bukan blocker status cuti utamanya */ });
   }
   function actionCell(rowId, label) {
     // Non-admin: tombol revisi hanya di menu Dashboard
@@ -2360,6 +2405,9 @@
       toast(tujuan !== filterState.segment
         ? 'Status diperbarui — dipindahkan ke ' + namaMenu[tujuan]
         : 'Status diperbarui', 'ok');
+      // Status baru bersifat arsip → revisi PENDING terkait (kalau ada) ikut
+      // otomatis ditolak, sama seperti jalur tombol "Sudah Masuk Kerja".
+      if (isArchived(value)) autoRejectPendingRevisiForRow(rowId);
     }).catch(function(err) {
       sel.classList.remove('task-saving'); sel.value = oldVal; toast('Gagal update status: ' + err.message, 'err');
     });
@@ -2396,18 +2444,7 @@
         applyFilters();
         updateTabCounts();
         toast('"' + label + '" ditandai sudah masuk kerja — dipindahkan ke Selesai Cuti', 'ok');
-
-        if (!pendingRevisi) return;
-        return sbPatch('revisi_cuti', 'id=eq.' + encodeURIComponent(pendingRevisi.id), {
-          status: 'DITOLAK', catatan_admin: 'Otomatis ditolak — cuti sudah ditandai selesai (Sudah Masuk Kerja)'
-        }).then(function() {
-          if (_revisiCache) {
-            for (var j = 0; j < _revisiCache.length; j++) {
-              if (_revisiCache[j].id === pendingRevisi.id) { _revisiCache[j].status = 'DITOLAK'; break; }
-            }
-          }
-          updateRevisiCount();
-        }).catch(function() { /* diam-diam gagal — bukan blocker status cuti utamanya */ });
+        return autoRejectPendingRevisiForRow(rowId);
       }).catch(function(err) {
         toast('Gagal menandai — ' + (err && err.message ? err.message : 'coba lagi'), 'err');
       });
@@ -3418,10 +3455,10 @@
     document.getElementById('rv_cutiId').value = cutiId;
     document.getElementById('rv_role').value = r.role || '';
     document.getElementById('rv_nama').value = r.nama;
-    document.getElementById('rv_perihal1').value = r.perihal1 || 'CUTI KERJA';
+    fillPerihalSelect(document.getElementById('rv_perihal1'), r.perihal1 || 'CUTI KERJA', false);
     document.getElementById('rv_start1').value = r.start1Raw || '';
     document.getElementById('rv_end1').value = r.end1Raw || '';
-    document.getElementById('rv_perihal2').value = r.perihal2 || '';
+    fillPerihalSelect(document.getElementById('rv_perihal2'), r.perihal2 || '', true);
     document.getElementById('rv_start2').value = r.start2Raw || '';
     document.getElementById('rv_end2').value = r.end2Raw || '';
     document.getElementById('rv_alasan').value = '';
@@ -3470,6 +3507,24 @@
     if (!s1 || !e1 || !p1) { msg.className = 'msg error'; msg.textContent = 'Isi minimal Cuti 1 (perihal, tanggal mulai & selesai).'; return; }
     if (!alasan) { msg.className = 'msg error'; msg.textContent = 'Isi alasan revisi.'; return; }
 
+    // Validasi urutan tanggal & batas durasi role — sebelumnya form ini TIDAK
+    // memanggil validateLeaves() sama sekali, jadi tanggal selesai < mulai bisa
+    // lolos (cuma dikasih teks kosmetik "⚠ Selesai < Mulai" di field Durasi,
+    // tidak memblokir submit) dan berujung durasi negatif tersimpan ke `cuti`
+    // saat di-ACC admin. Sekarang dicek dengan gerbang yang sama seperti
+    // pengajuan cuti biasa (lihat catatan audit bug #4).
+    var leaves = [{ perihal: p1, start: s1, end: e1 }];
+    if (p2 && s2 && e2) leaves.push({ perihal: p2, start: s2, end: e2 });
+    var origRowForValidasi = null;
+    (_cache || []).forEach(function(x) { if (x.rowId === cutiId) origRowForValidasi = x; });
+    var extraDays = parseTambahanDays(origRowForValidasi && origRowForValidasi.tambahan);
+    try {
+      validateLeaves(role, leaves, extraDays);
+    } catch (errValidasi) {
+      msg.className = 'msg error'; msg.textContent = errValidasi.message;
+      return;
+    }
+
     var id = 'RV-' + Date.now() + '-' + randSuffix(8);
     var payload = {
       id: id, cuti_id: cutiId, nama: nama,
@@ -3490,8 +3545,6 @@
       // Tanggal baru yang diajukan juga wajib lolos aturan bentrok — sama seperti
       // pengajuan cuti biasa, memakai gerbang validasi & pool data terkini yang sama.
       btn.textContent = 'Memeriksa bentrok…';
-      var leaves = [{ perihal: p1, start: s1, end: e1 }];
-      if (p2 && s2 && e2) leaves.push({ perihal: p2, start: s2, end: e2 });
       return checkClashOnSubmit(nama, role, leaves).then(function(clashReason) {
         if (clashReason) {
           btn.disabled = false; btn.textContent = '📤 Kirim Revisi';
@@ -3686,10 +3739,10 @@
     if (!r) return;
     _revisiEditId = revId;
     document.getElementById('rve_nama').value = r.nama;
-    document.getElementById('rve_perihal1').value = r.perihal1 || '';
+    fillPerihalSelect(document.getElementById('rve_perihal1'), r.perihal1 || '', false);
     document.getElementById('rve_start1').value = r.start1 || '';
     document.getElementById('rve_end1').value = r.end1 || '';
-    document.getElementById('rve_perihal2').value = r.perihal2 || '';
+    fillPerihalSelect(document.getElementById('rve_perihal2'), r.perihal2 || '', true);
     document.getElementById('rve_start2').value = r.start2 || '';
     document.getElementById('rve_end2').value = r.end2 || '';
     document.getElementById('rve_alasan').value = r.alasan || '';
@@ -3803,14 +3856,71 @@
   function closeRevisiReview() { document.getElementById('revisiReviewOverlay').classList.remove('open'); _revisiReviewId = null; }
   document.getElementById('revisiReviewOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiReview(); });
 
-  function reviewRevisi(keputusan) {
+  function reviewRevisi(keputusan, opts) {
     if (!_revisiReviewId) return;
     var r = null;
     (_revisiCache || []).forEach(function(x) { if (x.id === _revisiReviewId) r = x; });
     if (!r) return;
-    var catatan = document.getElementById('rvr_catatan').value.trim();
+    var accBtn = document.getElementById('rvr_acc');
+    var tolakBtn = document.getElementById('rvr_tolak');
+    // Bug #6 — cegah klik ganda / klik cepat ACC lalu Tolak (atau sebaliknya)
+    // sebelum request pertama selesai: selama salah satu tombol sedang terkunci,
+    // panggilan baru diabaikan sepenuhnya, bukan cuma dilewat begitu saja.
+    if (accBtn.disabled || tolakBtn.disabled) return;
+
     var msg = document.getElementById('rvr_msg');
+    var catatan = document.getElementById('rvr_catatan').value.trim();
     var statusSave = keputusan === 'ACC' ? 'DONE REVISI' : 'DITOLAK';
+
+    var orig = null;
+    (_cache || []).forEach(function(x) { if (x.rowId === r.cutiId) orig = x; });
+
+    if (keputusan === 'ACC') {
+      // Bug #2 — data cuti asli sudah dihapus (orphan): PATCH ke tabel `cuti`
+      // tidak akan mengubah baris apa pun sama sekali, tapi sbPatch memakai
+      // return=minimal yang tetap membalas "sukses" walau 0 baris ter-update —
+      // jadi harus ditolak DI SINI, bukan dibiarkan menampilkan toast berhasil
+      // yang palsu (lihat juga komentar di fungsi sbDelete soal celah yang sama).
+      if (!orig) {
+        msg.className = 'msg error';
+        msg.textContent = 'Tidak bisa ACC: data cuti asli untuk revisi ini sudah tidak ada (kemungkinan sudah dihapus). Tolak revisi ini, atau minta staff mengajukan cuti baru.';
+        return;
+      }
+      // Bug #9 — cek ulang aturan bentrok jadwal dengan data TERKINI sebelum
+      // benar-benar diterapkan (bisa saja ada pengajuan lain yang baru disetujui
+      // setelah staff mengirim revisi ini, sehingga tanggal revisi jadi bentrok).
+      // Sebelumnya bentrok hanya dicek sekali saat staff submit, tidak pernah
+      // dicek ulang saat admin approve. `opts._forceClash` dipakai saat admin
+      // memilih tetap melanjutkan walau ada bentrok (override manual).
+      if (!(opts && opts._forceClash)) {
+        var leavesCek = [];
+        if (r.start1 && r.end1) leavesCek.push({ perihal: r.perihal1, start: r.start1, end: r.end1 });
+        if (r.start2 && r.end2) leavesCek.push({ perihal: r.perihal2, start: r.start2, end: r.end2 });
+        accBtn.disabled = true; tolakBtn.disabled = true;
+        var accLabelCek = accBtn.textContent; accBtn.textContent = 'Memeriksa bentrok…';
+        checkClashOnSubmit(r.nama, orig.role, leavesCek).then(function(clashReason) {
+          accBtn.disabled = false; tolakBtn.disabled = false; accBtn.textContent = accLabelCek;
+          if (clashReason) {
+            confirmDialog({
+              title: 'Tanggal Revisi Bentrok',
+              text: 'Tanggal hasil revisi ini bentrok dengan pengajuan cuti lain yang sudah ada (' + clashReason.replace(/\n/g, ' ') + '). Tetap ACC & terapkan tanggal ini? Aturan bentrok akan dilewati secara manual oleh admin.',
+              okLabel: 'Tetap ACC', okClass: 'btn-danger', cancelLabel: 'Batal'
+            }, function() { reviewRevisi('ACC', { _forceClash: true }); });
+            return;
+          }
+          reviewRevisi('ACC', { _forceClash: true });
+        }).catch(function(err) {
+          accBtn.disabled = false; tolakBtn.disabled = false; accBtn.textContent = accLabelCek;
+          msg.className = 'msg error'; msg.textContent = 'Gagal memeriksa bentrok: ' + err.message;
+        });
+        return;
+      }
+    }
+
+    // Bug #6 — kunci kedua tombol selama request benar-benar berjalan.
+    accBtn.disabled = true; tolakBtn.disabled = true;
+    var accLabel = accBtn.textContent, tolakLabel = tolakBtn.textContent;
+    (keputusan === 'ACC' ? accBtn : tolakBtn).textContent = 'Memproses…';
 
     // Update status revisi
     sbPatch('revisi_cuti', 'id=eq.' + encodeURIComponent(_revisiReviewId), {
@@ -3834,9 +3944,11 @@
         logActivity('CUTI', 'STATUS', 'Tolak revisi cuti ' + r.nama);
       }
     }).then(function() {
+      accBtn.disabled = false; tolakBtn.disabled = false; accBtn.textContent = accLabel; tolakBtn.textContent = tolakLabel;
       closeRevisiReview();
       _revisiLoaded = false; loadRevisi(true);
     }).catch(function(err) {
+      accBtn.disabled = false; tolakBtn.disabled = false; accBtn.textContent = accLabel; tolakBtn.textContent = tolakLabel;
       msg.className = 'msg error'; msg.textContent = 'Gagal: ' + err.message;
     });
   }
