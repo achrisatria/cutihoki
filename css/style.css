@@ -1275,11 +1275,14 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
    (jatuh ke kuning bila kartu itu tidak menyetel warnanya sendiri). */
 .stat-item.stat-alert {
   --stat-alert-rgb: 234,179,8;
+  background: rgba(var(--stat-alert-rgb), .13);
+  border-color: rgba(var(--stat-alert-rgb), .5);
+  border-radius: var(--radius-md, 12px);
   animation: statPulse 2s ease infinite;
 }
 .stat-item.stat-alert:hover {
-  background: rgba(var(--stat-alert-rgb), .22); border-radius: var(--radius-md, 12px);
-  border-color: rgba(var(--stat-alert-rgb), .65);
+  background: rgba(var(--stat-alert-rgb), .24); border-radius: var(--radius-md, 12px);
+  border-color: rgba(var(--stat-alert-rgb), .75);
   animation: statAlertHoverPulse .9s ease-in-out infinite;
 }
 @keyframes statAlertHoverPulse {
