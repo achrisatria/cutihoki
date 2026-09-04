@@ -755,7 +755,7 @@
       <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
         <div style="font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Cuti 1 — Data Baru</div>
         <div class="grid" style="max-width:100%;">
-          <div class="field"><label>Perihal</label><select id="rv_perihal1"><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+          <div class="field"><label>Perihal</label><select id="rv_perihal1" data-cat="PERIHAL"></select></div>
           <div class="field"><label>Tanggal Mulai</label><input id="rv_start1" type="date"></div>
           <div class="field"><label>Tanggal Selesai</label><input id="rv_end1" type="date"></div>
           <div class="field"><label>Durasi</label><input id="rv_durasi1" type="text" readonly placeholder="0 Hari"></div>
@@ -764,7 +764,7 @@
       <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;">
         <div style="font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Cuti 2 — Data Baru (opsional)</div>
         <div class="grid" style="max-width:100%;">
-          <div class="field"><label>Perihal</label><select id="rv_perihal2"><option value="">— Kosong —</option><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+          <div class="field"><label>Perihal</label><select id="rv_perihal2" data-cat="PERIHAL"></select></div>
           <div class="field"><label>Tanggal Mulai</label><input id="rv_start2" type="date"></div>
           <div class="field"><label>Tanggal Selesai</label><input id="rv_end2" type="date"></div>
           <div class="field"><label>Durasi</label><input id="rv_durasi2" type="text" readonly placeholder="0 Hari"></div>
@@ -815,15 +815,15 @@
     <div class="modal-body">
       <div class="field" style="margin-bottom:12px;">
         <label>Nama Staff</label>
-        <input id="rve_nama" type="text">
+        <input id="rve_nama" type="text" readonly>
       </div>
       <div class="grid" style="margin-bottom:12px;">
-        <div class="field"><label>Perihal Cuti 1</label><select id="rve_perihal1"><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+        <div class="field"><label>Perihal Cuti 1</label><select id="rve_perihal1" data-cat="PERIHAL"></select></div>
         <div class="field"><label>Mulai</label><input id="rve_start1" type="date"></div>
         <div class="field"><label>Selesai</label><input id="rve_end1" type="date"></div>
       </div>
       <div class="grid" style="margin-bottom:12px;">
-        <div class="field"><label>Perihal Cuti 2</label><select id="rve_perihal2"><option value="">— Kosong —</option><option>CUTI KERJA</option><option>CUTI LOKAL</option><option>CUTI INDO</option></select></div>
+        <div class="field"><label>Perihal Cuti 2</label><select id="rve_perihal2" data-cat="PERIHAL"></select></div>
         <div class="field"><label>Mulai</label><input id="rve_start2" type="date"></div>
         <div class="field"><label>Selesai</label><input id="rve_end2" type="date"></div>
       </div>
