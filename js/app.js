@@ -3774,20 +3774,20 @@
     var warnOrphan = !orig
       ? '<div class="msg warn" style="margin-bottom:10px;">⚠️ Data cuti asli tidak ditemukan (kemungkinan sudah dihapus) — bagian "Tanggal Pengajuan Sebelumnya" tidak tersedia.</div>'
       : '';
-    // Tidak ada field nomor paspor pada data cuti/revisi — identifier yang dipakai adalah ID Pengajuan.
-    var identifier = orig ? orig.id : (r.cutiId || '');
+    // Nama staff sudah diisi lengkap dengan "NAMA - Passport" pada field nama itu sendiri,
+    // jadi cukup ditampilkan apa adanya (tidak perlu tambahan ID Pengajuan di belakangnya).
     var before = orig
       ? revLinesHtml(orig.perihal1, orig.start1Raw, orig.end1Raw, orig.perihal2, orig.start2Raw, orig.end2Raw)
       : '<div style="color:var(--text-faint);">— Tidak tersedia —</div>';
     var after = revLinesHtml(r.perihal1, r.start1, r.end1, r.perihal2, r.start2, r.end2);
     var detail = '<div style="font-size:13px;line-height:1.7;color:var(--text-secondary);">' +
       '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:12px;">' +
-        esc((r.nama || '').toUpperCase()) + (identifier ? ' - ' + esc(identifier) : '') +
+        esc((r.nama || '').toUpperCase()) +
       '</div>' +
       warnOrphan +
       '<div style="margin-bottom:14px;">' +
         '<div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;">Tanggal Pengajuan Sebelumnya :</div>' +
-        '<div style="color:var(--text-muted);text-decoration:line-through;">' + before + '</div>' +
+        '<div style="color:var(--text-muted);">' + before + '</div>' +
       '</div>' +
       '<div style="margin-bottom:6px;">' +
         '<div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;">Tanggal Pengajuan Setelah Revisi :</div>' +
