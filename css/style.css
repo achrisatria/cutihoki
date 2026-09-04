@@ -1278,12 +1278,13 @@ body.theme-revisi   #revisiContent    tbody tr.rec:hover td { background: var(--
   animation: statPulse 2s ease infinite;
 }
 .stat-item.stat-alert:hover {
-  background: rgba(var(--stat-alert-rgb), .10); border-radius: var(--radius-md, 12px);
+  background: rgba(var(--stat-alert-rgb), .22); border-radius: var(--radius-md, 12px);
+  border-color: rgba(var(--stat-alert-rgb), .65);
   animation: statAlertHoverPulse .9s ease-in-out infinite;
 }
 @keyframes statAlertHoverPulse {
-  0%, 100% { box-shadow: var(--shadow-card-hover), 0 0 0 0 rgba(var(--stat-alert-rgb), .5); }
-  50% { box-shadow: var(--shadow-card-hover), 0 0 0 9px transparent; }
+  0%, 100% { box-shadow: var(--shadow-card-hover), 0 0 0 0 rgba(var(--stat-alert-rgb), .65); }
+  50% { box-shadow: var(--shadow-card-hover), 0 0 0 10px transparent; }
 }
 @keyframes statPulse {
   0%, 100% { box-shadow: var(--shadow-card), 0 0 0 0 rgba(var(--stat-alert-rgb), .45); }
