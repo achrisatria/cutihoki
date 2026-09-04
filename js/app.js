@@ -3426,10 +3426,33 @@
     document.getElementById('rv_end2').value = r.end2Raw || '';
     document.getElementById('rv_alasan').value = '';
     var m = document.getElementById('rv_msg'); m.className = 'msg'; m.textContent = '';
+    calcRevisiDurasi();
     document.getElementById('revisiOverlay').classList.add('open');
   }
   function closeRevisiForm() { document.getElementById('revisiOverlay').classList.remove('open'); }
   document.getElementById('revisiOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiForm(); });
+
+  // Auto-hitung "N Hari" di form Ajukan Revisi, sama seperti form cuti utama.
+  function calcRevisiDurasiSlot(startId, endId, durasiId) {
+    var s = document.getElementById(startId).value;
+    var e = document.getElementById(endId).value;
+    var du = document.getElementById(durasiId);
+    if (!du) return;
+    if (s && e) {
+      var d = dayKey(e) - dayKey(s) + 1;
+      du.value = d > 0 ? d + ' Hari' : '⚠ Selesai < Mulai';
+    } else {
+      du.value = '';
+    }
+  }
+  function calcRevisiDurasi() {
+    calcRevisiDurasiSlot('rv_start1', 'rv_end1', 'rv_durasi1');
+    calcRevisiDurasiSlot('rv_start2', 'rv_end2', 'rv_durasi2');
+  }
+  ['rv_start1', 'rv_end1', 'rv_start2', 'rv_end2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', calcRevisiDurasi);
+  });
 
   document.getElementById('rv_submitBtn').addEventListener('click', function() {
     var cutiId = document.getElementById('rv_cutiId').value;
@@ -3726,24 +3749,19 @@
   document.getElementById('revisiEditOverlay').addEventListener('click', function(e) { if (e.target === this) closeRevisiEdit(); });
 
   // ── Review revisi (admin) ─────────────────────────────────────
-  // Satu blok perbandingan "Sebelum → Sesudah" untuk satu slot cuti (1 atau 2).
-  function revBeforeAfterRow(label, beforePerihal, beforeS, beforeE, afterPerihal, afterS, afterE) {
-    if (!beforeS && !afterS) return '';   // slot ini memang tidak dipakai sama sekali
-    var changed = beforePerihal !== afterPerihal || beforeS !== afterS || beforeE !== afterE;
-    return '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">' +
-      '<div style="font-size:9px;font-weight:800;letter-spacing:.10em;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">' + esc(label) + '</div>' +
-      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-        '<div style="flex:1;min-width:150px;">' +
-          '<div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Sebelum Revisi</div>' +
-          (beforeS ? '<div style="text-decoration:line-through;color:var(--text-muted);">' + esc(beforePerihal || '-') + ': ' + formatDate(beforeS) + ' — ' + formatDate(beforeE) + '</div>' : '<div style="color:var(--text-faint);">— Tidak ada —</div>') +
-        '</div>' +
-        '<div style="color:var(--yellow);font-size:16px;font-weight:700;">→</div>' +
-        '<div style="flex:1;min-width:150px;">' +
-          '<div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Sesudah Revisi</div>' +
-          (afterS ? '<div style="font-weight:700;color:' + (changed ? 'var(--yellow)' : 'var(--text-primary)') + ';">' + esc(afterPerihal || '-') + ': ' + formatDate(afterS) + ' — ' + formatDate(afterE) + '</div>' : '<div style="color:var(--text-faint);">— Dihapus —</div>') +
-        '</div>' +
-      '</div>' +
-    '</div>';
+  // Satu baris "PERIHAL : tgl mulai – tgl selesai ( N Hari )" untuk satu slot cuti.
+  function revFormatLine(perihal, s, e) {
+    if (!s || !e) return '';
+    var hari = calcDurasi(s, e);
+    return '<div>' + esc(perihal || '-') + ' : ' + formatDate(s) + ' – ' + formatDate(e) +
+      ' ( ' + hari + ' Hari )</div>';
+  }
+  // Daftar baris (flat list, bisa 0/1/2 baris) untuk satu sisi (sebelum ATAU sesudah revisi).
+  function revLinesHtml(perihal1, s1, e1, perihal2, s2, e2) {
+    var l1 = revFormatLine(perihal1, s1, e1);
+    var l2 = revFormatLine(perihal2, s2, e2);
+    var out = l1 + l2;
+    return out || '<div style="color:var(--text-faint);">— Tidak ada —</div>';
   }
   function openRevisiReview(revId) {
     var r = null;
@@ -3754,14 +3772,28 @@
     var orig = null;
     (_cache || []).forEach(function(x) { if (x.rowId === r.cutiId) orig = x; });
     var warnOrphan = !orig
-      ? '<div class="msg warn" style="margin-bottom:10px;">⚠️ Data cuti asli tidak ditemukan (kemungkinan sudah dihapus) — perbandingan "Sebelum" tidak tersedia.</div>'
+      ? '<div class="msg warn" style="margin-bottom:10px;">⚠️ Data cuti asli tidak ditemukan (kemungkinan sudah dihapus) — bagian "Tanggal Pengajuan Sebelumnya" tidak tersedia.</div>'
       : '';
-    var slot1 = revBeforeAfterRow('Cuti 1', orig && orig.perihal1, orig && orig.start1Raw, orig && orig.end1Raw, r.perihal1, r.start1, r.end1);
-    var slot2 = revBeforeAfterRow('Cuti 2', orig && orig.perihal2, orig && orig.start2Raw, orig && orig.end2Raw, r.perihal2, r.start2, r.end2);
-    var detail = '<div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">' +
-      '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:10px;">' + esc(r.nama) + '</div>' +
-      warnOrphan + slot1 + slot2 +
-      '<div style="margin-top:6px;"><strong>Alasan:</strong> ' + esc(r.alasan) + '</div>' +
+    // Tidak ada field nomor paspor pada data cuti/revisi — identifier yang dipakai adalah ID Pengajuan.
+    var identifier = orig ? orig.id : (r.cutiId || '');
+    var before = orig
+      ? revLinesHtml(orig.perihal1, orig.start1Raw, orig.end1Raw, orig.perihal2, orig.start2Raw, orig.end2Raw)
+      : '<div style="color:var(--text-faint);">— Tidak tersedia —</div>';
+    var after = revLinesHtml(r.perihal1, r.start1, r.end1, r.perihal2, r.start2, r.end2);
+    var detail = '<div style="font-size:13px;line-height:1.7;color:var(--text-secondary);">' +
+      '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:12px;">' +
+        esc((r.nama || '').toUpperCase()) + (identifier ? ' - ' + esc(identifier) : '') +
+      '</div>' +
+      warnOrphan +
+      '<div style="margin-bottom:14px;">' +
+        '<div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;">Tanggal Pengajuan Sebelumnya :</div>' +
+        '<div style="color:var(--text-muted);text-decoration:line-through;">' + before + '</div>' +
+      '</div>' +
+      '<div style="margin-bottom:6px;">' +
+        '<div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;">Tanggal Pengajuan Setelah Revisi :</div>' +
+        '<div style="font-weight:600;color:var(--yellow);">' + after + '</div>' +
+      '</div>' +
+      '<div style="margin-top:10px;"><strong>Alasan:</strong> ' + esc(r.alasan) + '</div>' +
       '</div>';
     document.getElementById('rvr_detail').innerHTML = detail;
     document.getElementById('rvr_catatan').value = '';
