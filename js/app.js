@@ -2256,8 +2256,8 @@
     lines.push(COPY_HEADER);
     lines.push('PENGAJUAN CUTI : ' + judul + ' ( ' + (r.keterangan || '') + ' )');
     lines.push('Nama Staff : ' + r.nama);
-    lines.push('Status : ' + r.role);
     lines.push('');
+    lines.push('Status : ' + r.role);
     lines.push('Tanggal Pengajuan : ');
     leaves.forEach(function(l) {
       lines.push(l.p + ' : ' + formatDate(l.s) + ' - ' + formatDate(l.e) + ' ( ' + l.d + ' )');
@@ -3693,26 +3693,40 @@
     }).join('');
   }
 
+  // Susun teks revisi siap tempel — memakai template yang SAMA PERSIS dengan
+  // format "Pengajuan Awal" (buildCopyFormat) supaya kedua versi terlihat
+  // konsisten saat dibandingkan berdampingan. Judul "PENGAJUAN CUTI" dan
+  // keterangan (mis. "TIDAK AMBIL PASSPORT") tetap mengikuti perihal Cuti 1 &
+  // data cuti ASLI (tidak ikut berubah oleh revisi) — hanya daftar tanggal di
+  // bawah "Tanggal Pengajuan :" yang mengikuti hasil revisi (bisa 1 atau 2 baris,
+  // dan bisa berbeda perihal per baris, mis. CUTI LOKAL dipecah + CUTI KERJA).
   function buildRevisiFormat(r) {
-    var lines = [
-      'REVISI CUTI STAFF',
-      '',
-      'Nama Staff : ' + r.nama,
-      '',
-      'Cuti 1 (Revisi) :',
-      'Perihal : ' + (r.perihal1 || '-'),
-      'Tanggal : ' + formatDate(r.start1) + ' — ' + formatDate(r.end1)
-    ];
-    if (r.start2 && r.end2) {
-      lines.push('');
-      lines.push('Cuti 2 (Revisi) :');
-      lines.push('Perihal : ' + (r.perihal2 || '-'));
-      lines.push('Tanggal : ' + formatDate(r.start2) + ' — ' + formatDate(r.end2));
-    }
+    var orig = null;
+    (_cache || []).forEach(function(x) { if (x.rowId === r.cutiId) orig = x; });
+
+    var leaves = [];
+    if (r.perihal1 && r.start1 && r.end1) leaves.push({ p: r.perihal1, s: r.start1, e: r.end1 });
+    if (r.perihal2 && r.start2 && r.end2) leaves.push({ p: r.perihal2, s: r.start2, e: r.end2 });
+
+    var judul = r.perihal1 || (leaves[0] && leaves[0].p) || '-';
+    var keterangan = orig ? orig.keterangan : '';
+    var role = orig ? orig.role : '';
+    var tambahan = orig ? orig.tambahan : '';
+
+    var lines = [];
+    lines.push(COPY_HEADER);
+    lines.push('PENGAJUAN CUTI : ' + judul + ' ( ' + (keterangan || '') + ' )');
+    lines.push('Nama Staff : ' + r.nama);
     lines.push('');
-    lines.push('Alasan Revisi : ' + (r.alasan || '-'));
+    lines.push('Status : ' + role);
+    lines.push('Tanggal Pengajuan : ');
+    leaves.forEach(function(l) {
+      lines.push(l.p + ' : ' + formatDate(l.s) + ' – ' + formatDate(l.e) + ' ( ' + calcDurasi(l.s, l.e) + ' Hari )');
+    });
+    // Baris keterangan penambahan hari (hanya bila memang ada tambahan pada cuti aslinya)
+    if (tambahan && !/tidak ada/i.test(tambahan)) lines.push(tambahan);
     lines.push('');
-    lines.push('ACC : ' + currentLeader());
+    lines.push('ACC LDR : ' + currentLeader());
     return lines.join('\n');
   }
 
