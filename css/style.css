@@ -130,6 +130,7 @@
   .auth-logout { cursor: pointer; background: rgba(255,255,255,.06); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius-pill); padding: 5px 11px; font-size: 12px; font-weight: 600; font-family: inherit; margin-left: 2px; transition: all .15s; }
   .auth-logout:hover { background: rgba(255,255,255,.14); }
   body:not(.is-admin) .admin-only { display: none !important; }
+  body.is-admin .non-admin-only { display: none !important; }
   .rek-warn { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; background: var(--amber-bg); border: 1px solid var(--amber-bd); color: var(--amber); font-size: 12.5px; font-weight: 700; }
 
   /* ═══ RULES MODAL ═══════════════════════════════════════════ */
