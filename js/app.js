@@ -2199,10 +2199,14 @@
     if (!isAdmin()) {
       if (filterState.segment === 'AKTIF') {
         // Cek apakah sudah ada revisi PENDING untuk cuti ini
-        var hasPending = !!findPendingRevisi(rowId);
-        if (hasPending) {
+        var pendingRevisiNonAdmin = findPendingRevisi(rowId);
+        if (pendingRevisiNonAdmin) {
+          // Dulu tombol ini disabled ("Revisi sedang diproses") — staff tidak bisa
+          // lihat apa yang sebenarnya sedang diajukan. Sekarang diklik membuka modal
+          // Review Revisi yang sama seperti punya admin, tapi read-only (tombol ACC/
+          // Tolak & catatan admin disembunyikan lewat class admin-only di HTML-nya).
           return '<span class="row-actions">' +
-            '<button class="icon-btn" title="Revisi sedang diproses" disabled style="border-color:var(--yellow-bd);color:var(--yellow);opacity:.5;cursor:not-allowed;">' +
+            '<button class="icon-btn" title="Lihat revisi yang sedang diajukan (menunggu admin)" onclick="openRevisiReview(\'' + esc(pendingRevisiNonAdmin.id) + '\')" style="border-color:var(--yellow-bd);color:var(--yellow);">' +
               '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
             '</button></span>';
         }
