@@ -792,15 +792,16 @@
     </div>
     <div class="modal-body">
       <div id="rvr_detail"></div>
-      <div class="field" style="margin-top:12px;">
+      <div class="field admin-only" style="margin-top:12px;">
         <label>Catatan Admin (opsional)</label>
         <textarea id="rvr_catatan" rows="2" placeholder="Catatan untuk staff…"></textarea>
       </div>
       <div class="msg" id="rvr_msg"></div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-danger" id="rvr_tolak" type="button" onclick="reviewRevisi('DITOLAK')">❌ Tolak</button>
-      <button class="btn btn-primary" id="rvr_acc" type="button" onclick="reviewRevisi('ACC')">✅ ACC & Terapkan</button>
+      <button class="btn btn-secondary non-admin-only" type="button" onclick="closeRevisiReview()">Tutup</button>
+      <button class="btn btn-danger admin-only" id="rvr_tolak" type="button" onclick="reviewRevisi('DITOLAK')">❌ Tolak</button>
+      <button class="btn btn-primary admin-only" id="rvr_acc" type="button" onclick="reviewRevisi('ACC')">✅ ACC & Terapkan</button>
     </div>
   </div>
 </div>
