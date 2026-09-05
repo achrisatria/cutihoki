@@ -2305,9 +2305,17 @@
     var r = null;
     for (var i = 0; i < (_cache || []).length; i++) if (_cache[i].rowId === rowId) { r = _cache[i]; break; }
     if (!r) return;
-    var text = buildCopyFormat(r);
+    // Kalau baris ini masih punya pengajuan revisi yang PENDING, data `cuti`-nya
+    // sendiri BELUM berubah — tanggal baru baru benar-benar diterapkan ke `cuti`
+    // saat admin meng-ACC (lihat reviewRevisi). Supaya tombol Salin di sini tidak
+    // membagikan tanggal LAMA yang sudah usang, dipakai draf tanggal HASIL REVISI
+    // (lewat buildRevisiFormat, format yang sama) selama masih menunggu approval.
+    // Begitu revisi di-ACC, findPendingRevisi tidak lagi menemukan apa-apa dan
+    // buildCopyFormat(r) biasa otomatis benar lagi (sudah memakai data terbaru).
+    var pendingRevisi = findPendingRevisi(rowId);
+    var text = pendingRevisi ? buildRevisiFormat(pendingRevisi) : buildCopyFormat(r);
     copyText(text).then(function() {
-      toast('Format pengajuan disalin', 'ok');
+      toast(pendingRevisi ? 'Format draf revisi disalin (belum di-ACC)' : 'Format pengajuan disalin', 'ok');
       if (btn) {   // umpan balik singkat di tombol
         var label = btn.querySelector('span'), asli = label ? label.textContent : '';
         btn.classList.add('done'); if (label) label.textContent = 'Tersalin';
@@ -2337,7 +2345,9 @@
   }
 
   function copyCell(rowId) {
-    return '<button class="copy-btn" type="button" title="Salin format pengajuan" onclick="copyRow(\'' + esc(rowId) + '\', this)">' +
+    var pending = !!findPendingRevisi(rowId);
+    var title = pending ? 'Salin draf tanggal hasil revisi (belum di-ACC admin)' : 'Salin format pengajuan';
+    return '<button class="copy-btn' + (pending ? ' copy-btn-pending' : '') + '" type="button" title="' + esc(title) + '" onclick="copyRow(\'' + esc(rowId) + '\', this)">' +
       '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
       '<span>Salin</span></button>';
   }
