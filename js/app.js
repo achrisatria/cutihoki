@@ -3858,6 +3858,23 @@
     var out = l1 + l2;
     return out || '<div style="color:var(--text-faint);">— Tidak ada —</div>';
   }
+  // Cek aman/bentroknya tanggal HASIL REVISI terhadap staff lain — memakai
+  // ulang clashIndex() (data _cache yang sudah di-cache, tanpa fetch baru) dan
+  // validateClashRules() yang SAMA PERSIS dengan gerbang yang menolak pengajuan
+  // cuti biasa & yang dicek ulang saat ACC (lihat bug #9), supaya "aman"/"bentrok"
+  // yang ditampilkan di sini konsisten dengan aturan yang benar-benar ditegakkan.
+  // Return null bila tidak relevan (bukan CUTI LOKAL/INDO, atau role tidak diketahui).
+  function buildRevisiClashInfo(r, orig) {
+    if (!orig || !orig.role) return null;
+    var slots = [];
+    if (r.perihal1 && r.start1 && r.end1 && CLASH_PERIHAL.indexOf(r.perihal1) !== -1)
+      slots.push({ perihal: r.perihal1, s: dayKey(r.start1), e: dayKey(r.end1) });
+    if (r.perihal2 && r.start2 && r.end2 && CLASH_PERIHAL.indexOf(r.perihal2) !== -1)
+      slots.push({ perihal: r.perihal2, s: dayKey(r.start2), e: dayKey(r.end2) });
+    if (!slots.length) return null;
+    var pool = clashIndex()[orig.role] || [];
+    return { reason: validateClashRules(r.nama, orig.role, slots, pool) };
+  }
   function openRevisiReview(revId) {
     var r = null;
     (_revisiCache || []).forEach(function(x) { if (x.id === revId) r = x; });
@@ -3875,6 +3892,16 @@
       ? revLinesHtml(orig.perihal1, orig.start1Raw, orig.end1Raw, orig.perihal2, orig.start2Raw, orig.end2Raw)
       : '<div style="color:var(--text-faint);">— Tidak tersedia —</div>';
     var after = revLinesHtml(r.perihal1, r.start1, r.end1, r.perihal2, r.start2, r.end2);
+    // Keterangan aman/bentroknya tanggal hasil revisi — hanya dihitung bila CUTI
+    // LOKAL/INDO ada di dalamnya (di luar itu aturan bentrok memang tidak berlaku,
+    // jadi tidak ditampilkan sama sekali, bukan dipaksakan "aman").
+    var clashInfoResult = buildRevisiClashInfo(r, orig);
+    var clashBadge = '';
+    if (clashInfoResult) {
+      clashBadge = clashInfoResult.reason
+        ? '<div class="msg error" style="margin:10px 0 0;white-space:pre-line;">' + esc(clashInfoResult.reason) + '</div>'
+        : '<div class="msg success" style="margin:10px 0 0;">✅ Tanggal hasil revisi ini AMAN — tidak bentrok dengan staff lain.</div>';
+    }
     var detail = '<div style="font-size:13px;line-height:1.7;color:var(--text-secondary);">' +
       '<div style="font-weight:700;font-size:15px;color:var(--text-primary);margin-bottom:12px;">' +
         esc((r.nama || '').toUpperCase()) +
@@ -3888,6 +3915,7 @@
         '<div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;">Tanggal Pengajuan Setelah Revisi :</div>' +
         '<div style="font-weight:600;color:var(--yellow);">' + after + '</div>' +
       '</div>' +
+      clashBadge +
       '<div style="margin-top:10px;"><strong>Alasan:</strong> ' + esc(r.alasan) + '</div>' +
       '</div>';
     document.getElementById('rvr_detail').innerHTML = detail;
