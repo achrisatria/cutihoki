@@ -164,13 +164,27 @@
     setTimeout(function(){ var e=document.getElementById('loginEmail'); if(e) e.focus(); }, 50);
   }
   function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+  // Cache Resign/Rekening/Revisi (dipakai badge sidebar & kartu notifikasi
+  // "Minta Revisi") awalnya cuma dimuat SEKALI saat halaman pertama dibuka
+  // (lihat bootstrap paling bawah file). invalidate() memang mengosongkan
+  // cache itu saat login/logout (RLS berubah, jadi datanya bisa beda), tapi
+  // TIDAK ADA yang memuat ulang isinya lagi sampai tab masing-masing dibuka
+  // manual — jadi begitu login/logout, badge sidebar & stat "Minta Revisi"
+  // sempat tampak kosong/nol (bukan data yang sebenarnya) sampai tab-nya
+  // dibuka satu-satu atau halaman di-refresh. Dipanggil di sini supaya semua
+  // langsung sinkron lagi tanpa jeda itu.
+  function refreshSidebarCaches() {
+    getResign().then(function(rows) { _resignCache = rows; _resignLoaded = true; updateResignCount(); }).catch(function() {});
+    getRekening().then(function(rows) { _rekCache = rows; _rekLoaded = true; updateRekCount(); }).catch(function() {});
+    getRevisi().then(function(rows) { _revisiCache = rows; _revisiLoaded = true; updateRevisiCount(); }).catch(function() {});
+  }
   function doLogout() {
     if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
     authLogout(); applyAuthUI();
     toast('Anda keluar dari mode admin', 'ok');
     logActivity('AUTH', 'LOGOUT', 'Admin logout');
     // Muat ulang tampilan agar kontrol admin & tab rekening tersembunyi kembali
-    invalidate(); switchTab('dashboard');
+    invalidate(); switchTab('dashboard'); refreshSidebarCaches();
   }
   function submitLogin() {
     var email = document.getElementById('loginEmail').value.trim();
@@ -186,7 +200,7 @@
       toast('Berhasil masuk sebagai admin', 'ok');
       logActivity('AUTH', 'LOGIN', 'Admin login: ' + email);
       if (AUTH && AUTH.refresh_token) startRefreshTimer();
-      invalidate(); loadDashboard(true);   // muat ulang agar kontrol admin muncul
+      invalidate(); loadDashboard(true); refreshSidebarCaches();   // muat ulang agar kontrol admin muncul
     }).catch(function(err) {
       btn.disabled = false; btn.textContent = 'Masuk';
       msg.className = 'msg error'; msg.textContent = 'Login gagal: ' + err.message;
